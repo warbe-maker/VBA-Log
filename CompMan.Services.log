@@ -1,0 +1,29 @@
+23-04-28 16:25:17 Update Outdated Common Components (by Add-in) for VBAServiceLog.xlsb: 
+23-04-28 16:25:17 ----------------------------------------------------------------------
+23-04-28 16:25:44 ==============================================================
+23-04-28 16:25:44 Export Changed Components (by Add-in) for VBAServiceLog.xlsb: 
+23-04-28 16:25:44 --------------------------------------------------------------
+23-04-28 16:25:45 Standard-Module mCompManClient: Modified Used Common Component exported (due revert allert registered!)
+23-04-28 16:25:45 Standard-Module mLogTest .....: Unchanged component
+23-04-28 16:25:45 Workbook        wbServiceLog .: Unchanged component
+23-04-28 16:25:45 Worksheet       wsServiceLog .: Unchanged component
+23-04-28 17:16:41 ==============================================================
+23-04-28 17:16:41 Export Changed Components (by Add-in) for VBAServiceLog.xlsb: 
+23-04-28 17:16:41 --------------------------------------------------------------
+23-04-28 17:16:41 Class-Module    clsLog .......: Hosted Raw Common Component code modified
+23-04-28 17:16:41                                 Code modified of Hosted Raw Common Component
+23-04-28 17:16:41                                 Exported, Revision Number increased, Export File copied to 'Common Components Folder'
+23-04-28 17:16:41 Standard-Module mCompManClient: Unchanged Used Common Component
+23-04-28 17:16:41 Standard-Module mLogTest .....: Modified code exported
+23-04-28 17:16:41 Workbook        wbServiceLog .: Unchanged component
+23-04-28 17:16:41 Worksheet       wsServiceLog .: Unchanged component
+23-04-28 19:23:48 ==============================================================
+23-04-28 19:23:48 Export Changed Components (by Add-in) for VBAServiceLog.xlsb: 
+23-04-28 19:23:48 --------------------------------------------------------------
+23-04-28 19:23:49 Class-Module    clsLog .......: Hosted Raw Common Component code modified
+23-04-28 19:23:49                                 Code modified of Hosted Raw Common Component
+23-04-28 19:23:49                                 Exported, Revision Number increased, Export File copied to 'Common Components Folder'
+23-04-28 19:23:49 Standard-Module mCompManClient: Unchanged Used Common Component
+23-04-28 19:23:49 Standard-Module mLogTest .....: Modified code exported
+23-04-28 19:23:49 Workbook        wbServiceLog .: Unchanged component
+23-04-28 19:23:49 Worksheet       wsServiceLog .: Unchanged component
