@@ -13,29 +13,29 @@ Option Explicit
 '
 ' Methods/services:
 ' -----------------
-' - AddLog
-' - ColsAlignHeader
-' - ColsAlignLine
+' - ColsAlignmnetHeader
+' - ColsAlignmnetLine
 ' - ColsHeader
-' - ColsWidth            Specifies each columns width, defaults to the width of the
-'                        corresponding column header string, is adjusted to the
-'                        width of the corresponding header string when already
-'                        provided.
+' - ColsWidth             Specifies each columns width, defaults to the width of the
+'                         corresponding column header string, is adjusted to the
+'                         width of the corresponding header string when already
+'                         provided.
 ' - Dsply
-' - Service
-' - ServicedItem
-' - ServicedItemsMaxLen
-' - WriteLog
-'
+' - Entry                 Appends an entry to the log file. A single line when only
+'                         one string is provided or a column aligned string when more
+'                         than one string is provided (ParamArray)'
 ' Properties:
 ' -----------
-' - ColsMargin           Defaults to " ", may be set to vbNullString, when provided
-'                        adds to the width of the header string
-' - Entry        Let     Appends an entry to the log file.
-' - FileFullName Get/Let
-' - FileName     Let
-' - KeepDays     Let
-' - LogFile      Get
+' - ColsMargin            Defaults to " ", may be set to vbNullString, when provided
+'                         adds to the width of the header string
+' - FileFullName  Get/Let
+' - FileName      Let
+' - KeepDays      Let
+' - LogFile       Get
+' - Path          Let
+' - Title         Let     Triggers the automated writing of a header with the firs
+'                         call of the Entry method
+' - WithTimeStamp Let     Prefix for log entries when True
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' -----------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ Private Const COLS_DELIMITER_DFLT   As String = "|"
 Private Const COLS_MARGIN_DFLT      As String = " "
 Private Const LOG_FILE_NAME_DFLT    As String = "Service.log"
 
+Private bHeaderDue          As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
 Private lKeepDays           As Long
@@ -54,15 +55,16 @@ Private sFileFullName       As String
 Private sFileName           As String
 Private sPath               As String
 Private sHeaderText         As String
-Private sService            As String
+Private sTitle              As String
 Private sServiceDelimiter   As String
 Private sServicedItem       As String
 Private sServicedItemName   As String
 Private sServicedItemType   As String
 Public vColsWidth           As Variant ' Public for test purpose only
 Public vColsHeader          As Variant ' Public for test purpose only
-Public vColsAlignHeader     As Variant ' Public for test purpose only
-Public vColsAlignLine       As Variant ' Public for test purpose only
+Public vColsAlignmnetHeader As Variant ' Public for test purpose only
+Public vColsAlignmnetLine   As Variant ' Public for test purpose only
+Private vEntry              As Variant
 
 #If Not MsgComp = 1 Then
     ' -------------------------------------------------------------------------------
@@ -93,6 +95,7 @@ Private Sub Class_Initialize()
 ' -----------------------------------------------------------------------------------
 ' Initializing defaults
 ' -----------------------------------------------------------------------------------
+    bHeaderDue = True
     bNewLog = True
     bWithTimeStamp = True
     lKeepDays = 1
@@ -102,35 +105,32 @@ Private Sub Class_Initialize()
     sPath = ThisWorkbook.Path
 End Sub
 
-Private Function TimeStamp() As String
-    If bWithTimeStamp Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " " & COLS_DELIMITER_DFLT
+Public Function TimeStamp() As String ' Public for test purpose only
+    If bWithTimeStamp Then
+        If ArrayIsAllocated(vColsHeader) _
+        Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " " & COLS_DELIMITER_DFLT _
+        Else TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " "
+    End If
 End Function
 
 Public Property Let ColsMargin(ByVal s As String)
     sColsMargin = s
 End Property
 
-Public Property Let Entry(ByVal s As String)
+Public Sub Entry(ParamArray e() As Variant)
 ' -----------------------------------------------------------------------------------
 ' Append an entry to the log file.
 ' -----------------------------------------------------------------------------------
     Static sItem    As String
     Dim sCompName   As String
     
-    If ServicedItem = vbNullString Then
-        sEntry = TimeStamp & s
-    Else
-        If ServicedItem = sItem Then
-            sEntry = TimeStamp & VBA.Space$(Len(sItem)) & s
-        Else
-            sEntry = TimeStamp & " " & ServicedItem & s
-        End If
-    End If
-    WriteLog sEntry
-    sItem = sServicedItem
-    sCompName = Split(ServicedItemName, "(")(0)
+    If bHeaderDue Then WriteHeader
+    vEntry = e
+    If LBound(vEntry) = UBound(vEntry) _
+    Then WriteEntry vEntry(0) _
+    Else WriteColumned
     
-End Property
+End Sub
 
 Friend Property Get FileFullName() As String
     FileFullName = sFileFullName
@@ -200,117 +200,29 @@ Public Property Let WithTimeStamp(ByVal b As Boolean)
     bWithTimeStamp = b
 End Property
 
-Friend Property Get ServicedItem(Optional ByVal s_max_len_name As Long, _
-                                 Optional ByVal s_max_len_type As Long, _
-                                 Optional ByVal s_wbk As Workbook, _
-                                 Optional ByVal s_type As String) As Variant
-' -----------------------------------------------------------------------------------
-'
-' -----------------------------------------------------------------------------------
-    If sServicedItemType = vbNullString And sServicedItemName = vbNullString Then
-        ServicedItem = sServicedItem
-    Else
-        sServicedItem = Align(sServicedItemType, s_max_len_type) & " " & Align(sServicedItemName, s_max_len_name, , " ", ".") & ": "
-        ServicedItem = sServicedItem
-    End If
+Public Property Get WithTimeStamp() As Boolean
+    WithTimeStamp = bWithTimeStamp
 End Property
 
-Friend Property Let ServicedItem(Optional ByVal s_max_len_name As Long, _
-                                 Optional ByVal s_max_len_type As Long, _
-                                 Optional ByVal s_wbk As Workbook, _
-                                 Optional ByVal s_type As String, _
-                                          ByVal v As Variant)
-' -----------------------------------------------------------------------------------
-' Determines the serviced item's type and name string for logging and computes the
-' maximum length for both.
-' -----------------------------------------------------------------------------------
-    Const PROC = "ServicedItem-Let"
-    
-    On Error GoTo eh
-    Dim vbc As VBComponent
-    Dim nme  As Name
-    Dim wsh  As Worksheet
-    Dim ref As Reference
-    Dim shp As Shape
-    Dim tbt As ToggleButton
-    Dim tbx As TextBox
-    Dim sbt As SpinButton
-    Dim scb As ScrollBar
-    Dim obt As OptionButton
-    Dim lbx As ListBox
-    Dim lbl As Label
-    Dim img As Image
-    Dim cbt As CommandButton
-    Dim Rng As Range
-    
-    Select Case TypeName(v)
-        Case "VBComponent":     Set vbc = v:    Select Case vbc.Type
-                                                    Case vbext_ct_ActiveXDesigner:  ServicedItemProperties "ActiveX-Designer", vbc.Name, s_max_len_type, s_max_len_name
-                                                    Case vbext_ct_ClassModule:      ServicedItemProperties "Class-Module", vbc.Name, s_max_len_type, s_max_len_name
-                                                    Case vbext_ct_MSForm:           ServicedItemProperties "UserForm", vbc.Name, s_max_len_type, s_max_len_name
-                                                    Case vbext_ct_StdModule:        ServicedItemProperties "Standard-Module", vbc.Name, s_max_len_type, s_max_len_name
-                                                    Case vbext_ct_Document:         If IsSheetDocMod(vbc, s_wbk) _
-                                                                                    Then ServicedItemProperties "Worksheet", vbc.Name, s_max_len_type, s_max_len_name _
-                                                                                    Else ServicedItemProperties "Workbook", vbc.Name, s_max_len_type, s_max_len_name
-                                                End Select
-        Case "Name":            Set nme = v:    ServicedItemProperties "Name", Replace(nme.Name, nme.Parent.Name & "!", vbNullString) & "(" & nme.RefersTo & ")", s_max_len_type, s_max_len_name
-        Case "Reference":       Set ref = v:    ServicedItemProperties TypeName(ref), ref.Description, s_max_len_type, s_max_len_name
-        Case "Shape":           Set shp = v:    ServicedItemProperties s_type, shp.Parent.Name & "." & ShapeNames(shp), s_max_len_type, s_max_len_name
-        Case "Worksheet":       Set wsh = v:    ServicedItemProperties "Worksheet", wsh.CodeName, s_max_len_type, s_max_len_name
-        Case "String":                          ServicedItemProperties Split(v, ";")(0), Split(v, ";")(1), s_max_len_type, s_max_len_name
-        Case "CommandButton":   Set cbt = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "Image":           Set img = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "Label":           Set lbl = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "ListBox":         Set lbx = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "OptionButton":    Set obt = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "ScrollBar":       Set scb = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "SpinButton":      Set sbt = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "TextBox":         Set tbx = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "ToggleButton":    Set tbt = v:    ServicedItemProperties TypeName(v), v.Name, s_max_len_type, s_max_len_name
-        Case "Range":           Set Rng = v:    ServicedItemProperties TypeName(v), v.Name.Name, s_max_len_type, s_max_len_name
-        Case Else
-            Debug.Print "TypeName '" & TypeName(v) & "' not yet considered as a serviced item"
-    End Select
-
-xt: Exit Property
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Property
-
-Private Property Get ServicedItemName(Optional ByVal s_max_len_name As Long) As String
-    ServicedItemName = sServicedItemName & "(" & s_max_len_name & ")"
-End Property
-
-Private Property Let ServicedItemName(Optional ByVal s_max_len_name As Long, _
-                                               ByVal s As String)
-    sServicedItemName = s
-End Property
-
-Private Property Get ServicedItemType(Optional ByVal s_max_len_type As Long) As String
-    ServicedItemType = sServicedItemType & "(" & s_max_len_type & ")"
-End Property
-
-Private Property Let ServicedItemType(Optional ByVal s_max_len_type As Long, _
-                                               ByVal s As String)
-    sServicedItemType = s
-End Property
-
-Public Property Let ServiceHeader(ByVal s As String)
+Public Property Let Title(ByVal s As String)
 ' ----------------------------------------------------------------------------
 ' Alternatively to the "Service" property!
 ' ----------------------------------------------------------------------------
-    sService = s
+    bHeaderDue = s <> sTitle
+    sTitle = s
+    vColsHeader = vbNullString
+    vColsWidth = vbNullString
+    vEntry = vbNullString
 End Property
 
-Public Sub AddLog(ParamArray a_cols() As Variant)
+Private Sub WriteColumned()
 ' -----------------------------------------------------------------------------------
 ' Add a line to the log file aligned in columns.
-' Note: Any string exceeding the number of provided column widths is ignored!
+' - Any string exceeding the number of provided column headers and column widths is
+'   ignored!
+' - When no column headers had been provided (method ColsHeader) an error is raised.
 ' -----------------------------------------------------------------------------------
-    Const PROC = "AddLog"
+    Const PROC = "WriteColumned"
     
     On Error GoTo eh
     Dim i           As Long
@@ -322,24 +234,20 @@ Public Sub AddLog(ParamArray a_cols() As Variant)
     If Not ArrayIsAllocated(vColsHeader) _
     Then Err.Raise AppErr(1), ErrSrc(PROC), "No column header provided. This service writes log entries in " & _
                                             "columns for which column header is obligatory " & _
-                                            "(for unformatted of preformatted log entries use the WriteLog service)!"
-    If Not ArrayIsAllocated(vColsWidth) _
-    Then Err.Raise AppErr(2), ErrSrc(PROC), "No column widths provided. Neither explicit nor through the specification of column headers!"
-    
-    ProvideColsAlignLine
-    s = TimeStamp
+                                            "(for unformatted of preformatted log entries use the WriteEntry service)!"
+    ProvideColsAlignmnetLine
     v = Split(sHeaderText, COLS_DELIMITER_DFLT)
-    For i = LBound(a_cols) To Min(UBound(a_cols), UBound(vColsWidth))
-        sElement = a_cols(i)
+    For i = LBound(vEntry) To Min(UBound(vEntry), UBound(vColsWidth))
+        sElement = vEntry(i)
         If Len(sElement) > 0 Then
             If Left(sElement, 1) <> sColsMargin Then
                 sElement = sColsMargin & sElement
             End If
         End If
-        s = s & sColDelim & Align(sElement, Len(v(i)), vColsAlignLine(i), sColsMargin)
+        s = s & sColDelim & Align(sElement, Len(v(i)), vColsAlignmnetLine(i), sColsMargin)
         sColDelim = COLS_DELIMITER_DFLT
     Next i
-    WriteLog s
+    WriteEntry s
     
 xt: Exit Sub
 
@@ -403,50 +311,49 @@ Private Function ArrayIsAllocated(arr As Variant) As Boolean
     
 End Function
 
-Public Sub ColsAlignHeader(ParamArray c_align() As Variant)
+Public Sub ColsAlignmnetHeader(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
 ' -----------------------------------------------------------------------------------
     Dim i As Long
-    vColsAlignHeader = c_align
+    vColsAlignmnetHeader = c_align
     '~~ Set any invalid entry to the default "L" (align left)
-    For i = LBound(vColsAlignHeader) To UBound(vColsAlignHeader)
-        If Len(vColsAlignHeader(i)) >= 1 Then
-            Select Case Left(vColsAlignHeader(i), 1)
+    For i = LBound(vColsAlignmnetHeader) To UBound(vColsAlignmnetHeader)
+        If Len(vColsAlignmnetHeader(i)) >= 1 Then
+            Select Case Left(vColsAlignmnetHeader(i), 1)
                 Case "L", "R", "C"
-                Case Else: vColsAlignHeader(i) = COLS_ALGN_DFLT_HEADER
+                Case Else: vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
             End Select
         Else
-            vColsAlignHeader(i) = COLS_ALGN_DFLT_HEADER
+            vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
         End If
     Next i
     
 End Sub
 
-Public Sub ColsAlignLine(ParamArray c_align() As Variant)
+Public Sub ColsAlignmnetLine(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
 ' -----------------------------------------------------------------------------------
     Dim i As Long
-    vColsAlignLine = c_align
+    vColsAlignmnetLine = c_align
     '~~ Set any invalid entry to the default "L" (align left)
-    For i = LBound(vColsAlignLine) To UBound(vColsAlignLine)
-        If Len(vColsAlignLine(i)) >= 1 Then
-            Select Case Left(vColsAlignLine(i), 1)
+    For i = LBound(vColsAlignmnetLine) To UBound(vColsAlignmnetLine)
+        If Len(vColsAlignmnetLine(i)) >= 1 Then
+            Select Case Left(vColsAlignmnetLine(i), 1)
                 Case "L", "R", "C"
-                Case Else: vColsAlignLine(i) = COLS_ALGN_DFLT_LINE
+                Case Else: vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
             End Select
         Else
-            vColsAlignLine(i) = COLS_ALGN_DFLT_LINE
+            vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
         End If
     Next i
     
 End Sub
 
-Public Sub ColsHeader(ByVal c_margin As String, _
-                      ParamArray c_headers() As Variant)
+Public Sub ColsHeader(ParamArray c_headers() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
@@ -454,7 +361,7 @@ Public Sub ColsHeader(ByVal c_margin As String, _
     Dim i As Long
     Dim l As Long
     
-    sColsMargin = c_margin
+    vColsHeader = vbNullString
     vColsHeader = c_headers
     If Not ArrayIsAllocated(vColsWidth) Then
         ReDim vColsWidth(UBound(vColsHeader))
@@ -478,6 +385,7 @@ Public Sub ColsWidth(ParamArray c_widths() As Variant)
     Dim i As Long
     Dim l As Long
     
+    vColsWidth = vbNullString
     vColsWidth = c_widths
     If ArrayIsAllocated(vColsHeader) Then
         For i = LBound(vColsHeader) To Min(UBound(vColsHeader), UBound(vColsWidth))
@@ -592,34 +500,13 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
-Private Function IsSheetDocMod(ByVal i_vbc As VBComponent, _
-                               ByVal i_wbk As Workbook, _
-                      Optional ByRef i_wsh As Worksheet) As Boolean
-' ------------------------------------------------------------------------------
-' When the VBComponent (vbc) represents a Worksheet the function returns TRUE
-' and the corresponding Worksheet (i_wsh).
-' ------------------------------------------------------------------------------
-    Dim wsh As Worksheet
-
-    IsSheetDocMod = i_vbc.Type = vbext_ct_Document And i_vbc.Name <> i_wbk.CodeName
-    If IsSheetDocMod Then
-        For Each wsh In i_wbk.Worksheets
-            If wsh.CodeName = i_vbc.Name Then
-                Set i_wsh = wsh
-                Exit For
-            End If
-        Next wsh
-    End If
-
-End Function
-
-Private Sub WriteLog(ByVal ft_string As String)
+Private Sub WriteEntry(ByVal s As String)
 ' ----------------------------------------------------------------------------
-' Writes the string (ft_string) into the file (ft_file) which might be a file
+' Writes the string (s) into the file (ft_file) which might be a file
 ' object or a file's full name.
 ' Note: ft_split is not used but specified to comply with Property Get.
 ' ----------------------------------------------------------------------------
-    Const PROC = "WriteLog"
+    Const PROC = "WriteEntry"
     
     On Error GoTo eh
     Dim fso As New FileSystemObject
@@ -632,7 +519,7 @@ Private Sub WriteLog(ByVal ft_string As String)
         Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForAppending)
     End With
     
-    ts.WriteLine ft_string
+    ts.WriteLine TimeStamp & s
 
 xt: ts.Close
     Set fso = Nothing
@@ -671,24 +558,22 @@ Private Function Min(ParamArray va() As Variant) As Variant
     
 End Function
 
-Private Sub ProvideColsAlignHeader()
+Private Sub ProvideColsAlignmnetHeader()
     Dim i   As Long
-    If Not ArrayIsAllocated(vColsAlignHeader) Then
-        ReDim vColsAlignHeader(UBound(vColsHeader))
-        For i = LBound(vColsAlignHeader) To UBound(vColsAlignHeader)
-            vColsAlignHeader(i) = COLS_ALGN_DFLT_HEADER
+    If Not ArrayIsAllocated(vColsAlignmnetHeader) Then
+        ReDim vColsAlignmnetHeader(UBound(vColsHeader))
+        For i = LBound(vColsAlignmnetHeader) To UBound(vColsAlignmnetHeader)
+            vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
         Next i
-    Else
-        
     End If
 End Sub
 
-Private Sub ProvideColsAlignLine()
+Private Sub ProvideColsAlignmnetLine()
     Dim i   As Long
-    If Not ArrayIsAllocated(vColsAlignLine) Then
-        ReDim vColsAlignLine(UBound(vColsHeader))
-        For i = LBound(vColsAlignLine) To UBound(vColsAlignLine)
-            vColsAlignLine(i) = COLS_ALGN_DFLT_LINE
+    If Not ArrayIsAllocated(vColsAlignmnetLine) Then
+        ReDim vColsAlignmnetLine(UBound(vColsHeader))
+        For i = LBound(vColsAlignmnetLine) To UBound(vColsAlignmnetLine)
+            vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
         Next i
     End If
 End Sub
@@ -711,49 +596,6 @@ Private Sub ProvideLogFile()
     End With
     Set fso = Nothing
 End Sub
-
-Private Sub ServicedItemProperties(ByVal sip_type As String, _
-                                   ByVal sip_name As String, _
-                                   ByRef s_max_len_type As Long, _
-                                   ByRef s_max_len_name As Long)
-    ServicedItemType = sip_type
-    ServicedItemName = sip_name
-    s_max_len_type = Max(s_max_len_type, Len(sip_type))
-    s_max_len_name = Max(s_max_len_name, Len(sip_name))
-
-End Sub
-
-Private Function ShapeNames(ByVal sn_obj As Variant) As String
-' ------------------------------------------------------------------------------
-' Returns the Name of a Shape and - in case Shape is a type msoOLEControlObject
-' - the OOB-Object Name (Code Name) added separated with a semicolon.
-' ------------------------------------------------------------------------------
-    Const PROC = "ShapeNames"
-    
-    On Error GoTo eh
-    Dim shp As Shape
-    Dim oob As OLEObject
-    
-    Select Case TypeName(sn_obj)
-        Case "Shape"
-            Set shp = sn_obj
-            ShapeNames = shp.Name
-            If shp.Type = msoOLEControlObject Then ShapeNames = ShapeNames & " (" & shp.OLEFormat.Object.Name & ")"
-        Case "OLEObject"
-            Set oob = sn_obj
-            ShapeNames = oob.ShapeRange.Name
-            ShapeNames = ShapeNames & " (" & oob.Name & ")"
-        Case Else
-            Err.Raise AppErr(1), ErrSrc(PROC), "The provided object iss neither a 'Shape' nor an 'OleObject'!"
-    End Select
-    
-xt: Exit Function
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Function
 
 Private Sub ShellRun(ByVal sr_string As String, _
             Optional ByVal sr_show_how As Long = 1)
@@ -810,6 +652,8 @@ End Sub
 
 Public Sub WriteHeader()
 ' -----------------------------------------------------------------------------------
+' When not performed explicitely it will be performed along with the first _Entry_
+' method call when bHeaderDue is True.
 ' - Writes a header based on the strings provided in their width by default, by the
 '   width explicitely provided otherwise
 ' - When the KeepDays limit is reached writing the header establishes a new log file,
@@ -828,10 +672,12 @@ Public Sub WriteHeader()
     Dim v           As Variant
     
     ProvideLogFile
-    ProvideColsAlignHeader
+    If Not ArrayIsAllocated(vColsHeader) Then GoTo xt
+    ProvideColsAlignmnetHeader
     
+    sHeaderText = vbNullString
     For i = LBound(vColsHeader) To Min(UBound(vColsHeader), UBound(vColsWidth))
-        sHeaderText = sHeaderText & sColDelim & Align(vColsHeader(i), vColsWidth(i), vColsAlignHeader(i), sColsMargin)
+        sHeaderText = sHeaderText & sColDelim & Align(vColsHeader(i), vColsWidth(i), vColsAlignmnetHeader(i), sColsMargin)
         sColDelim = COLS_DELIMITER_DFLT
     Next i
     sColDelim = vbNullString
@@ -841,17 +687,18 @@ Public Sub WriteHeader()
         sHeaderLine = sHeaderLine & sColDelim & String(Len(v(i)), "-")
         sColDelim = "+"
     Next i
-    If sService <> vbNullString Then
-        sHeaderSrvc = Align(sService, Len(sHeaderText), "C", " ", "-")
+    If sTitle <> vbNullString Then
+        sHeaderSrvc = Align(sTitle, Len(sHeaderText), "C", " ", "-")
     End If
     
     If sServiceDelimiter <> vbNullString Then
-        WriteLog TimeStamp & String(Len(sHeaderText), sServiceDelimiter)
+        WriteEntry String(Len(sHeaderText), sServiceDelimiter)
         sServiceDelimiter = vbNullString
     End If
-    If sHeaderSrvc <> vbNullString Then WriteLog TimeStamp & sHeaderSrvc
-    WriteLog TimeStamp & sHeaderText
-    WriteLog TimeStamp & sHeaderLine
+    If sHeaderSrvc <> vbNullString Then WriteEntry sHeaderSrvc
+    WriteEntry sHeaderText
+    WriteEntry sHeaderLine
+    bHeaderDue = False ' may be set to True again when a new Title is provided
     
 xt: Exit Sub
 
