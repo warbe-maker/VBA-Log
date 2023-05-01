@@ -1,5 +1,6 @@
 Attribute VB_Name = "mLogTest"
 Option Explicit
+Option Base 1
 ' ----------------------------------------------------------------------
 ' Standard Module mLogTest: Regression-Test for the clsLog Class Module
 ' =========================
@@ -155,14 +156,17 @@ Private Sub AssertResult(ByVal a_file As String, _
     Dim vResult     As Variant
     Dim vExpected   As Variant
     Dim i           As Long
-    Dim sResult     As String
     
     vExpected = a
     vResult = FileArry(a_file)
     Debug.Assert UBound(vResult) = UBound(vExpected)
     For i = 0 To UBound(vResult)
-        sResult = Right(vResult(i), Len(vResult(i)) - (Len(a_time_stamp) - 1))
-        Debug.Assert sResult = vExpected(i)
+        If Not vResult(i) Like "*" & vExpected(i) Then
+            Debug.Print "Line  " & i + 1 & ":"
+            Debug.Print "Result  : " & vResult(i)
+            Debug.Print "Expected: " & vExpected(i)
+            Stop
+        End If
     Next i
     
 End Sub
@@ -247,7 +251,7 @@ Private Function ErrMsg(ByVal err_source As String, _
     '~~ Obtain error information from the Err object for any argument not provided
     If err_no = 0 Then err_no = Err.Number
     If err_line = 0 Then ErrLine = Erl
-    If err_source = vbNullString Then err_source = Err.source
+    If err_source = vbNullString Then err_source = Err.Source
     If err_dscrptn = vbNullString Then err_dscrptn = Err.Description
     If err_dscrptn = vbNullString Then err_dscrptn = "--- No error description available ---"
     
@@ -301,14 +305,15 @@ Private Sub Test_00_Regression()
     BoP ErrSrc(PROC)
     
     mErH.Regression = True
-'    Test_01_ColsHeader
-'    Test_02_ColsWidth
-'    Test_03_Property_Name
-'    Test_04_Property_Path_As_Workbook
+    Test_01_ColsHeader
+    Test_02_ColsWidth
+    Test_03_Property_Name
+    Test_04_Property_Path_As_Workbook
     Test_05_WriteHeader
-    Test_06_Entry_Columned
+    Test_06_Log_Items
 
 xt: EoP ErrSrc(PROC)
+    mTrc.Dsply
     Exit Sub
 
 eh: Select Case ErrMsg(ErrSrc(PROC))
@@ -324,13 +329,15 @@ Private Sub Test_01_ColsHeader()
     Const HEADER_3 = "--Column-03-Header--"
     
     On Error GoTo eh
+    Dim sColsMargin As String: sColsMargin = " "
     BoP ErrSrc(PROC)
     
     With New clsLog
+        .ColsMargin = sColsMargin
         .ColsHeader HEADER_1, HEADER_2, HEADER_3
-        Debug.Assert .vColsWidth(0) = Len(HEADER_1) + 2: Debug.Assert .vColsHeader(0) = HEADER_1
-        Debug.Assert .vColsWidth(1) = Len(HEADER_2) + 2: Debug.Assert .vColsHeader(1) = HEADER_2
-        Debug.Assert .vColsWidth(2) = Len(HEADER_3) + 2: Debug.Assert .vColsHeader(2) = HEADER_3
+        Debug.Assert .vColsWidth(1) = Len(HEADER_1): Debug.Assert .vColsHeader(1) = HEADER_1
+        Debug.Assert .vColsWidth(2) = Len(HEADER_2): Debug.Assert .vColsHeader(2) = HEADER_2
+        Debug.Assert .vColsWidth(3) = Len(HEADER_3): Debug.Assert .vColsHeader(3) = HEADER_3
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -354,9 +361,9 @@ Private Sub Test_02_ColsWidth()
     With New clsLog
         .ColsHeader HEADER_1, HEADER_2, HEADER_3
         .ColsWidth 20, 25, 30
-        Debug.Assert .vColsWidth(0) = 20: Debug.Assert .vColsHeader(0) = HEADER_1
-        Debug.Assert .vColsWidth(1) = 25: Debug.Assert .vColsHeader(1) = HEADER_2
-        Debug.Assert .vColsWidth(2) = 30: Debug.Assert .vColsHeader(2) = HEADER_3
+        Debug.Assert .vColsWidth(1) = 20: Debug.Assert .vColsHeader(1) = HEADER_1
+        Debug.Assert .vColsWidth(2) = 25: Debug.Assert .vColsHeader(2) = HEADER_2
+        Debug.Assert .vColsWidth(3) = 30: Debug.Assert .vColsHeader(3) = HEADER_3
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -391,10 +398,12 @@ Private Sub Test_04_Property_Path_As_Workbook()
     Const PROC = "Test_04_Property_Path_As_Workbook"
     
     On Error GoTo eh
+    Dim fso As New FileSystemObject
+    
     BoP ErrSrc(PROC)
     With New clsLog
-        .Path = ThisWorkbook.Path
-        Debug.Assert .FileFullName = ThisWorkbook.Path & "\Service.log"
+        .Path = ActiveWorkbook.Path
+        Debug.Assert .FileFullName = ActiveWorkbook.Path & "\" & fso.GetBaseName(ActiveWorkbook.Name) & ".log"
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -412,8 +421,11 @@ Private Sub Test_05_WriteHeader()
     Const HEADER_2 = "-Column-02-Header-"
     Const HEADER_3 = "--Column-03-Header--"
     
+    Dim bTimeStamp As Boolean: bTimeStamp = True
+    
     With New clsLog
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
+        .WithTimeStamp = bTimeStamp
         .ColsHeader HEADER_1, HEADER_2, HEADER_3
         .ColsWidth 20, 25, 30
         .WriteHeader
@@ -421,9 +433,9 @@ Private Sub Test_05_WriteHeader()
             .Dsply
         Else
             AssertResult .LogFile _
-                      , .TimeStamp _
-                      , "|  Column-01-Header  |   -Column-02-Header-   |     --Column-03-Header--     " _
-                      , "|--------------------+------------------------+------------------------------"
+                      , bTimeStamp _
+                      , "|  Column-01-Header  |   -Column-02-Header-    |     --Column-03-Header--     " _
+                      , "|--------------------+-------------------------+------------------------------"
         End If
     End With
 
@@ -436,49 +448,51 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Sub Test_06_Entry_Columned()
-    Const PROC = "Test_06_Entry_Columned"
+Private Sub Test_06_Log_Items()
+    Const PROC = "Test_06_Log_Items"
     Const HEADER_1 = "Column-01-Header"
     Const HEADER_2 = "-Column-02-Header-"
     Const HEADER_3 = "--Column-03-Header--"
     
     On Error GoTo eh
+    Dim bTimeStamp As Boolean: bTimeStamp = True
+    
     BoP ErrSrc(PROC)
     
     With New clsLog
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
+        .WithTimeStamp = bTimeStamp
         .Title = "Test method 'Entry' case 1:"
         .ColsMargin = vbNullString
         .ColsWidth 10, 25, 30
         .ColsHeader HEADER_1, HEADER_2, HEADER_3
-        .Entry "xxx", "yyyyyy", "zzzzzz"
-        .Entry "xxx", "yyyyyy", "zzzzzz"
-        .Entry "xxx", "yyyyyy", "zzzzzz"
-        .Title = "Test method 'Entry' case 2: Repeated header with new title"
-        .ColsMargin = vbNullString
-        .ColsWidth 10, 25, 30
-        .ColsHeader HEADER_1, HEADER_2, HEADER_3
-''        .WriteHeader
-        .Entry "xxx", "yyyyyy", "zzzzzz"
-        .Entry "xxx", "yyyyyy", "zzzzzz"
-        .Entry "xxx", "yyyyyy", "zzzzzz"
+        .Items "xxx", "yyyyyy", "zzzzzz"
+        .Items "xxx", "yyyyyy", "zzzzzz"
+        .Items "xxx", "yyyyyy", "zzzzzz"
+        .Title = "Test method 'Items' case 2: New title, with marging"
+        .ColsMargin = " "
+        .Items "xxx", "yyyyyy", "zzzzzz"
+        .Items "xxx", "yyyyyy", "zzzzzz"
+        .Items "xxx", "yyyyyy", "zzzzzz"
         
         If Not mErH.Regression Then
             .Dsply
         Else
             AssertResult .LogFile _
-                      , .TimeStamp _
+                      , bTimeStamp _
                       , "|---------------------- Test method 'Entry' case 1: ----------------------" _
                       , "|Column-01-Header|   -Column-02-Header-    |     --Column-03-Header--     " _
                       , "|----------------+-------------------------+------------------------------" _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|=========================================================================" _
-                      , "|------ Test method 'Entry' case 2: Repeated header with new title ------" _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        "
+                      , "|===========================================================================" _
+                      , "|----------- Test method 'Items' case 2: New title, with marging -----------" _
+                      , "| Column-01-Header |   -Column-02-Header-    |     --Column-03-Header--     " _
+                      , "|------------------+-------------------------+------------------------------" _
+                      , "| xxx              | yyyyyy                  | zzzzzz                       " _
+                      , "| xxx              | yyyyyy                  | zzzzzz                       " _
+                      , "| xxx              | yyyyyy                  | zzzzzz                       "
         End If
     End With
 

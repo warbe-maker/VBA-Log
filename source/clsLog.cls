@@ -8,22 +8,23 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+Option Base 1 ' ensures the index conforms with the column number
 ' -----------------------------------------------------------------------------------
 ' Class Module clsLog
 '
 ' Methods/services:
 ' -----------------
-' - ColsAlignmnetHeader
-' - ColsAlignmnetLine
+' - ColsAlignmentHeader
+' - ColsAlignmentItem
 ' - ColsHeader
 ' - ColsWidth             Specifies each columns width, defaults to the width of the
 '                         corresponding column header string, is adjusted to the
 '                         width of the corresponding header string when already
 '                         provided.
 ' - Dsply
-' - Entry                 Appends an entry to the log file. A single line when only
-'                         one string is provided or a column aligned string when more
-'                         than one string is provided (ParamArray)'
+' - Entry                 Appends a line to the log file.
+' - Items                 Appends a log line with the provided items aligned in columns
+'
 ' Properties:
 ' -----------
 ' - ColsMargin            Defaults to " ", may be set to vbNullString, when provided
@@ -34,17 +35,18 @@ Option Explicit
 ' - LogFile       Get
 ' - Path          Let
 ' - Title         Let     Triggers the automated writing of a header with the firs
-'                         call of the Entry method
+'                         call of the Items method
 ' - WithTimeStamp Let     Prefix for log entries when True
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' -----------------------------------------------------------------------------------
-Private Const COLS_ALGN_DFLT_HEADER As String = "C"
-Private Const COLS_ALGN_DFLT_LINE   As String = "L"
-Private Const COLS_DELIMITER_DFLT   As String = "|"
-Private Const COLS_MARGIN_DFLT      As String = " "
-Private Const LOG_FILE_NAME_DFLT    As String = "Service.log"
+Private Const DEFAULT_COL_ALIGNMENT_HEADER  As String = "C"
+Private Const DEFAULT_COL_ALIGNMENT_ITEM    As String = "L"
+Private Const DEFAULT_COL_DELIMITER         As String = "|"
+Private Const DEFAULT_COL_MARGIN            As String = " "
 
+Private sColsDelimiter      As String
+Private fso                 As New FileSystemObject
 Private bHeaderDue          As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
@@ -62,9 +64,9 @@ Private sServicedItemName   As String
 Private sServicedItemType   As String
 Public vColsWidth           As Variant ' Public for test purpose only
 Public vColsHeader          As Variant ' Public for test purpose only
-Public vColsAlignmnetHeader As Variant ' Public for test purpose only
-Public vColsAlignmnetLine   As Variant ' Public for test purpose only
-Private vEntry              As Variant
+Public vColsAlignmentHeader As Variant ' Public for test purpose only
+Public vColsAlignmentItem   As Variant ' Public for test purpose only
+Private vItems              As Variant
 
 #If Not MsgComp = 1 Then
     ' -------------------------------------------------------------------------------
@@ -99,55 +101,171 @@ Private Sub Class_Initialize()
     bNewLog = True
     bWithTimeStamp = True
     lKeepDays = 1
-    sColsMargin = COLS_MARGIN_DFLT
-    sFileFullName = ThisWorkbook.Path & "\" & LOG_FILE_NAME_DFLT
-    sFileName = LOG_FILE_NAME_DFLT
-    sPath = ThisWorkbook.Path
+    sColsMargin = DEFAULT_COL_MARGIN
+    sFileFullName = ActiveWorkbook.Path & "\" & DefaultLogFileName
+    sFileName = DefaultLogFileName
+    sPath = ActiveWorkbook.Path
+    sColsDelimiter = DEFAULT_COL_DELIMITER
 End Sub
 
-Public Function TimeStamp() As String ' Public for test purpose only
-    If bWithTimeStamp Then
-        If ArrayIsAllocated(vColsHeader) _
-        Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " " & COLS_DELIMITER_DFLT _
-        Else TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " "
+Public Property Get ColsDelimiter(ByVal s As String):   sColsDelimiter = s: End Property
+
+Private Property Get ColHeader(Optional ByVal c_col As Long) As String
+    Dim s   As String
+    Dim l   As Long
+    
+    If ArrayIsAllocated(vColsHeader) Then
+        If c_col <= UBound(vColsHeader) Then
+            s = sColsMargin & vColsHeader(c_col) & sColsMargin
+            l = Len(s)
+            ColWidth(c_col) = l
+            ColHeader = Align(vColsHeader(c_col), ColWidth(c_col), ColAlignmentHeader(c_col), sColsMargin)
+        End If
     End If
-End Function
-
-Public Property Let ColsMargin(ByVal s As String)
-    sColsMargin = s
 End Property
 
-Public Sub Entry(ParamArray e() As Variant)
-' -----------------------------------------------------------------------------------
-' Append an entry to the log file.
-' -----------------------------------------------------------------------------------
-    Static sItem    As String
-    Dim sCompName   As String
+Private Property Let ColHeader(Optional ByVal c_col As Long, _
+                                        ByVal c_header As String)
     
-    If bHeaderDue Then WriteHeader
-    vEntry = e
-    If LBound(vEntry) = UBound(vEntry) _
-    Then WriteEntry vEntry(0) _
-    Else WriteColumned
+    If Not ArrayIsAllocated(vColsHeader) Then
+        ReDim vColsHeader(c_col)
+    Else
+        ReDim Preserve vColsHeader(Max(UBound(vColsHeader), c_col))
+    End If
+    vColsHeader(c_col) = c_header
     
-End Sub
-
-Friend Property Get FileFullName() As String
-    FileFullName = sFileFullName
 End Property
 
-Friend Property Let FileFullName(ByVal s As String)
+Private Property Get ColAlignmentHeader(Optional ByVal c_col As Long) As String
+    If Not ArrayIsAllocated(vColsAlignmentItem) Then
+        ColAlignmentHeader = DEFAULT_COL_ALIGNMENT_HEADER
+    Else
+        If c_col <= UBound(vColsAlignmentItem) Then
+            If vColsAlignmentItem(c_col) = vbNullString Then
+                ColAlignmentHeader = DEFAULT_COL_ALIGNMENT_HEADER
+            Else
+                ColAlignmentHeader = vColsAlignmentItem(c_col)
+            End If
+        Else
+            ColAlignmentHeader = DEFAULT_COL_ALIGNMENT_HEADER
+        End If
+    End If
+            
+End Property
+
+Private Property Let ColAlignmentHeader(Optional ByVal c_col As Long, _
+                                                ByVal c_align As String)
+    Dim lAlignmentHeader As Long
+    
+    If Not ArrayIsAllocated(vColsAlignmentItem) Then
+        ReDim vColsAlignmentItem(c_col)
+    Else
+        ReDim Preserve vColsAlignmentItem(Max(UBound(vColsAlignmentItem), c_col))
+    End If
+    If c_align = vbNullString Then
+        c_align = DEFAULT_COL_ALIGNMENT_HEADER
+    Else
+        Select Case UCase(Left(c_align, 1))
+            Case "L", "C", "R": vColsAlignmentItem(c_col) = c_align
+            Case Else:          vColsAlignmentItem(c_col) = DEFAULT_COL_ALIGNMENT_HEADER
+        End Select
+    End If
+    
+End Property
+
+Private Property Get ColAlignmentItem(Optional ByVal c_col As Long) As String
+    If Not ArrayIsAllocated(vColsAlignmentItem) Then
+        ColAlignmentItem = DEFAULT_COL_ALIGNMENT_ITEM
+    Else
+        If UBound(vColsAlignmentItem) <= c_col Then
+            If vColsAlignmentItem(c_col) = vbNullString Then
+                ColAlignmentItem = DEFAULT_COL_ALIGNMENT_ITEM
+            Else
+                ColAlignmentItem = vColsAlignmentItem(c_col)
+            End If
+        Else
+            ColAlignmentItem = DEFAULT_COL_ALIGNMENT_ITEM
+        End If
+    End If
+            
+End Property
+
+Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
+                                               ByVal c_align As String)
+    Dim lAlignmentLine As Long
+    
+    If Not ArrayIsAllocated(vColsAlignmentItem) Then
+        ReDim vColsAlignmentItem(c_col)
+    Else
+        ReDim Preserve vColsAlignmentItem(Max(UBound(vColsAlignmentItem), c_col))
+    End If
+    If c_align = vbNullString Then
+        c_align = DEFAULT_COL_ALIGNMENT_ITEM
+    Else
+        Select Case UCase(Left(c_align, 1))
+            Case "L", "C", "R": vColsAlignmentItem(c_col) = c_align
+            Case Else:          vColsAlignmentItem(c_col) = DEFAULT_COL_ALIGNMENT_ITEM
+        End Select
+    End If
+    
+End Property
+
+Public Property Let ColsMargin(ByVal s As String):      sColsMargin = s:        End Property
+
+Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
+    If Not ArrayIsAllocated(vColsWidth) Then
+        If ArrayIsAllocated(vItems) Then
+            If c_col <= UBound(vItems) Then
+                ColWidth = Len(vItems(c_col))
+            End If
+        End If
+    Else
+        If c_col <= UBound(vColsWidth) Then
+            ColWidth = vColsWidth(c_col)
+        Else
+            If ArrayIsAllocated(vItems) Then
+                If c_col <= UBound(vItems) Then
+                    ColWidth = Len(vItems(c_col))
+                End If
+            End If
+        End If
+    End If
+End Property
+
+Private Property Let ColWidth(Optional ByVal c_col As Long, _
+                                       ByVal c_width As Long)
+    Dim lWidth As Long
+    
+    If Not ArrayIsAllocated(vColsWidth) Then
+        ReDim vColsWidth(c_col)
+    Else
+        If c_col > UBound(vColsWidth) Then
+            ReDim Preserve vColsWidth(Max(UBound(vColsWidth), c_col))
+        End If
+    End If
+    lWidth = vColsWidth(c_col)
+    vColsWidth(c_col) = Max(lWidth, c_width)
+
+End Property
+
+Private Property Get DefaultLogFileName() As String
+    DefaultLogFileName = fso.GetBaseName(ActiveWorkbook.Name) & ".log"
+End Property
+
+Public Property Let Entry(ByVal s As String):   WriteEntry s:                   End Property
+
+Public Property Get FileFullName() As String:   FileFullName = sFileFullName:   End Property
+
+Public Property Let FileFullName(ByVal s As String)
 ' ----------------------------------------------------------------------------
 ' Explicitely specifies the log file's name and location. This is an
 ' alternative to the provision of FileName and Path
 ' ----------------------------------------------------------------------------
-    Dim fso As New FileSystemObject
     With fso
         sFileName = .GetFileName(s)
         sPath = .GetParentFolderName(s)
         If Not .FileExists(sFileFullName) Then .CreateTextFile sFileFullName
     End With
-    Set fso = Nothing
 End Property
 
 Public Property Let FileName(ByVal s As String)
@@ -174,7 +292,6 @@ Public Property Let Path(ByVal v As Variant)
 ' which may be a string, a Workbook, or a folder object.
 ' -----------------------------------------------------------------------------------
     Const PROC = "Path-Let"
-    Dim fso As New FileSystemObject
     Dim wbk As Workbook
     Dim fld As Folder
     
@@ -196,66 +313,18 @@ Public Property Let Path(ByVal v As Variant)
     
 End Property
 
-Public Property Let WithTimeStamp(ByVal b As Boolean)
-    bWithTimeStamp = b
-End Property
-
-Public Property Get WithTimeStamp() As Boolean
-    WithTimeStamp = bWithTimeStamp
-End Property
-
 Public Property Let Title(ByVal s As String)
 ' ----------------------------------------------------------------------------
 ' Alternatively to the "Service" property!
 ' ----------------------------------------------------------------------------
     bHeaderDue = s <> sTitle
     sTitle = s
-    vColsHeader = vbNullString
-    vColsWidth = vbNullString
-    vEntry = vbNullString
+    vItems = vbNullString
 End Property
 
-Private Sub WriteColumned()
-' -----------------------------------------------------------------------------------
-' Add a line to the log file aligned in columns.
-' - Any string exceeding the number of provided column headers and column widths is
-'   ignored!
-' - When no column headers had been provided (method ColsHeader) an error is raised.
-' -----------------------------------------------------------------------------------
-    Const PROC = "WriteColumned"
-    
-    On Error GoTo eh
-    Dim i           As Long
-    Dim s           As String
-    Dim sColDelim   As String
-    Dim v           As Variant
-    Dim sElement    As String
-    
-    If Not ArrayIsAllocated(vColsHeader) _
-    Then Err.Raise AppErr(1), ErrSrc(PROC), "No column header provided. This service writes log entries in " & _
-                                            "columns for which column header is obligatory " & _
-                                            "(for unformatted of preformatted log entries use the WriteEntry service)!"
-    ProvideColsAlignmnetLine
-    v = Split(sHeaderText, COLS_DELIMITER_DFLT)
-    For i = LBound(vEntry) To Min(UBound(vEntry), UBound(vColsWidth))
-        sElement = vEntry(i)
-        If Len(sElement) > 0 Then
-            If Left(sElement, 1) <> sColsMargin Then
-                sElement = sColsMargin & sElement
-            End If
-        End If
-        s = s & sColDelim & Align(sElement, Len(v(i)), vColsAlignmnetLine(i), sColsMargin)
-        sColDelim = COLS_DELIMITER_DFLT
-    Next i
-    WriteEntry s
-    
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
+Public Property Let WithTimeStamp(ByVal b As Boolean)
+    bWithTimeStamp = b
+End Property
 
 Private Function Align(ByVal a_strng As String, _
                        ByVal a_lngth As Long, _
@@ -268,23 +337,36 @@ Private Function Align(ByVal a_strng As String, _
 ' ----------------------------------------------------------------------------
     Dim SpaceLeft       As Long
     Dim LengthRemaining As Long
+    Dim sItem           As String
+    Dim sFill           As String
     
     Select Case Left(a_mode, 1)
         Case "L"
-            If Len(a_strng & a_margin) >= a_lngth _
-            Then Align = VBA.Left$(a_strng & a_margin, a_lngth) _
-            Else Align = a_strng & a_margin & VBA.String$(a_lngth - (Len(a_strng & a_margin)), a_fill)
-        Case "R"
-            If Len(a_margin & a_strng) >= a_lngth _
-            Then Align = VBA.Left$(a_margin & a_strng, a_lngth) _
-            Else Align = VBA.String$(a_lngth - (Len(a_margin & a_strng)), a_fill) & a_margin & a_strng
-        Case "C"
-            If Len(a_margin & a_strng & a_margin) >= a_lngth Then
-                Align = a_margin & Left$(a_strng, a_lngth) & a_margin
+            sItem = a_margin & Trim(a_strng) & a_margin
+            If Len(sItem) >= a_lngth Then
+                Align = VBA.Left$(sItem, a_lngth)
             Else
-                SpaceLeft = Max(1, ((a_lngth - Len(a_strng) - (2 * Len(a_margin))) / 2))
-                Align = VBA.String$(SpaceLeft, a_fill) & a_margin & a_strng & a_margin & VBA.String$(SpaceLeft, a_fill)
-                Align = VBA.Right$(Align, a_lngth)
+                sFill = VBA.String$(a_lngth - (Len(sItem)), a_fill)
+                Align = VBA.Left(sItem & sFill, a_lngth)
+            End If
+        Case "C"
+            sItem = a_margin & Trim(a_strng) & a_margin
+            If Len(sItem) >= a_lngth Then
+                Align = Left$(sItem, a_lngth)
+            Else
+                sFill = VBA.String$(Int((a_lngth - Len(sItem)) / 2), a_fill)
+                Align = VBA.Right$(sFill & sItem & sFill, a_lngth)
+            End If
+            If Len(Align) < a_lngth Then
+                Align = Align & VBA.String$(a_lngth - Len(Align), a_fill)
+            End If
+        Case "R"
+            sItem = a_margin & Trim(a_strng) & a_margin
+            If Len(sItem) >= a_lngth Then
+                Align = VBA.Right$(sItem, a_lngth)
+            Else
+                sFill = VBA.String$(a_lngth - (Len(sItem)), a_fill)
+                Align = VBA.Right$(sFill & sItem & sFill, a_lngth)
             End If
     End Select
 
@@ -311,70 +393,73 @@ Private Function ArrayIsAllocated(arr As Variant) As Boolean
     
 End Function
 
-Public Sub ColsAlignmnetHeader(ParamArray c_align() As Variant)
+Public Sub ColsAlignmentHeader(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
 ' -----------------------------------------------------------------------------------
     Dim i As Long
-    vColsAlignmnetHeader = c_align
-    '~~ Set any invalid entry to the default "L" (align left)
-    For i = LBound(vColsAlignmnetHeader) To UBound(vColsAlignmnetHeader)
-        If Len(vColsAlignmnetHeader(i)) >= 1 Then
-            Select Case Left(vColsAlignmnetHeader(i), 1)
-                Case "L", "R", "C"
-                Case Else: vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
-            End Select
-        Else
-            vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
-        End If
+    
+    For i = LBound(c_align) To UBound(c_align)
+        ColAlignmentHeader(i + 1) = c_align(i)
     Next i
     
 End Sub
 
-Public Sub ColsAlignmnetLine(ParamArray c_align() As Variant)
+Public Sub ColsAlignmentItem(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
 ' -----------------------------------------------------------------------------------
     Dim i As Long
-    vColsAlignmnetLine = c_align
-    '~~ Set any invalid entry to the default "L" (align left)
-    For i = LBound(vColsAlignmnetLine) To UBound(vColsAlignmnetLine)
-        If Len(vColsAlignmnetLine(i)) >= 1 Then
-            Select Case Left(vColsAlignmnetLine(i), 1)
-                Case "L", "R", "C"
-                Case Else: vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
-            End Select
-        Else
-            vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
-        End If
+    
+    For i = LBound(c_align) To UBound(c_align)
+        ColAlignmentItem(i + 1) = c_align(i)
     Next i
     
 End Sub
+
+Private Property Let ColItem(Optional ByVal c_col As Long, _
+                                     ByVal c_item As String)
+    If Not ArrayIsAllocated(vItems) Then
+        ReDim vItems(c_col)
+    Else
+        ReDim Preserve vItems(Max(UBound(vItems), c_col))
+    End If
+    vItems(c_col) = c_item
+
+End Property
+
+Private Property Get ColItem(Optional ByVal c_col As Long) As String
+    If ArrayIsAllocated(vItems) Then
+        If c_col <= UBound(vItems) Then
+            ColItem = Align(vItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin)
+        End If
+    End If
+End Property
 
 Public Sub ColsHeader(ParamArray c_headers() As Variant)
 ' -----------------------------------------------------------------------------------
-' When ColWidths are not provided the columns width defaults to the width of the
-' colum headers plus 2 margin spaces.
+' Note: ColsWidth defaults to the maximum of an already specified width and the width
+'       if the corresponding header string.
 ' -----------------------------------------------------------------------------------
+    Const PROC = "ColsHeader"
+    
+    On Error GoTo eh
     Dim i As Long
-    Dim l As Long
     
     vColsHeader = vbNullString
-    vColsHeader = c_headers
-    If Not ArrayIsAllocated(vColsWidth) Then
-        ReDim vColsWidth(UBound(vColsHeader))
-        For i = LBound(vColsHeader) To UBound(vColsHeader)
-            vColsWidth(i) = Len(vColsHeader(i))
-        Next i
-    Else
-        For i = LBound(vColsHeader) To Min(UBound(vColsHeader), UBound(vColsWidth))
-            l = vColsWidth(i)
-            vColsWidth(i) = Max(Len(vColsHeader(i)), l)
-        Next i
-    End If
+    For i = LBound(c_headers) To UBound(c_headers)
+        ColHeader(i + 1) = c_headers(i)
+        ColWidth(i + 1) = Len(c_headers(i))
+    Next i
     
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Public Sub ColsWidth(ParamArray c_widths() As Variant)
@@ -382,18 +467,32 @@ Public Sub ColsWidth(ParamArray c_widths() As Variant)
 ' Specifies the width of n columns. When not provided the column width defaults to
 ' width of the column headers
 ' -----------------------------------------------------------------------------------
+    Const PROC = "ColsWidth"
+    
+    On Error GoTo eh
     Dim i As Long
     Dim l As Long
     
     vColsWidth = vbNullString
-    vColsWidth = c_widths
-    If ArrayIsAllocated(vColsHeader) Then
-        For i = LBound(vColsHeader) To Min(UBound(vColsHeader), UBound(vColsWidth))
-            l = vColsWidth(i)
-            vColsWidth(i) = Max(Len(vColsHeader(i)), l)
-        Next i
-    End If
+    For i = LBound(c_widths) To UBound(c_widths)
+        l = ColWidth(i + 1)
+        If ArrayIsAllocated(vColsHeader) Then
+            If i + 1 <= UBound(vColsHeader) Then
+                ColWidth(i + 1) = Max(Len(vColsHeader(i + 1)), l, c_widths(i))
+            Else
+                ColWidth(i + 1) = Max(l, c_widths(i))
+            End If
+        Else
+            ColWidth(i + 1) = Max(l, c_widths(i))
+        End If
+    Next i
 
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Public Sub Dsply()
@@ -453,7 +552,7 @@ Private Function ErrMsg(ByVal err_source As String, _
     '~~ Obtain error information from the Err object for any argument not provided
     If err_no = 0 Then err_no = Err.Number
     If err_line = 0 Then ErrLine = Erl
-    If err_source = vbNullString Then err_source = Err.source
+    If err_source = vbNullString Then err_source = Err.Source
     If err_dscrptn = vbNullString Then err_dscrptn = Err.Description
     If err_dscrptn = vbNullString Then err_dscrptn = "--- No error description available ---"
     
@@ -500,36 +599,18 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
-Private Sub WriteEntry(ByVal s As String)
-' ----------------------------------------------------------------------------
-' Writes the string (s) into the file (ft_file) which might be a file
-' object or a file's full name.
-' Note: ft_split is not used but specified to comply with Property Get.
-' ----------------------------------------------------------------------------
-    Const PROC = "WriteEntry"
+Public Sub Items(ParamArray e() As Variant)
+' -----------------------------------------------------------------------------------
+' Append the items (i) to the log file aligned in columns.
+' -----------------------------------------------------------------------------------
+    Dim i As Long
     
-    On Error GoTo eh
-    Dim fso As New FileSystemObject
-    Dim ts  As TextStream
-    Dim sFl As String
-   
-    ProvideLogFile
-    With fso
-        sFl = sFileFullName
-        Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForAppending)
-    End With
+    If bHeaderDue Then WriteHeader
+    For i = LBound(e) To UBound(e)
+        ColItem(i + 1) = e(i)
+    Next i
+    WriteItems
     
-    ts.WriteLine TimeStamp & s
-
-xt: ts.Close
-    Set fso = Nothing
-    Set ts = Nothing
-    Exit Sub
-    
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
 End Sub
 
 Private Function Max(ParamArray va() As Variant) As Variant
@@ -558,43 +639,40 @@ Private Function Min(ParamArray va() As Variant) As Variant
     
 End Function
 
-Private Sub ProvideColsAlignmnetHeader()
+Private Sub ProvideColsAlignmentHeader()
     Dim i   As Long
-    If Not ArrayIsAllocated(vColsAlignmnetHeader) Then
-        ReDim vColsAlignmnetHeader(UBound(vColsHeader))
-        For i = LBound(vColsAlignmnetHeader) To UBound(vColsAlignmnetHeader)
-            vColsAlignmnetHeader(i) = COLS_ALGN_DFLT_HEADER
+    If Not ArrayIsAllocated(vColsAlignmentHeader) Then
+        ReDim vColsAlignmentHeader(UBound(vColsHeader))
+        For i = LBound(vColsAlignmentHeader) To UBound(vColsAlignmentHeader)
+            vColsAlignmentHeader(i) = DEFAULT_COL_ALIGNMENT_HEADER
         Next i
     End If
 End Sub
 
-Private Sub ProvideColsAlignmnetLine()
+Private Sub ProvideColsAlignmentItem()
     Dim i   As Long
-    If Not ArrayIsAllocated(vColsAlignmnetLine) Then
-        ReDim vColsAlignmnetLine(UBound(vColsHeader))
-        For i = LBound(vColsAlignmnetLine) To UBound(vColsAlignmnetLine)
-            vColsAlignmnetLine(i) = COLS_ALGN_DFLT_LINE
+    If Not ArrayIsAllocated(vColsAlignmentItem) Then
+        ReDim vColsAlignmentItem(UBound(vColsHeader))
+        For i = LBound(vColsAlignmentItem) To UBound(vColsAlignmentItem)
+            vColsAlignmentItem(i) = DEFAULT_COL_ALIGNMENT_ITEM
         Next i
     End If
 End Sub
 
 Private Sub ProvideLogFile()
-    Dim fso As New FileSystemObject
     With fso
-        If .FileExists(sFileFullName) Then
-            If VBA.DateDiff("d", .GetFile(sFileFullName).DateCreated, Now()) > lKeepDays _
-            Then .DeleteFile sFileFullName
-        End If
         If Not .FileExists(sFileFullName) Then
             .CreateTextFile sFileFullName
-            sServiceDelimiter = vbNullString
         Else
-            If .GetFile(sFileFullName).Size = 0 _
-            Then sServiceDelimiter = vbNullString _
-            Else sServiceDelimiter = "="
+            If VBA.DateDiff("d", .GetFile(sFileFullName).DateCreated, Now()) > lKeepDays Then
+                .DeleteFile sFileFullName
+                .CreateTextFile sFileFullName
+            End If
         End If
+        If .GetFile(sFileFullName).Size = 0 _
+        Then sServiceDelimiter = vbNullString _
+        Else sServiceDelimiter = "="
     End With
-    Set fso = Nothing
 End Sub
 
 Private Sub ShellRun(ByVal sr_string As String, _
@@ -650,9 +728,105 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
+Private Function TimeStamp() As String ' Public for test purpose only
+    If bWithTimeStamp Then
+        If ArrayIsAllocated(vColsHeader) _
+        Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " " & sColsDelimiter _
+        Else TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " "
+    End If
+End Function
+
+Private Sub WriteItems()
+' -----------------------------------------------------------------------------------
+' Add a line to the log file aligned in columns.
+' - Any string exceeding the number of provided column headers and column widths is
+'   ignored!
+' - When no column headers had been provided (method ColsHeader) an error is raised.
+' -----------------------------------------------------------------------------------
+    Const PROC = "WriteItems"
+    
+    On Error GoTo eh
+    Dim i           As Long
+    Dim s           As String
+    Dim sColDelim   As String
+    Dim v           As Variant
+    Dim sElement    As String
+    
+    v = Split(sHeaderText, sColsDelimiter)
+    For i = LBound(vItems) To UBound(vItems)
+        sElement = vItems(i)
+        If Len(sElement) > 0 Then
+            If Left(sElement, 1) <> sColsMargin Then
+                sElement = sColsMargin & sElement
+            End If
+        End If
+        s = s & sColDelim & ColItem(i)
+        sColDelim = sColsDelimiter
+    Next i
+    WriteLog s
+    
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
+Private Sub WriteLog(ByVal s As String)
+' ----------------------------------------------------------------------------
+' Writes the string (s) into the file (ft_file) which might be a file
+' object or a file's full name.
+' Note: ft_split is not used but specified to comply with Property Get.
+' ----------------------------------------------------------------------------
+    Const PROC = "WriteLog"
+    
+    On Error GoTo eh
+    Dim ts  As TextStream
+   
+    ProvideLogFile
+    Set ts = fso.OpenTextFile(FileName:=sFileFullName, IOMode:=ForAppending)
+    ts.WriteLine TimeStamp & s
+
+xt: ts.Close
+    Set ts = Nothing
+    Exit Sub
+    
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
+Private Sub WriteEntry(ByVal s As String)
+' ----------------------------------------------------------------------------
+' Writes the string (s) into the file (ft_file) which might be a file
+' object or a file's full name.
+' Note: ft_split is not used but specified to comply with Property Get.
+' ----------------------------------------------------------------------------
+    Const PROC = "WriteEntry"
+    
+    On Error GoTo eh
+    Dim ts  As TextStream
+   
+    If bHeaderDue Then WriteHeader
+    ProvideLogFile
+    Set ts = fso.OpenTextFile(FileName:=sFileFullName, IOMode:=ForAppending)
+    ts.WriteLine TimeStamp & s
+
+xt: ts.Close
+    Set ts = Nothing
+    Exit Sub
+    
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
 Public Sub WriteHeader()
 ' -----------------------------------------------------------------------------------
-' When not performed explicitely it will be performed along with the first _Entry_
+' When not performed explicitely it will be performed along with the first _Items_
 ' method call when bHeaderDue is True.
 ' - Writes a header based on the strings provided in their width by default, by the
 '   width explicitely provided otherwise
@@ -663,41 +837,43 @@ Public Sub WriteHeader()
     Const PROC = "WriteHeader"
     
     On Error GoTo eh
-    Dim fso         As New FileSystemObject
     Dim sHeaderLine As String
-    Dim sHeaderSrvc As String
-    
     Dim i           As Long
     Dim sColDelim   As String
     Dim v           As Variant
     
-    ProvideLogFile
-    If Not ArrayIsAllocated(vColsHeader) Then GoTo xt
-    ProvideColsAlignmnetHeader
+'    ProvideLogFile
+    If Not ArrayIsAllocated(vColsHeader) Then
+        If sServiceDelimiter <> vbNullString Then
+            WriteEntry String(Len(sHeaderText), sServiceDelimiter)
+            sServiceDelimiter = vbNullString
+        End If
+        GoTo xt
+    End If
     
     sHeaderText = vbNullString
-    For i = LBound(vColsHeader) To Min(UBound(vColsHeader), UBound(vColsWidth))
-        sHeaderText = sHeaderText & sColDelim & Align(vColsHeader(i), vColsWidth(i), vColsAlignmnetHeader(i), sColsMargin)
-        sColDelim = COLS_DELIMITER_DFLT
+    For i = LBound(vColsHeader) To UBound(vColsHeader)
+        sHeaderText = sHeaderText & sColDelim & ColHeader(i)
+        sColDelim = sColsDelimiter
     Next i
     sColDelim = vbNullString
     
-    v = Split(sHeaderText, COLS_DELIMITER_DFLT)
+    v = Split(sHeaderText, sColsDelimiter)
     For i = LBound(v) To UBound(v)
         sHeaderLine = sHeaderLine & sColDelim & String(Len(v(i)), "-")
         sColDelim = "+"
     Next i
     If sTitle <> vbNullString Then
-        sHeaderSrvc = Align(sTitle, Len(sHeaderText), "C", " ", "-")
+        sTitle = Align(sTitle, Len(sHeaderText), "C", " ", "-")
     End If
     
     If sServiceDelimiter <> vbNullString Then
-        WriteEntry String(Len(sHeaderText), sServiceDelimiter)
+        WriteLog String(Len(sHeaderText), sServiceDelimiter)
         sServiceDelimiter = vbNullString
     End If
-    If sHeaderSrvc <> vbNullString Then WriteEntry sHeaderSrvc
-    WriteEntry sHeaderText
-    WriteEntry sHeaderLine
+    If sTitle <> vbNullString Then WriteLog sTitle
+    WriteLog sHeaderText
+    WriteLog sHeaderLine
     bHeaderDue = False ' may be set to True again when a new Title is provided
     
 xt: Exit Sub
@@ -708,3 +884,11 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
+Private Sub Class_Terminate()
+    Set fso = Nothing
+    Set vColsAlignmentHeader = Nothing
+    Set vColsAlignmentItem = Nothing
+    Set vColsHeader = Nothing
+    Set vColsWidth = Nothing
+    Set vItems = Nothing
+End Sub
