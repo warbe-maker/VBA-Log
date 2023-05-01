@@ -462,14 +462,14 @@ Private Sub Test_06_Log_Items()
     With New clsLog
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .Title = "Test method 'Entry' case 1:"
+        .Title = "Method 'Items' test:"
         .ColsMargin = vbNullString
         .ColsWidth 10, 25, 30
         .ColsHeader HEADER_1, HEADER_2, HEADER_3
         .Items "xxx", "yyyyyy", "zzzzzz"
         .Items "xxx", "yyyyyy", "zzzzzz"
         .Items "xxx", "yyyyyy", "zzzzzz"
-        .Title = "Test method 'Items' case 2: New title, with marging"
+        .Title = "Method 'Items' test: New title, with marging"
         .ColsMargin = " "
         .Items "xxx", "yyyyyy", "zzzzzz"
         .Items "xxx", "yyyyyy", "zzzzzz"
@@ -480,14 +480,14 @@ Private Sub Test_06_Log_Items()
         Else
             AssertResult .LogFile _
                       , bTimeStamp _
-                      , "|---------------------- Test method 'Entry' case 1: ----------------------" _
+                      , "|------------------------- Method 'Items' test: --------------------------" _
                       , "|Column-01-Header|   -Column-02-Header-    |     --Column-03-Header--     " _
                       , "|----------------+-------------------------+------------------------------" _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
                       , "|xxx             |yyyyyy                   |zzzzzz                        " _
                       , "|===========================================================================" _
-                      , "|----------- Test method 'Items' case 2: New title, with marging -----------" _
+                      , "|-------------- Method 'Items' test: New title, with marging ---------------" _
                       , "| Column-01-Header |   -Column-02-Header-    |     --Column-03-Header--     " _
                       , "|------------------+-------------------------+------------------------------" _
                       , "| xxx              | yyyyyy                  | zzzzzz                       " _
