@@ -299,13 +299,31 @@ Private Function ErrSrc(ByVal sProc As String) As String
 End Function
 
 Private Sub Test_00_Regression()
+' ------------------------------------------------------------------------------
+' Combines all individual test to one regression test which only stops when an
+' expected result is not met. This test is obligatory after any code modifi-
+' cation. When finished the test displays the Exec.trc file (written when the
+' Conditional Compile Argument ExecTrace = 1.
+'
+' While the individual test display the result log-file when the test has one
+' written, the regression test has the result assertion automated. Thus, when
+' all results ar those expected, the test runs un-attended.
+'
+' Note: The regression test uses the Common Components:
+'       - mErH  Error Handling when the Conditional Compile Argument ErHComp = 1
+'       - fMsg  Error Message Display
+'       - mMsg  Error Message Display
+'       - mTrc  Execution trace
+'
+' W. Rauschenberger, Berlin May 2023
+' ------------------------------------------------------------------------------
     Const PROC = "Test_00_Regression"
     
     On Error GoTo eh
     BoP ErrSrc(PROC)
     
     mErH.Regression = True
-    Test_01_ColsHeader
+    Test_01_Headers
     Test_02_ColsWidth
     Test_03_Property_Name
     Test_04_Property_Path_As_Workbook
@@ -322,8 +340,8 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Sub Test_01_ColsHeader()
-    Const PROC = "Test_01_ColsHeader"
+Private Sub Test_01_Headers()
+    Const PROC = "Test_01_Headers"
     Const HEADER_1 = "Column-01-Header"
     Const HEADER_2 = "-Column-02-Header-"
     Const HEADER_3 = "--Column-03-Header--"
@@ -334,10 +352,10 @@ Private Sub Test_01_ColsHeader()
     
     With New clsLog
         .ColsMargin = sColsMargin
-        .ColsHeader HEADER_1, HEADER_2, HEADER_3
-        Debug.Assert .vColsWidth(1) = Len(HEADER_1): Debug.Assert .vColsHeader(1) = HEADER_1
-        Debug.Assert .vColsWidth(2) = Len(HEADER_2): Debug.Assert .vColsHeader(2) = HEADER_2
-        Debug.Assert .vColsWidth(3) = Len(HEADER_3): Debug.Assert .vColsHeader(3) = HEADER_3
+        .Headers HEADER_1, HEADER_2, HEADER_3
+        Debug.Assert .vColsWidth(1) = Len(HEADER_1): Debug.Assert .vHeaders(1) = HEADER_1
+        Debug.Assert .vColsWidth(2) = Len(HEADER_2): Debug.Assert .vHeaders(2) = HEADER_2
+        Debug.Assert .vColsWidth(3) = Len(HEADER_3): Debug.Assert .vHeaders(3) = HEADER_3
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -359,11 +377,11 @@ Private Sub Test_02_ColsWidth()
     BoP ErrSrc(PROC)
     
     With New clsLog
-        .ColsHeader HEADER_1, HEADER_2, HEADER_3
+        .Headers HEADER_1, HEADER_2, HEADER_3
         .ColsWidth 20, 25, 30
-        Debug.Assert .vColsWidth(1) = 20: Debug.Assert .vColsHeader(1) = HEADER_1
-        Debug.Assert .vColsWidth(2) = 25: Debug.Assert .vColsHeader(2) = HEADER_2
-        Debug.Assert .vColsWidth(3) = 30: Debug.Assert .vColsHeader(3) = HEADER_3
+        Debug.Assert .vColsWidth(1) = 20: Debug.Assert .vHeaders(1) = HEADER_1
+        Debug.Assert .vColsWidth(2) = 25: Debug.Assert .vHeaders(2) = HEADER_2
+        Debug.Assert .vColsWidth(3) = 30: Debug.Assert .vHeaders(3) = HEADER_3
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -426,7 +444,7 @@ Private Sub Test_05_WriteHeader()
     With New clsLog
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .ColsHeader HEADER_1, HEADER_2, HEADER_3
+        .Headers HEADER_1, HEADER_2, HEADER_3
         .ColsWidth 20, 25, 30
         .WriteHeader
         If Not mErH.Regression Then
@@ -465,7 +483,7 @@ Private Sub Test_06_Log_Items()
         .Title = "Method 'Items' test:"
         .ColsMargin = vbNullString
         .ColsWidth 10, 25, 30
-        .ColsHeader HEADER_1, HEADER_2, HEADER_3
+        .Headers HEADER_1, HEADER_2, HEADER_3
         .Items "xxx", "yyyyyy", "zzzzzz"
         .Items "xxx", "yyyyyy", "zzzzzz"
         .Items "xxx", "yyyyyy", "zzzzzz"
