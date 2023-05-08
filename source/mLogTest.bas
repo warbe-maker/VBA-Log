@@ -2,11 +2,20 @@ Attribute VB_Name = "mLogTest"
 Option Explicit
 Option Base 1
 ' ----------------------------------------------------------------------
-' Standard Module mLogTest: Regression-Test for the clsLog Class Module
-' =========================
+' Standard Module mLogTest: Individual tests plus a Regression-Test
+' ========================= which combines them all.
 '
 ' ----------------------------------------------------------------------
-Private fso As New FileSystemObject
+Private bRegTestFailed  As Boolean
+Private sRegTestResult  As String
+Private fso             As New FileSystemObject
+Private lLineExpected   As Long
+Private lLineResult     As Long
+Private sExpected       As String
+Private sExpectedFile   As String
+Private sResult         As String
+Private sLineExpected   As String
+Private sLineResult     As String
 
 #If Not MsgComp = 1 Then
     ' -------------------------------------------------------------------------------
@@ -150,26 +159,65 @@ Private Function AppErr(ByVal app_err_no As Long) As Long
     AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
 End Function
 
-Private Sub AssertResult(ByVal a_file As String, _
-                         ByVal a_time_stamp As String, _
-                         ParamArray a() As Variant)
+Private Function Min(ParamArray va() As Variant) As Variant
+' --------------------------------------------------------
+' Returns the minimum (smallest) of all provided values.
+' --------------------------------------------------------
+    Dim v As Variant
+    
+    Min = va(LBound(va)): If LBound(va) = UBound(va) Then Exit Function
+    For Each v In va
+        If v < Min Then Min = v
+    Next v
+    
+End Function
+
+Private Function ResultAsserted(ByVal a_file As String, _
+                                ByVal a_time_stamp As String, _
+                                ByRef a_expected As Variant, _
+                                ByRef a_result As Variant, _
+                                ByRef a_line_expected As Long, _
+                                ByRef a_line_result As Long, _
+                                ByRef a_lines As Long) As Boolean
+' ------------------------------------------------------------------------------
+' Returns TRUE when the resut in the log-file conforms with the expected result
+' (a_expected())
+' ------------------------------------------------------------------------------
     Dim vResult     As Variant
     Dim vExpected   As Variant
     Dim i           As Long
     
-    vExpected = a
+    ResultAsserted = True
+    vExpected = FileArry(sExpectedFile)
     vResult = FileArry(a_file)
-    Debug.Assert UBound(vResult) = UBound(vExpected)
-    For i = 0 To UBound(vResult)
+    For i = LBound(vResult) To Min(UBound(vResult), UBound(vExpected))
         If Not vResult(i) Like "*" & vExpected(i) Then
-            Debug.Print "Line  " & i + 1 & ":"
-            Debug.Print "Result  : " & vResult(i)
-            Debug.Print "Expected: " & vExpected(i)
-            Stop
+            ResultAsserted = False
+            a_result = vResult(i)
+            a_expected = vExpected(i)
+            a_line_expected = i
+            a_line_result = i
         End If
+        a_lines = i
     Next i
     
-End Sub
+    Select Case True
+        Case UBound(vResult) > UBound(vExpected)
+            ResultAsserted = False
+            a_result = vResult(UBound(vResult))
+            a_expected = vbNullString
+            a_line_result = UBound(vResult)
+            a_line_expected = 0
+            
+        Case UBound(vResult) > UBound(vExpected)
+            ResultAsserted = False
+            a_result = vbNullString
+            a_expected = vExpected(UBound(vExpected))
+            a_line_result = 0
+            a_line_expected = UBound(vExpected)
+    End Select
+    
+End Function
 
 Public Sub BoP(ByVal b_proc As String, ParamArray b_arguments() As Variant)
 ' ------------------------------------------------------------------------------
@@ -251,7 +299,7 @@ Private Function ErrMsg(ByVal err_source As String, _
     '~~ Obtain error information from the Err object for any argument not provided
     If err_no = 0 Then err_no = Err.Number
     If err_line = 0 Then ErrLine = Erl
-    If err_source = vbNullString Then err_source = Err.Source
+    If err_source = vbNullString Then err_source = Err.source
     If err_dscrptn = vbNullString Then err_dscrptn = Err.Description
     If err_dscrptn = vbNullString Then err_dscrptn = "--- No error description available ---"
     
@@ -298,39 +346,100 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "mLogTest" & "." & sProc
 End Function
 
+Private Sub ProvideTraceLogFile()
+    Dim s As String
+    With fso
+        s = ThisWorkbook.Path & "\" & .GetBaseName(ThisWorkbook.Name) & ".RegressionTest.trc"
+        If .FileExists(s) Then .DeleteFile s
+    End With
+    mTrc.LogFileFullName = s
+End Sub
+
+Private Sub Test()
+    Const PROC = "Test"
+    
+    On Error GoTo eh
+    ProvideTraceLogFile
+    BoP ErrSrc(PROC)
+    mErH.Regression = True
+    Test_00_Regression
+    
+    EoP ErrSrc(PROC)
+    mErH.Regression = False
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
 Private Sub Test_00_Regression()
 ' ------------------------------------------------------------------------------
-' Combines all individual test to one regression test which only stops when an
-' expected result is not met. This test is obligatory after any code modifi-
-' cation. When finished the test displays the Exec.trc file (written when the
-' Conditional Compile Argument ExecTrace = 1.
+' Regression-Test approach:
+'    | New  |   Col   | Time  | Width |
+' No | Log  | Aligned | Stamp |       |
+'    | File |         |       |       |
+' ---+------+---------+-------+-------+
+' 01 | yes  |   No    |  no   |  n/p  |
 '
-' While the individual test display the result log-file when the test has one
-' written, the regression test has the result assertion automated. Thus, when
-' all results ar those expected, the test runs un-attended.
-'
-' Note: The regression test uses the Common Components:
-'       - mErH  Error Handling when the Conditional Compile Argument ErHComp = 1
-'       - fMsg  Error Message Display
-'       - mMsg  Error Message Display
-'       - mTrc  Execution trace
-'
-' W. Rauschenberger, Berlin May 2023
 ' ------------------------------------------------------------------------------
     Const PROC = "Test_00_Regression"
     
     On Error GoTo eh
+    Dim Log             As New clsLog
+    Dim bTimeStamp      As Boolean: bTimeStamp = False
+    Dim lLines          As Long
+    
+    sExpectedFile = ThisWorkbook.Path & "\RegressionExpectedResult.log"
+    
+    If Not mErH.Regression Then ProvideTraceLogFile
     BoP ErrSrc(PROC)
     
-    mErH.Regression = True
-    Test_01_Headers
-    Test_02_ColsWidth
-    Test_03_Property_Name
-    Test_04_Property_Path_As_Workbook
-    Test_05_WriteHeader
-    Test_06_Log_Items
+    With Log
+        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
+        .WithTimeStamp = bTimeStamp
+        .Entry "1. Single string, new log."
+        .Entry "2. Single string, new log."
+        .Title "New Log title" ' explicit indication of a new series of log entries
+        .Entry "1. Single string, new log."
+        .Entry "2. Single string, new log."
+'        .ColsMargin = vbNullString
+'        .ColsWidth 10, 25, 30
+'        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'        .Title "Method 'Entry' test: New title, with marging (1st Line)" _
+'             , "Method 'Entry' test: New title, with marging (2nd Line)"
+'        .ColsMargin = " "
+'        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'        .Entry "xxx", "yyyyyy", "zzzzzz"
+'
+        If Not mErH.Regression Then
+            .Dsply
+        End If
+    End With
 
 xt: EoP ErrSrc(PROC)
+    If mErH.Regression Then
+        If Not ResultAsserted(Log.LogFile _
+                            , bTimeStamp _
+                            , sExpected _
+                            , sResult _
+                            , lLineExpected _
+                            , lLineResult _
+                            , lLines) Then
+            mTrc.LogInfo = "Test f a i l e d !"
+            mTrc.LogInfo = "Line " & Format(lLineExpected, "00") & " Expected: " & sExpected
+            mTrc.LogInfo = "Line " & Format(lLineResult, "00") & " Result: " & sResult
+        Else
+            mTrc.LogInfo = "Test p a s s e d !"
+            mTrc.LogInfo = lLines & " Result lines match with " & lLines & " expected result lines!"
+        End If
+    End If
     mTrc.Dsply
     Exit Sub
 
@@ -340,186 +449,46 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Sub Test_01_Headers()
-    Const PROC = "Test_01_Headers"
-    Const HEADER_1 = "Column-01-Header"
-    Const HEADER_2 = "-Column-02-Header-"
-    Const HEADER_3 = "--Column-03-Header--"
-    
-    On Error GoTo eh
-    Dim sColsMargin As String: sColsMargin = " "
-    BoP ErrSrc(PROC)
-    
-    With New clsLog
-        .ColsMargin = sColsMargin
-        .Headers HEADER_1, HEADER_2, HEADER_3
-        Debug.Assert .vColsWidth(1) = Len(HEADER_1): Debug.Assert .vHeaders(1) = HEADER_1
-        Debug.Assert .vColsWidth(2) = Len(HEADER_2): Debug.Assert .vHeaders(2) = HEADER_2
-        Debug.Assert .vColsWidth(3) = Len(HEADER_3): Debug.Assert .vHeaders(3) = HEADER_3
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Private Sub Test_02_ColsWidth()
-    Const PROC = "Test_02_ColsWidth"
-    Const HEADER_1 = "Column-01-Header"
-    Const HEADER_2 = "-Column-02-Header-"
-    Const HEADER_3 = "--Column-03-Header--"
-    
-    On Error GoTo eh
-    BoP ErrSrc(PROC)
-    
-    With New clsLog
-        .Headers HEADER_1, HEADER_2, HEADER_3
-        .ColsWidth 20, 25, 30
-        Debug.Assert .vColsWidth(1) = 20: Debug.Assert .vHeaders(1) = HEADER_1
-        Debug.Assert .vColsWidth(2) = 25: Debug.Assert .vHeaders(2) = HEADER_2
-        Debug.Assert .vColsWidth(3) = 30: Debug.Assert .vHeaders(3) = HEADER_3
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Private Sub Test_03_Property_Name()
-    Const PROC = "Test_03_Property_Name"
-    
-    On Error GoTo eh
-    BoP ErrSrc(PROC)
-    With New clsLog
-        .FileName = "TestService.log"
-        Debug.Assert .FileFullName = ThisWorkbook.Path & "\TestService.log"
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Private Sub Test_04_Property_Path_As_Workbook()
-    Const PROC = "Test_04_Property_Path_As_Workbook"
-    
-    On Error GoTo eh
-    Dim fso As New FileSystemObject
-    
-    BoP ErrSrc(PROC)
-    With New clsLog
-        .Path = ActiveWorkbook.Path
-        Debug.Assert .FileFullName = ActiveWorkbook.Path & "\" & fso.GetBaseName(ActiveWorkbook.Name) & ".log"
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Private Sub Test_05_WriteHeader()
-    Const PROC = "Test_05_WriteHeader"
-    Const HEADER_1 = "Column-01-Header"
-    Const HEADER_2 = "-Column-02-Header-"
-    Const HEADER_3 = "--Column-03-Header--"
-    
-    Dim bTimeStamp As Boolean: bTimeStamp = True
-    
-    With New clsLog
-        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
-        .WithTimeStamp = bTimeStamp
-        .Headers HEADER_1, HEADER_2, HEADER_3
-        .ColsWidth 20, 25, 30
-        .WriteHeader
-        If Not mErH.Regression Then
-            .Dsply
-        Else
-            AssertResult .LogFile _
-                      , bTimeStamp _
-                      , "|  Column-01-Header  |   -Column-02-Header-    |     --Column-03-Header--     " _
-                      , "|--------------------+-------------------------+------------------------------"
-        End If
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Private Sub Test_06_Log_Items()
-    Const PROC = "Test_06_Log_Items"
-    Const HEADER_1 = "Column-01-Header"
-    Const HEADER_2 = "-Column-02-Header-"
-    Const HEADER_3 = "--Column-03-Header--"
-    
-    On Error GoTo eh
-    Dim bTimeStamp As Boolean: bTimeStamp = True
-    
-    BoP ErrSrc(PROC)
-    
-    With New clsLog
-        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
-        .WithTimeStamp = bTimeStamp
-        .Title = "Method 'Items' test:"
-        .ColsMargin = vbNullString
-        .ColsWidth 10, 25, 30
-        .Headers HEADER_1, HEADER_2, HEADER_3
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        .Title = "Method 'Items' test: New title, with marging"
-        .ColsMargin = " "
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        .Items "xxx", "yyyyyy", "zzzzzz"
-        
-        If Not mErH.Regression Then
-            .Dsply
-        Else
-            AssertResult .LogFile _
-                      , bTimeStamp _
-                      , "|------------------------- Method 'Items' test: --------------------------" _
-                      , "|Column-01-Header|   -Column-02-Header-    |     --Column-03-Header--     " _
-                      , "|----------------+-------------------------+------------------------------" _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|xxx             |yyyyyy                   |zzzzzz                        " _
-                      , "|===========================================================================" _
-                      , "|-------------- Method 'Items' test: New title, with marging ---------------" _
-                      , "| Column-01-Header |   -Column-02-Header-    |     --Column-03-Header--     " _
-                      , "|------------------+-------------------------+------------------------------" _
-                      , "| xxx              | yyyyyy                  | zzzzzz                       " _
-                      , "| xxx              | yyyyyy                  | zzzzzz                       " _
-                      , "| xxx              | yyyyyy                  | zzzzzz                       "
-        End If
-    End With
-
-xt: EoP ErrSrc(PROC)
-    Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
+'Private Sub Test_07_Header_AlignedImplicit()
+'    Const PROC = "Test_07_Header_AlignedImplicit"
+'
+'    Dim bTimeStamp As Boolean: bTimeStamp = True
+'
+'    BoP ErrSrc(PROC)
+'    With New clsLog
+'        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
+'        .WithTimeStamp = bTimeStamp
+'        .Header " Header-01-Rigth", "Header-02-Left ", " Header-03-Centered "
+'        .ColsWidth 25, 25, 25
+'        .Entry "xxxxxx", "yyyyy", "zzzzzzzzzzz"
+'        If Not mErH.Regression Then
+'            .Dsply
+'        Else
+'            If Not ResultAsserted(.LogFile _
+'                                , bTimeStamp _
+'                                , sExpected _
+'                                , sResult _
+'                                , "|  Column-01-Header  |   -Column-02-Header-    |     --Column-03-Header--     " _
+'                                , "|--------------------+-------------------------+------------------------------" _
+'                                , "| xxxxxx             | yyyyy                   | zzzzzzzzzzz                  ") Then
+'                sRegTestResult = " f a i l e d !" & vbLf & _
+'                                 "Expected: " & sExpected & vbLf & _
+'                                 "Provided: " & sResult
+'                bRegTestFailed = True
+'            Else
+'                sRegTestResult = " p a s s e d !"
+'            End If
+'        End If
+'    End With
+'
+'xt: EoP ErrSrc(PROC)
+'    If mErH.Regression Then mTrc.LogInfo = "Test " & sRegTestResult
+'    Exit Sub
+'
+'eh: Select Case ErrMsg(ErrSrc(PROC))
+'        Case vbResume:  Stop: Resume
+'        Case Else:      GoTo xt
+'    End Select
+'End Sub
+'
 
