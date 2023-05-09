@@ -3,7 +3,7 @@ UsedExportFolder=source
 [clsLog]
 KindOfComponent=hosted
 RawExpFileFullName=D:\Ablage\Excel VBA\DevAndTest\VBA-Service-Log\source\clsLog.cls
-RawRevisionNumber=2023-05-08.002
+RawRevisionNumber=2023-05-09.011
 [fMsg]
 KindOfComponent=used
 RawRevisionNumber=2023-04-15.001
@@ -20,4 +20,4 @@ RawRevisionNumber=2023-04-15.001
 [mTrc]
 DueModificationWarning=1
 KindOfComponent=used
-RawRevisionNumber=2023-03-17.002
+RawRevisionNumber=2023-05-03.004

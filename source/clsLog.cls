@@ -50,16 +50,17 @@ Private Const DEFAULT_COL_ALIGNMENT_ITEM    As String = "L"
 Private Const DEFAULT_COL_DELIMITER         As String = "|"
 Private Const DEFAULT_COL_MARGIN            As String = " "
 
-Private aColsAlignmentHeader As Variant ' Public for test purpose only
-Private aColsAlignmentItem   As Variant ' Public for test purpose only
-Private aColsHeader          As Variant ' Public for test purpose only
-Private aColsWidth           As Variant ' Public for test purpose only
+Private aAlignmentsHeader   As Variant ' Public for test purpose only
+Private aAlignments         As Variant ' Public for test purpose only
+Private aHeaders            As Variant ' Public for test purpose only
+Private aWidths             As Variant ' Public for test purpose only
 Private aItems              As Variant
 Private aTitle              As Variant
-Private bAlignedByColumns   As Boolean
+Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
 Private fso                 As New FileSystemObject
+Private lColumns            As Long
 Private lKeepDays           As Long
 Private sColsDelimiter      As String
 Private sColsMargin         As String
@@ -113,10 +114,10 @@ End Sub
 
 Private Sub Class_Terminate()
     Set fso = Nothing
-    Set aColsAlignmentHeader = Nothing
-    Set aColsAlignmentItem = Nothing
-    Set aColsHeader = Nothing
-    Set aColsWidth = Nothing
+    Set aAlignmentsHeader = Nothing
+    Set aAlignments = Nothing
+    Set aHeaders = Nothing
+    Set aWidths = Nothing
     Set aItems = Nothing
     Set aTitle = Nothing
 End Sub
@@ -127,13 +128,13 @@ Private Property Get ColHeader(Optional ByVal c_col As Long) As String
     Dim s   As String
     Dim l   As Long
     
-    If IsAllocated(aColsHeader) Then
-        If c_col <= UBound(aColsHeader) Then
-            s = sColsMargin & aColsHeader(c_col) & sColsMargin
+    If IsAllocated(aHeaders) Then
+        If c_col <= UBound(aHeaders) Then
+            s = sColsMargin & aHeaders(c_col) & sColsMargin
             l = Len(s)
             l = Max(ColWidth(c_col), l) ' width with marging may be greater than originally calculated
             ColWidth(c_col) = l
-            ColHeader = Align(aColsHeader(c_col), l, ColAlignmentHeader(c_col), sColsMargin)
+            ColHeader = Align(aHeaders(c_col), l, ColAlignmentHeader(c_col), sColsMargin)
         End If
     End If
 End Property
@@ -141,38 +142,38 @@ End Property
 Private Property Let ColHeader(Optional ByVal c_col As Long, _
                                         ByVal c_header As String)
     
-    If Not IsAllocated(aColsHeader) Then
-        ReDim aColsHeader(c_col)
+    If Not IsAllocated(aHeaders) Then
+        ReDim aHeaders(c_col)
     Else
-        ReDim Preserve aColsHeader(Max(UBound(aColsHeader), c_col))
+        ReDim Preserve aHeaders(Max(UBound(aHeaders), c_col))
     End If
-    aColsHeader(c_col) = c_header
+    aHeaders(c_col) = c_header
     
     
 End Property
 
 Private Property Get ColAlignmentHeader(Optional ByVal c_col As Long) As String
-    If IsAllocated(aColsAlignmentHeader) Then
-        If c_col <= UBound(aColsAlignmentHeader) Then
-            ColAlignmentHeader = aColsAlignmentHeader(c_col)
+    If IsAllocated(aAlignmentsHeader) Then
+        If c_col <= UBound(aAlignmentsHeader) Then
+            ColAlignmentHeader = aAlignmentsHeader(c_col)
         End If
     End If
 End Property
 
 Private Property Let ColAlignmentHeader(Optional ByVal c_col As Long, _
                                                 ByVal c_align As String)
-    If Not IsAllocated(aColsAlignmentHeader) Then
-        ReDim aColsAlignmentHeader(c_col)
-    ElseIf c_col > UBound(aColsAlignmentHeader) Then
-        ReDim Preserve aColsAlignmentHeader(c_col)
+    If Not IsAllocated(aAlignmentsHeader) Then
+        ReDim aAlignmentsHeader(c_col)
+    ElseIf c_col > UBound(aAlignmentsHeader) Then
+        ReDim Preserve aAlignmentsHeader(c_col)
     End If
-    aColsAlignmentHeader(c_col) = c_align
+    aAlignmentsHeader(c_col) = c_align
 End Property
 
 Private Property Get ColAlignmentItem(Optional ByVal c_col As Long) As String
-    If IsAllocated(aColsAlignmentItem) Then
-        If c_col <= UBound(aColsAlignmentItem) Then
-            ColAlignmentItem = aColsAlignmentItem(c_col)
+    If IsAllocated(aAlignments) Then
+        If c_col <= UBound(aAlignments) Then
+            ColAlignmentItem = aAlignments(c_col)
         Else
             ColAlignmentItem = DEFAULT_COL_ALIGNMENT_ITEM
         End If
@@ -185,33 +186,21 @@ Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
                                                ByVal c_align As String)
     Dim lAlignmentLine As Long
     
-    If Not IsAllocated(aColsAlignmentItem) Then
-        ReDim aColsAlignmentItem(c_col)
-    ElseIf c_col > UBound(aColsAlignmentItem) Then
-        ReDim Preserve aColsAlignmentItem(c_col)
+    If Not IsAllocated(aAlignments) Then
+        ReDim aAlignments(c_col)
+    ElseIf c_col > UBound(aAlignments) Then
+        ReDim Preserve aAlignments(c_col)
     End If
-    aColsAlignmentItem(c_col) = c_align
+    aAlignments(c_col) = c_align
     
 End Property
 
 Public Property Let ColsMargin(ByVal s As String):      sColsMargin = s:        End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
-    If Not IsAllocated(aColsWidth) Then
-        If IsAllocated(aItems) Then
-            If c_col <= UBound(aItems) Then
-                ColWidth = Len(aItems(c_col))
-            End If
-        End If
-    Else
-        If c_col <= UBound(aColsWidth) Then
-            ColWidth = aColsWidth(c_col)
-        Else
-            If IsAllocated(aItems) Then
-                If c_col <= UBound(aItems) Then
-                    ColWidth = Len(aItems(c_col))
-                End If
-            End If
+    If IsAllocated(aWidths) Then
+        If c_col <= UBound(aWidths) Then
+            ColWidth = aWidths(c_col)
         End If
     End If
 End Property
@@ -220,15 +209,12 @@ Private Property Let ColWidth(Optional ByVal c_col As Long, _
                                        ByVal c_width As Long)
     Dim lWidth As Long
     
-    If Not IsAllocated(aColsWidth) Then
-        ReDim aColsWidth(c_col)
-    Else
-        If c_col > UBound(aColsWidth) Then
-            ReDim Preserve aColsWidth(Max(UBound(aColsWidth), c_col))
-        End If
+    If Not IsAllocated(aWidths) Then
+        ReDim aWidths(c_col)
+    ElseIf c_col > UBound(aWidths) Then
+        ReDim Preserve aWidths(c_col)
     End If
-    lWidth = aColsWidth(c_col)
-    aColsWidth(c_col) = Max(lWidth, c_width)
+    aWidths(c_col) = c_width
 
 End Property
 
@@ -247,17 +233,25 @@ Public Sub Entry(ParamArray e() As Variant)
     Dim iCol    As Long
     Dim s       As String
     Dim v       As Variant
+    Dim lWidth  As Long
     
-    v = e
-    If LBound(v) = UBound(v) Then
+    If LBound(e) = UBound(e) Then
         '~~ Only a single string has been provided
-        s = v(LBound(v))
+        s = e(LBound(e))
         If InStr(s, "|") <> 0 Then
             '~~ The | in the string indicates items for being column aligned
+            '~~ and additionally the implicit width
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+            v = Split(s, "|")
             AlignedByColumns = True
-            For i = LBound(e) To UBound(e)
+            lColumns = UBound(v)
+            For i = LBound(v) To UBound(v)
                 iCol = i + 1
-                ColItem(iCol) = e(i)
+                ColItem(iCol) = v(i)
+                If ColWidth(iCol) = 0 Then
+                    ColWidth(iCol) = Len(v(i))
+                End If
             Next i
             WriteItems
         Else
@@ -275,6 +269,11 @@ Public Sub Entry(ParamArray e() As Variant)
         For i = LBound(e) To UBound(e)
             iCol = i + 1
             ColItem(iCol) = e(i)
+            If ColWidth(iCol) = 0 Then
+                ColWidth(iCol) = Len(Trim(e(i))) + (Len(sColsMargin) * 2)
+            End If
+            ColAlignmentItem(iCol) = Aligned(e(i))
+            lColumns = iCol
         Next i
         WriteItems
     End If
@@ -284,13 +283,12 @@ End Sub
 
 Private Property Let AlignedByColumns(ByVal b As Boolean)
 ' ----------------------------------------------------------------------------
-' The change from one mode to another (from bAlignedByColumns = True to False
+' The change from one mode to another (from bColsAligned = True to False
 ' and vice versa) indicates the begin of a new series of log entries.
 ' ----------------------------------------------------------------------------
-    If Not bAlignedByColumns = b Then
-        
-        bAlignedByColumns = b
-        bNewLog = True
+    If Not bColsAligned = b Then
+        bColsAligned = b
+        NewLog
     End If
 End Property
 
@@ -374,11 +372,14 @@ Private Function Align(ByVal a_strng As String, _
 ' ----------------------------------------------------------------------------
 ' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_mode) filled
 ' with characters (a_fill).
+' Note: The length (a_lngth) of the string (a_strng) is considered including
+'       already the length of the column margin (a_margin) - if any.
 ' ----------------------------------------------------------------------------
     Dim SpaceLeft       As Long
     Dim LengthRemaining As Long
     Dim sItem           As String
     Dim sFill           As String
+    Dim lLength         As Long
     
     Select Case Left(a_mode, 1)
         Case "L"
@@ -401,7 +402,9 @@ Private Function Align(ByVal a_strng As String, _
                 Align = Align & VBA.String$(a_lngth - Len(Align), a_fill)
             End If
         Case "R"
-            sItem = a_margin & Trim(a_strng) & a_margin
+            sItem = Trim$(a_strng) & a_margin
+            lLength = a_lngth + (Len(a_margin) * 2)
+            
             If Len(sItem) >= a_lngth Then
                 Align = VBA.Right$(sItem, a_lngth)
             Else
@@ -502,7 +505,7 @@ Public Sub ColsAlignmentItem(ParamArray c_align() As Variant)
 End Sub
 
 Private Property Let ColItem(Optional ByVal c_col As Long, _
-                                     ByVal c_item As String)
+                                      ByVal c_item As String)
     If Not IsAllocated(aItems) Then
         ReDim aItems(c_col)
     ElseIf c_col > UBound(aItems) Then
@@ -522,25 +525,17 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
 ' Note 1: Any column(c_col) above the UBound(aItems) is ignored, i.e. returns a
 '         vbNullString.
 ' -----------------------------------------------------------------------------------
-    Dim lWidth As Long
-    
     If IsAllocated(aItems) Then
-        Select Case True
-            Case c_col < UBound(aItems)
-                If ColWidth(c_col) = 0 Then
-                    '~~ When yet no column widht is specified, the first one specifies it
-                    lWidth = Len(aItems(c_col))
-                    ColWidth(c_col) = lWidth
-                Else
-                    lWidth = ColWidth(c_col)
-                End If
-            Case c_col = UBound(aItems)
-                '~~ The rightmost column's width may be expanded to the lenght of the item
-                lWidth = ColWidth(c_col)
-                lWidth = Max(lWidth, Len(sColsMargin & aItems(c_col)))
-                ColWidth(c_col) = lWidth
-        End Select
-        ColItem = Align(aItems(c_col), lWidth, ColAlignmentItem(c_col), sColsMargin)
+        If c_col < lColumns Then
+            If ColWidth(c_col) = 0 Then
+                '~~ When yet no column width is specified, the first line's item specifies it
+                ColWidth(c_col) = Len(aItems(c_col))
+            End If
+            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin)
+        ElseIf c_col = lColumns Then
+            '~~ The rightmost column's width may be expanded to the lenght of the item
+            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin)  ' rightmost no lenght limit and left aligned
+        End If
     End If
 End Property
 
@@ -558,16 +553,22 @@ Public Sub Headers(ParamArray c_headers() As Variant)
     Dim s       As String
     Dim v       As Variant
     
-    aColsHeader = vbNullString
+    aHeaders = vbNullString
     For i = LBound(c_headers) To UBound(c_headers)
         s = c_headers(i)
         If InStr(s, sColsDelimiter) <> 0 Then
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
             v = Split(s, sColsDelimiter)
             For j = LBound(v) To UBound(v)
                 If v(j) <> vbNullString Then
                     iCol = j + 1
                     ColHeader(iCol) = v(j)
                     ColWidth(iCol) = Len(v(j)) ' enclosed in || the width is implicit
+                    If ColAlignmentHeader(iCol) = vbNullString Then
+                        '~~ Implicit alignment when none has been specified explicitely
+                        ColAlignmentHeader(iCol) = Aligned(v(j))
+                    End If
                 End If
             Next j
         Else
@@ -812,7 +813,7 @@ End Sub
 
 Private Function TimeStamp() As String ' Public for test purpose only
     If bWithTimeStamp Then
-        If IsAllocated(aColsHeader) _
+        If IsAllocated(aHeaders) _
         Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " " & sColsDelimiter _
         Else TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & " "
     End If
@@ -910,18 +911,21 @@ Private Sub BeginOfNewLogEntries(ByVal n_items As Boolean, _
     End If
     
     If IsAllocated(aTitle) Then
-        '~~ Log title
+        '~~ Write title
         For i = LBound(aTitle) To UBound(aTitle)
-            s = Align(aTitle(i), Len(n_line), "C", " ", "-")
-            WriteLine s
+            If aTitle(i) <> vbNullString Then
+                s = Align(aTitle(i), Len(n_line), "C", " ", "-")
+                WriteLine s
+            End If
         Next i
-        WriteLine String(Len(s), "-") ' Title undeline
+        '~~ Write title underline
+        WriteLine String(Len(n_line), "-")
     End If
       
-    If IsAllocated(aColsHeader) Then
+    If IsAllocated(aHeaders) Then
         '~~ Column header
         s = vbNullString
-        For i = LBound(aColsHeader) To UBound(aColsHeader)
+        For i = LBound(aHeaders) To UBound(aHeaders)
             s = s & sColDelim & ColHeader(i)
             sColDelim = sColsDelimiter
         Next i
@@ -950,4 +954,5 @@ End Sub
 
 Public Sub NewLog()
     bNewLog = True
+'    aTitle = vbNullString
 End Sub

@@ -1,7 +1,20 @@
-1. Single string, new log.
-2. Single string, new log.
-==========================
------ New Log title ------
---------------------------
-1. Single string, new log.
-2. Single string, new log.
+ 01 1. Single string, new log.
+ 01 2. Single string, new log.
+==============================
+------ 02 New Log title ------
+------------------------------
+ 02 1. Single string, new log.
+ 02 2. Single string without any width limit
+==========================================================
+----------------------------------------------------------
+ 03 | xxxx | yyyyyy | Rightmost column without width limit
+ 03 | xxxx | yyyy   | zzzzzz            
+ 03 | xxxx | yyyyy  | zzzzzz 
+==========================================================================================
+------- 04 Header implicitely specifies column widths by mean of vertical bars (|) -------
+------------------------------------------------------------------------------------------
+  Nr |  Item-1  |   Item-2   |  Item-3 (no width limit) 
+-----+----------+------------+--------------------------
+ 04|  xxxx  | yyyyyy   | Rightmost column without width limit (though defines title with!)
+ 04  |   xxxx   | yyyy       | zzzzzz            
+ 04  |   xxxx   | yyyyy      | zzzzzz 

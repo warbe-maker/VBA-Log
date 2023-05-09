@@ -376,12 +376,22 @@ End Sub
 
 Private Sub Test_00_Regression()
 ' ------------------------------------------------------------------------------
-' Regression-Test approach:
-'    | New  |   Col   | Time  | Width |
-' No | Log  | Aligned | Stamp |       |
-'    | File |         |       |       |
-' ---+------+---------+-------+-------+
-' 01 | yes  |   No    |  no   |  n/p  |
+' Regression-Test approach: n/a = not applicable
+'                           n/p = not provided
+'                           imp = implicit
+'                           exp = explicit (by method)
+'    | New  |   Col   | Time  | Width  |
+' No | Log  | Aligned | Stamp |        |
+' ---+------+---------+-------+--------+
+' 01 | File |   no    |  no   |  n/a   |
+' 02 | Title|   no    |  no   |  n/a   |
+' 03 | imp  |   yes   |  no   |  imp   |
+' 04 | Title|   yes   |  no   | Header |
+' 05 | Title|   yes   |  no   |   exp  |
+' 06 |      |         |  no   |        |
+' 07 |      |         |  no   |        |
+' 08 |      |         |  no   |        |
+' 09 |      |         |  no   |        |
 '
 ' ------------------------------------------------------------------------------
     Const PROC = "Test_00_Regression"
@@ -399,11 +409,20 @@ Private Sub Test_00_Regression()
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .Entry "1. Single string, new log."
-        .Entry "2. Single string, new log."
-        .Title "New Log title" ' explicit indication of a new series of log entries
-        .Entry "1. Single string, new log."
-        .Entry "2. Single string, new log."
+        .Entry " 01 1. Single string, new log."
+        .Entry " 01 2. Single string, new log."
+        .Title " 02 New Log title" ' explicit indication of a new series of log entries
+        .Entry " 02 1. Single string, new log."
+        .Entry " 02 2. Single string without any width limit"
+        .Title vbNullString
+        .Entry " 03", "xxxx", " yyyyyy  ", "Rightmost column without width limit"
+        .Entry " 03", "xxxx", " yyyy       ", "         zzzzzz   "
+        .Entry " 03", "xxxx", " yyyyy       ", "zzzzzz "
+        .Title " 04 Header implicitely specifies column widths by mean of vertical bars (|)"
+        .Headers "| Nr| Item-1 |  Item-2  | Item-3 (no width limit)"
+        .Entry "04", "xxxx", " yyyyyy  ", "Rightmost column without width limit (though defines title with!)"
+        .Entry "04", "xxxx", " yyyy       ", "         zzzzzz   "
+        .Entry "04", "xxxx", " yyyyy       ", "zzzzzz "
 '        .ColsMargin = vbNullString
 '        .ColsWidth 10, 25, 30
 '        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
