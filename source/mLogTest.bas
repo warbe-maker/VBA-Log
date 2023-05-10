@@ -380,18 +380,19 @@ Private Sub Test_00_Regression()
 '                           n/p = not provided
 '                           imp = implicit
 '                           exp = explicit (by method)
-'    | New  |   Col   | Time  | Width  |
-' No | Log  | Aligned | Stamp |        |
-' ---+------+---------+-------+--------+
-' 01 | File |   no    |  no   |  n/a   |
-' 02 | Title|   no    |  no   |  n/a   |
-' 03 | imp  |   yes   |  no   |  imp   |
-' 04 | Title|   yes   |  no   | Header |
-' 05 | Title|   yes   |  no   |   exp  |
-' 06 |      |         |  no   |        |
-' 07 |      |         |  no   |        |
-' 08 |      |         |  no   |        |
-' 09 |      |         |  no   |        |
+'    |   NewLog  |   Col   | Time  |   Width   |
+' No | indicated | Aligned | Stamp | detemined |
+'    |    by     |         |       |    by     |
+' ---+-----------+---------+-------+-----------+
+' 01 | New File  |   no    |  no   | unlimited |
+' 02 | Title     |   no    |  no   | unlimited |
+' 03 | NewLog    |   imp   |  yes  |   imp     |
+' 04 | Title     |   yes   |  no   |  Header   |
+' 05 | Title     |   yes   |  no   | ColsWidth |
+' 06 |           |         |  no   |           |
+' 07 |           |         |  no   |           |
+' 08 |           |         |  no   |           |
+' 09 |           |         |  no   |           |
 '
 ' ------------------------------------------------------------------------------
     Const PROC = "Test_00_Regression"
@@ -409,29 +410,35 @@ Private Sub Test_00_Regression()
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .Entry " 01 1. Single string, new log."
-        .Entry " 01 2. Single string, new log."
+        .Entry " 01 1. Single string, new log, no title. "
+        .Entry " 01 2. Single string, new log, no title. "
         .Title " 02 New Log title" ' explicit indication of a new series of log entries
         .Entry " 02 1. Single string, new log."
         .Entry " 02 2. Single string without any width limit"
-        .Title vbNullString
-        .Entry " 03", "xxxx", " yyyyyy  ", "Rightmost column without width limit"
-        .Entry " 03", "xxxx", " yyyy       ", "         zzzzzz   "
-        .Entry " 03", "xxxx", " yyyyy       ", "zzzzzz "
-        .Title " 04 Header implicitely specifies column widths by mean of vertical bars (|)"
-        .Headers "| Nr| Item-1 |  Item-2  | Item-3 (no width limit)"
-        .Entry "04", "xxxx", " yyyyyy  ", "Rightmost column without width limit (though defines title with!)"
-        .Entry "04", "xxxx", " yyyy       ", "         zzzzzz   "
+        .NewLog ' explicit indication of a new series of log entries
+        .Entry " 03", "xxxx", " yyyyyy", " Rightmost column without width limit"
+        .Entry " 03", "xxxx", " yyyy       ", "Method 'NewLog' indicated the begin of a new series of log entries"
+        .Entry " 03", "xxxx", " yyyyy       ", "Log entries wthout a title"
+        .Title "| 04 In this test the Header method implicitely specifies:" _
+             , "|    - Implicitely the alignment by means of leading and trailing spaces," _
+             , "|    - Implicitely the column widths by vertical bars (|)!" _
+             , "|    Note-1: The leading | (not printed) indicates left adjusted" _
+             , "|    Note-2: The header alignment is idependant from the items alignment" _
+             , "|    Note-3: The column width is the max of any explicit specified, the header's width" _
+             , "|            and the first row's items width"
+        .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
+        .Entry " 04", "xxxx", " yyyyyy", " Rightmost column without width limit!  "
+        .Entry " 04", "xxxx", " yyyy       ", "         zzzzzz   "
         .Entry "04", "xxxx", " yyyyy       ", "zzzzzz "
-'        .ColsMargin = vbNullString
-'        .ColsWidth 10, 25, 30
-'        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
+        .NewLog
+        .ColsWidth 2, 10, 25, 30
+        .Headers " 05", "Column-01-Header", "Column-02-Header", "Column-03-Header"
+        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
+        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
+        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
 '        .Title "Method 'Entry' test: New title, with marging (1st Line)" _
 '             , "Method 'Entry' test: New title, with marging (2nd Line)"
-'        .ColsMargin = " "
+'        .ColsMargin = vbNullString
 '        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
 '        .Entry "xxx", "yyyyyy", "zzzzzz"
 '        .Entry "xxx", "yyyyyy", "zzzzzz"

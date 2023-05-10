@@ -13,28 +13,27 @@ Provides comprehensive methods/services and properties for writing a log file ei
 ### Methods
 | Method Name     | Function |
 |-----------------|----------|
-|_ColsWidth_      | ParamArray of values, specifies for each ***column*** its width. When none is specified for a column its width defaults to the width of the corresponding column's header, when no header had been specified for the corresponding column its width defaults to the first written item of the corresponding column. |
+|_ColsWidth_      | ParamArray of values explicitely specifying for each ***column*** its **minimum** width. When none is specified for a column its width defaults to the maximum of the width of the corresponding column's header and the width of the very first entry's items width, whereby the rightmost columns width is unlimited by default. When no _Headers_ had been specified the column width defaults to the first written item of the corresponding column. |
 |_Dsply_          | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
-|_Entry_          | String expression, written to the log-file |
-|_Headers_        | Specifies any number of strings written as ***column*** header, either automatically with the first call of the method _Items_ of explicitly with the method _WriteHeader_.  |
+|_Entry_          | ParamArray of strings. When only one string (without any vertical bars [\|) is specified, the string is written as specified, when multiple strings are specified the strings are written left aligned in columns, when a single string with vertical bars (\|) is specified the elements are written aligned in columns whereby the kind of alignment is implicitly specified by leading and trailing spaces.<br>Example: **"\| xx\|yy \|zz\| aa \|"** xx is right ajusted, yy is left adjusted, zz and aa are aligned centered.<br>Note: The alignment of the items is independent of the alignment of the column headers.|
+|_Headers_        | ParamArray of strings, specifying any number number of strings written as a single line ***column*** header, written automatically with the first call of the _Entry_ method provided it specifies column aligned items. The alignment of the header string defaults to centered. An implicit specification of the alignment is possible by means of vertical bars [\|).<br>Examples:<br>- **"\| xx\|yy \|zz\| aa \|"** xx=right adjusted, yy=left adjusted, zz, aa=centered.<br>- **"xxx", "yyyy", "zzz"** are written centered provided not specified explicitly by means of the _HeaderAlignment_ method. |
 |_HeaderAlignment_| Defaults to ***C***entered for each of the specified headers |
 |_Items_          | ParamArray of string expressions written to the log-file aligned in columns |
-|_ItemsAlignment_ | Defaults to ***L***eft adjusted for each of the items provided with the _Items_ method. |
-| WriteHeader | Writes the specified header to the log-file |
+|_ItemsAlignment_ | ParamArray if strings. When not provided each columns alignemtWhen not specified alignments default to **L**eft adjusted. <br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
+|_Title_           | ParamArray of strings, each specifying a title line, aligned centered and filled with - by default. When the title strings start with a vertical bar (\|) the title line(s) is(are) left aligned filled with spaces.<br>Examples:<br>- **"Any title"** will be centered,<br> - **"\| &nbsp;&nbsp;&nbsp;Any title"** will be left adjusted including all leading spaces.|
 
 
 ### Properties
 | Name          | Description |
 |---------------|-------------|
-| FileFullName  | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` with an ".log" extension |
-| FileName      | |
-| KeepDays      | |
-| LogFile       | Expression representing a file object. |
-| Path          | String expression, defaults to the `ActiveWorkbook's` parent folder. |
-| Title         | String expression, specifying the title printed above the log-lines. |
-| WithTimeStamp | Boolean expression, defaults to true, when true each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
-| ColsMargin    | Default to a single space, printed left and right of the vertical bar \| used to spearate the columns _ColDelimiter_ |
-| ColsDelimiter | Defaults to a vertical bar (\|), may be replaced e.b. by a space. |
+|_FileFullName_ | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` with an ".log" extension |
+|_FileName_     | |
+|_KeepDays_     | |
+|_LogFile_      | Expression representing a file object. |
+|_Path_         | String expression, defaults to the `ActiveWorkbook's` parent folder. |
+|_WithTimeStamp_| Boolean expression, defaults to true, when true each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
+|_ColsMargin_   | Defaults to a single leading and trailing space, may be specified as vbNullString. |
+|_ColsDelimiter_| Defaults to a vertical bar (\|), may be a space or any other single character. |
 
 ### Installation
 Download and open the dedicated development Workbook [VBLogService.xlsb][1] and in the VB-Editor copy (drag and drop) the clsLog Class-Module into your VB-Project. Alternatively copy the below to the clipboard and into a new Class-Module (throughout this README named _***clsLog***_).

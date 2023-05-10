@@ -1,20 +1,31 @@
- 01 1. Single string, new log.
- 01 2. Single string, new log.
+ 01 1. Single string, new log, no title. 
+ 01 2. Single string, new log, no title. 
 ==============================
 ------ 02 New Log title ------
 ------------------------------
  02 1. Single string, new log.
  02 2. Single string without any width limit
 ==========================================================
-----------------------------------------------------------
  03 | xxxx | yyyyyy | Rightmost column without width limit
- 03 | xxxx | yyyy   | zzzzzz            
- 03 | xxxx | yyyyy  | zzzzzz 
-==========================================================================================
-------- 04 Header implicitely specifies column widths by mean of vertical bars (|) -------
-------------------------------------------------------------------------------------------
-  Nr |  Item-1  |   Item-2   |  Item-3 (no width limit) 
------+----------+------------+--------------------------
- 04|  xxxx  | yyyyyy   | Rightmost column without width limit (though defines title with!)
- 04  |   xxxx   | yyyy       | zzzzzz            
- 04  |   xxxx   | yyyyy      | zzzzzz 
+ 03 | xxxx |   yyyy | Method 'NewLog' indicated the begin of a new series of log entries
+ 03 | xxxx |  yyyyy | Log entries wthout a title
+=====================================================================================
+ 04 In this test the Header method implicitely specifies:                            
+    - Implicitely the alignment by means of leading and trailing spaces,             
+    - Implicitely the column widths by vertical bars (|)!                            
+    Note-1: The leading | (not printed) indicates left adjusted                      
+    Note-2: The header alignment is idependant from the items alignment              
+    Note-3: The column width is the max of any explicit specified, the header's width
+            and the first row's items width                                          
+-------------------------------------------------------------------------------------
+ Nr | Item-1 |  Item-2  | Item-3 (no width limit)             
+----+--------+----------+------------------------------------------------------------
+ 04 |  xxxx  |   yyyyyy | Rightmost column without width limit!
+ 04 |  xxxx  |     yyyy | zzzzzz
+ 04 |  xxxx  |    yyyyy | zzzzzz
+=============================================================
+ 05 | Column-01-Header | Column-02-Header | Column-03-Header 
+----+------------------+------------------+------------------
+ 05 |       xxx        |      yyyyyy      | zzzzzz
+ 05 |       xxx        |      yyyyyy      | zzzzzz
+ 05 |       xxx        |      yyyyyy      | zzzzzz
