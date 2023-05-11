@@ -41,11 +41,11 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 |---------------|-------------|
 |***ColsDelimiter***| String expression. defaults to a vertical bar (`|`), when set to a single space the ***ColsMargin*** is set to a `VBNullString`|
 |***ColsMargin***   | String expression, defaults to a single space (` `), when set to a `VBNustring` the ***ColsDelimiter*** is set to a vertical bar (`|`) |
-|***FileFullName*** | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` with an ".log" extension |
-|***FileName***     | |
-|***KeepDays***     | |
+|***FileFullName*** | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` [^1] with an ".log" extension |
+|***FileName***     | Specifies the log-files name, defaults to the  `ActiveWorkbook's` [^1] BaseName with an `.log` file extension. |
+|***KeepDays***     | Specifies the number of days a new log-file is kept before it is deleted and re-created.|
 |***LogFile***      | Expression representing a file object. |
-|***Path***         | String expression, defaults to the `ActiveWorkbook's` parent folder. |
+|***Path***         | String expression, defaults to the `ActiveWorkbook's` [^1] parent folder. |
 |***WithTimeStamp***| Boolean expression, defaults to true, when true each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
 
 
@@ -85,5 +85,6 @@ In general the implicit specification is done by means of vertical bars (|) indi
 
 >The calculated final width encloses the string in at least one leading a trailing [***ColsMargin***](#class-module-properties), which default to a single space and is supposed for the above examples. 
 
+[^1]: When the `ActiveWorkbook` is used as the default for the log-file's location the log-file is located in the serviced Workbook's parent folder. When the service writing the log is for the Workbook itself `ThisWorkbook` and `ActiveWorkbook` are the same, when the service is provided by another Workbook for the  servicing Workbook will be `ThisWorkbook` and the serviced Workbook will be the `ActiveWorkbook`. In both cases the log-file written into the **serviced Workbook's** parent folder.
 
 [1]: https://github.com/warbe-maker/VBA-Log-Service/blob/main/VBALogService.xlsb?raw=true
