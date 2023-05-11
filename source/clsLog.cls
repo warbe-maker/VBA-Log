@@ -14,34 +14,46 @@ Option Base 1 ' ensures the index conforms with the column number
 '
 ' Methods/services:
 ' -----------------
-' - ColsAlignmentHeader
-' - ColsAlignmentItem
-' - ColsHeader
-' - ColsWidth             Specifies each columns width, defaults to the width of the
-'                         corresponding column header string, is adjusted to the
-'                         width of the corresponding header string when already
-'                         provided.
-' - BeginOfNewLogEntries  Delimiter line, title, header, imlicitely when applicable
-'                         or explicitely when desired.
-' - Dsply
+' - BeginOfNewLogEntries  Delimiter line, title, header, imlicitly when applicable
+'                         or explicitly when desired.
+' - Dsply                 Displays the Log-Files content.
 ' - Entry                 - When a single string without any | is provided the string
-'                          is appended as a new line to the log file
+'                           is appended as a new line to the log file
 '                         - When multiple strings are provided or the string contains
 '                           vertical bars (|) the indicated items are writen aligned
 '                           in columns to the log-file
+' - EntryItemsAlignment   Explicitly specifies the alignment for each column's
+'                         item, defaults to "L"eft adjusted when not provided.
+' - Headers               Specifies the column headers
+' - HeadersAlignment      Explicitly specifies the alignment for each column's
+'                         header, defaults to "C"entered
+' - Widths                Explicitly specifies each columns width, defaults to the
+'                         width of the corresponding column header string, is
+'                         adjusted to the width of the corresponding header string
+'                         when one is provided.
 '
 ' Properties:
 ' -----------
-' - ColsMargin            Defaults to " ", may be set to vbNullString, when provided
-'                         adds to the width of the header string
-' - FileFullName  Get/Let
-' - FileName      Let
-' - KeepDays      Let
-' - LogFile       Get
-' - Path          Let
-' - Title         Let     Triggers the automated writing of a header with the firs
-'                         call of the Items method
-' - WithTimeStamp Let     Prefix for log entries when True
+' - ColsDelimiter         Defaults to a vertical bar (|) may be set to a single
+'                         space - which will set the ColsMargin to a vbNullString.
+' - ColsMargin            Defaults to " ", may be set to vbNullString - which will
+'                         turn the ColsDelimiter to a vertical bar (|)
+' - FileFullName  r/w     Specifies the full name of the log-file. The location
+'                         defaults to the ActiveWorkbook's parent folder, the name
+'                         defaults to the ActiveWorkbook's BaseName with a .log
+'                         file extention.
+' - FileName      w       Specifies the log-file's name, defaults to the
+'                         ActiveWorkbook's BaseName with a .log file extention.
+' - KeepDays      w       Specifies the number of days a new created log-file is
+'                         kept before it is deleted and re-created, defaults to 1.
+' - LogFile       r       The log-file as file object
+' - Path          w       Sepcifies the log-file's location/folder, defaults to the
+'                         ActiveWorkbook's parent folder
+' - Title         w       Specifies the - optionally multiline - title of a new series
+'                         of log entries. Triggers the writing of the column headers
+'                         provided specified.
+' - WithTimeStamp w       Prefixes each log entry with a timestamp in the format
+'                         yy-mm-dd-hh:mm:ss when True
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' -----------------------------------------------------------------------------------
@@ -123,34 +135,15 @@ Private Sub Class_Terminate()
     Set aTitle = Nothing
 End Sub
 
-Public Property Get ColsDelimiter(ByVal s As String):   sColsDelimiter = s: End Property
-
-Private Property Get ColHeader(Optional ByVal c_col As Long) As String
-    Dim s   As String
-    Dim l   As Long
-    
-    If IsAllocated(aHeaders) Then
-        If c_col <= UBound(aHeaders) Then
-            s = sColsMargin & aHeaders(c_col) & sColsMargin
-            l = Len(s)
-            l = Max(ColWidth(c_col), l) ' width with marging may be greater than originally calculated
-            ColWidth(c_col) = l
-            ColHeader = Align(aHeaders(c_col), l, ColAlignmentHeader(c_col), sColsMargin)
-        End If
+Private Property Let AlignedByColumns(ByVal b As Boolean)
+' ----------------------------------------------------------------------------
+' The change from one mode to another (from bColsAligned = True to False
+' and vice versa) indicates the begin of a new series of log entries.
+' ----------------------------------------------------------------------------
+    If Not bColsAligned = b Then
+        bColsAligned = b
+        bNewLog = True
     End If
-End Property
-
-Private Property Let ColHeader(Optional ByVal c_col As Long, _
-                                        ByVal c_header As String)
-    
-    If Not IsAllocated(aHeaders) Then
-        ReDim aHeaders(c_col)
-    Else
-        ReDim Preserve aHeaders(Max(UBound(aHeaders), c_col))
-    End If
-    aHeaders(c_col) = c_header
-    
-    
 End Property
 
 Private Property Get ColAlignmentHeader(Optional ByVal c_col As Long) As String
@@ -196,7 +189,88 @@ Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
     
 End Property
 
-Public Property Let ColsMargin(ByVal s As String):      sColsMargin = s:        End Property
+Private Property Get ColHeader(Optional ByVal c_col As Long) As String
+    Dim s   As String
+    Dim l   As Long
+    
+    If IsAllocated(aHeaders) Then
+        If c_col <= UBound(aHeaders) Then
+            s = WithMargins(aHeaders(c_col), sColsMargin)
+            l = Len(s)
+            l = Max(ColWidth(c_col), l) ' width with marging may be greater than originally calculated
+            ColWidth(c_col) = l
+            ColHeader = Align(aHeaders(c_col), l, ColAlignmentHeader(c_col), sColsMargin)
+        End If
+    End If
+End Property
+
+Private Property Let ColHeader(Optional ByVal c_col As Long, _
+                                        ByVal c_header As String)
+    
+    If Not IsAllocated(aHeaders) Then
+        ReDim aHeaders(c_col)
+    Else
+        ReDim Preserve aHeaders(Max(UBound(aHeaders), c_col))
+    End If
+    aHeaders(c_col) = c_header
+    
+    
+End Property
+
+Private Property Get ColItem(Optional ByVal c_col As Long) As String
+' -----------------------------------------------------------------------------------
+' Returns the item of a column (c_col):
+' - Aligned as explicitly specified or, when not specified explicitly, aligned as
+'   indicated implicit by the very first.
+' - In the width explicitly specified and/or specified by the header's width or when
+'   no width is specified by the width of the very first row's item width.
+' Note 1: Any column(c_col) beyond UBound(aItems) is ignored, i.e. returns a
+'         vbNullString.
+' -----------------------------------------------------------------------------------
+    Dim lWidth  As Long
+    
+    If IsAllocated(aItems) Then
+        If c_col < lColumns Then
+            If ColWidth(c_col) = 0 Then
+                '~~ When yet no column width is specified, the first line's item specifies it
+                ColWidth(c_col) = Len(aItems(c_col))
+            End If
+            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin)
+        ElseIf c_col = lColumns Then
+            '~~ The rightmost column's width has no width limit and uses the lenght of the item
+            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin)  ' rightmost no lenght limit and left aligned
+            If bNewLog Then
+                '~~ When this is the first line of a new series of log entries
+                '~~ the width of the rightmost column matters for a correct
+                '~~ alignment of the headers - in case specified - and the width of the title - in case specified
+                lWidth = ColWidth(c_col)
+                ColWidth(c_col) = Max(Len(aItems(c_col)), lWidth)
+            End If
+        End If
+    End If
+    
+End Property
+
+Private Property Let ColItem(Optional ByVal c_col As Long, _
+                                      ByVal c_item As String)
+    If Not IsAllocated(aItems) Then
+        ReDim aItems(c_col)
+    ElseIf c_col > UBound(aItems) Then
+        ReDim Preserve aItems(c_col)
+    End If
+    aItems(c_col) = c_item
+
+End Property
+
+Public Property Let ColsDelimiter(ByVal s As String)
+    sColsDelimiter = s
+    If s = " " Then sColsMargin = vbNullString
+End Property
+
+Public Property Let ColsMargin(ByVal s As String)
+    sColsMargin = s
+    If s = vbNullString Then sColsDelimiter = "|"
+End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
     If IsAllocated(aWidths) Then
@@ -223,81 +297,11 @@ Private Property Get DefaultLogFileName() As String
     DefaultLogFileName = fso.GetBaseName(ActiveWorkbook.Name) & ".log"
 End Property
 
-Public Sub Entry(ParamArray e() As Variant)
-' ----------------------------------------------------------------------------
-' - When a single string without any | is provided the string is appended as a
-'   new line to the log file
-' - When multiple strings are provided or a string contains vertical bars (|)
-'   the indicated items are writen aligned in columns to the log-file
-' ----------------------------------------------------------------------------
-    Dim i       As Long
-    Dim iCol    As Long
-    Dim s       As String
-    Dim v       As Variant
-    Dim lWidth  As Long
-    
-    If LBound(e) = UBound(e) Then
-        '~~ Only a single string has been provided
-        s = e(LBound(e))
-        If InStr(s, "|") <> 0 Then
-            '~~ The | in the string indicates items for being column aligned
-            '~~ and additionally the implicit width
-            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
-            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
-            v = Split(s, "|")
-            AlignedByColumns = True
-            lColumns = UBound(v)
-            For i = LBound(v) To UBound(v)
-                iCol = i + 1
-                ColItem(iCol) = v(i)
-                If ColWidth(iCol) = 0 Then
-                    ColWidth(iCol) = Len(v(i))
-                End If
-            Next i
-            WriteItems
-        Else
-            AlignedByColumns = False
-            If bNewLog _
-            Then BeginOfNewLogEntries n_items:=False, n_line:=s
-            WriteLine s
-            bNewLog = False
-        End If
-    Else
-        '~~ When more than one string is provided this indicates items for being column aligned
-        AlignedByColumns = True
-        lColumns = UBound(e) + 1
-        For i = LBound(e) To UBound(e)
-            iCol = i + 1
-            If bNewLog Then ' the first row determines the items alignment
-                ColAlignmentItem(iCol) = Aligned(e(i))
-            End If
-            ColItem(iCol) = Trim$(e(i))
-            If ColWidth(iCol) = 0 Then
-                ColWidth(iCol) = Len(Trim(e(i))) + (Len(sColsMargin) * 2)
-            End If
-        Next i
-        WriteItems
-    End If
-        
-xt: Exit Sub
-End Sub
-
-Private Property Let AlignedByColumns(ByVal b As Boolean)
-' ----------------------------------------------------------------------------
-' The change from one mode to another (from bColsAligned = True to False
-' and vice versa) indicates the begin of a new series of log entries.
-' ----------------------------------------------------------------------------
-    If Not bColsAligned = b Then
-        bColsAligned = b
-        bNewLog = True
-    End If
-End Property
-
 Public Property Get FileFullName() As String:   FileFullName = sFileFullName:   End Property
 
 Public Property Let FileFullName(ByVal s As String)
 ' ----------------------------------------------------------------------------
-' Explicitely specifies the log file's name and location. This is an
+' Explicitly specifies the log file's name and location. This is an
 ' alternative to the provision of FileName and Path
 ' ----------------------------------------------------------------------------
     With fso
@@ -351,31 +355,6 @@ Public Property Let Path(ByVal v As Variant)
     End Select
     
 End Property
-
-Public Sub Title(ParamArray t() As Variant)
-' ----------------------------------------------------------------------------
-' Alternatively to the "Service" property!
-' ----------------------------------------------------------------------------
-    Dim i       As Long
-    Dim s       As String
-    Dim iLine   As Long
-    
-    sAlignmentTitle = "C" ' default
-    bNewLog = True
-    ReDim aTitle(UBound(t) + 1)
-    For i = LBound(t) To UBound(t)
-        s = t(i)
-        iLine = i + 1
-        If Left(s, 1) = "|" Then
-            If i = LBound(t) _
-            Then sAlignmentTitle = "L"
-            s = Right(s, Len(s) - 1)
-        End If
-        aTitle(iLine) = s
-    Next i
-    aItems = vbNullString
-
-End Sub
 
 Public Property Let WithTimeStamp(ByVal b As Boolean)
     bWithTimeStamp = b
@@ -437,28 +416,6 @@ Private Function Align(ByVal a_strng As String, _
 
 End Function
 
-Private Function AppErr(ByVal app_err_no As Long) As Long
-' ------------------------------------------------------------------------------
-' Ensures that a programmed (i.e. an application) error numbers never conflicts
-' with the number of a VB runtime error. Thr function returns a given positive
-' number (app_err_no) with the vbObjectError added - which turns it into a
-' negative value. When the provided number is negative it returns the original
-' positive "application" error number e.g. for being used with an error message.
-' ------------------------------------------------------------------------------
-    AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
-End Function
-
-Private Function IsAllocated(arr As Variant) As Boolean
-' -----------------------------------------------------------------------------------
-' Retruns TRUE when an array (arr) is allocated, i.e. when it has a valid LBound and
-' and an LBound which is less or equal its UBound.
-' -----------------------------------------------------------------------------------
-    On Error Resume Next
-    IsAllocated = IsArray(arr) _
-              And Not IsError(LBound(arr, 1)) _
-              And LBound(arr, 1) <= UBound(arr, 1)
-End Function
-
 Private Function Aligned(ByVal a_string As String) As String
 ' -----------------------------------------------------------------------------------
 ' Returns the implicit alignment of a string (a_string) which is either "L"eft,
@@ -495,23 +452,197 @@ Private Function Aligned(ByVal a_string As String) As String
 
 End Function
 
-Public Sub ColsAlignmentHeader(ParamArray c_align() As Variant)
+Private Function AppErr(ByVal app_err_no As Long) As Long
+' ------------------------------------------------------------------------------
+' Ensures that a programmed (i.e. an application) error numbers never conflicts
+' with the number of a VB runtime error. Thr function returns a given positive
+' number (app_err_no) with the vbObjectError added - which turns it into a
+' negative value. When the provided number is negative it returns the original
+' positive "application" error number e.g. for being used with an error message.
+' ------------------------------------------------------------------------------
+    AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
+End Function
+
+Private Function AsArrayOfStrings(ByVal a_string As String, _
+                                  ByVal a_split_by As String) As String()
 ' -----------------------------------------------------------------------------------
-' This method explicitely specifies the columns alignment of the column headers.
-' Only when no explicit header alignment had been specified, the alignment is considered
-' "implicit", indicated by the number of left and right spaces.
+' Returns a string (a_string) as an array of strings considering a split character
+' (a_split_by). Any leading or trailing split character is removed before the split.
 ' -----------------------------------------------------------------------------------
-    Dim i       As Long
-    Dim iCol    As Long
+    If InStr(a_string, a_split_by) <> 0 Then
+        If Left(a_string, 1) = a_split_by Then a_string = Right(a_string, Len(a_string) - 1)
+        If Right(a_string, 1) = a_split_by Then a_string = Left(a_string, Len(a_string) - 1)
+    End If
+    AsArrayOfStrings = Split(a_string, a_split_by)
+End Function
+
+Private Sub BeginOfNewLogEntries(ByVal n_items As Boolean, _
+                                 ByVal n_line As String)
+' -----------------------------------------------------------------------------------
+' Implicitely performed with the writing of the first line of a new series of log
+' entries provided:
+' - A new instance of the Class-Module had been established
+' - The Title Property has been asigned a (new) title
+' - The _ColsHeader_ method had been used to specify new column headers
+' - A new log-file has been stablished
+'
+' Writes: - A delimiting line (=====) when the log-file already has entries, in the
+'           width of the about to be written line (n_line)
+'         - The specified Title(s) if any, , in the width of the about to be written
+'           line (n_line)
+'         - A column header, provided the about to be writen line (n_line) is for
+'           items aligned in columns (n_items = True)
+' -----------------------------------------------------------------------------------
+    Const PROC = "BeginOfNewLogEntries"
     
-    For i = LBound(c_align) To UBound(c_align)
-        iCol = i + 1
-        ColAlignmentHeader(iCol) = Aligned(c_align(i))
-    Next i
+    On Error GoTo eh
+    Dim s                   As String
+    Dim sDelimiter          As String
+    Dim i                   As Long
+    Dim sColDelim           As String
+    Dim v                   As Variant
+    Dim lLenTitle           As Long
+    Dim sHeader             As String
+    Dim sHeaderUnderLine    As String
+    Dim sLogDelim           As String
+    Dim sTitle              As String
+    Dim lWidthEntry         As Long
+    Dim lLenHeader          As Long
+    Dim sTitleFill          As String
     
+    ProvideLogFile
+    '~~ Calculate max title width
+    If IsAllocated(aTitle) Then
+        For i = LBound(aTitle) To UBound(aTitle)
+            If aTitle(i) <> vbNullString Then
+                lLenTitle = Max(lLenTitle, Len(aTitle(i)), Len(n_line))
+            End If
+        Next i
+    End If
+    
+    '~~ Assemble column header
+    sHeader = vbNullString
+    If IsAllocated(aHeaders) Then
+        For i = LBound(aHeaders) To UBound(aHeaders)
+            sHeader = sHeader & sColDelim & ColHeader(i)
+            sColDelim = sColsDelimiter
+            lLenHeader = Max(lLenHeader, Len(sHeader))
+        Next i
+    End If
+            
+    lWidthEntry = Max(lLenTitle, lLenHeader, Len(n_line))
+    '~~ New log delimiter line
+    If fso.GetFile(sFileFullName).Size <> 0 Then
+        '~~ Log entries delimiter
+        WriteLine String(lWidthEntry, "=")
+    End If
+    
+    If IsAllocated(aTitle) Then
+        '~~ Write (optionally multiline) title
+        If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
+        For i = LBound(aTitle) To UBound(aTitle)
+            If aTitle(i) <> vbNullString Then
+                sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", sTitleFill)
+                WriteLine sTitle
+            End If
+        Next i
+        '~~ Write title underline
+        WriteLine String(lWidthEntry, "-")
+    End If
+      
+    If sHeader <> vbNullString Then
+        WriteLine sHeader
+        '~~ Column header under-line based on the header line written
+        v = Split(sHeader, sColsDelimiter)
+        sHeaderUnderLine = vbNullString
+        sColDelim = vbNullString
+        For i = LBound(v) To UBound(v)
+            sHeaderUnderLine = sHeaderUnderLine & sColDelim & String(Len(v(i)), "-")
+            If sColsDelimiter = "|" _
+            Then sColDelim = "+" _
+            Else sColDelim = " "
+        Next i
+        If Len(sHeaderUnderLine) < lWidthEntry Then
+            sHeaderUnderLine = sHeaderUnderLine & String(lWidthEntry - Len(sHeaderUnderLine), "-")
+        End If
+        WriteLine sHeaderUnderLine
+    End If
+        
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
-Public Sub ColsAlignmentItem(ParamArray c_align() As Variant)
+Public Sub Dsply()
+' -----------------------------------------------------------------------------------
+' Displays the Log-Files content.
+' -----------------------------------------------------------------------------------
+    ShellRun sFileFullName
+End Sub
+
+Public Sub Entry(ParamArray e() As Variant)
+' ----------------------------------------------------------------------------
+' - When a single string without any | is provided the string is appended as a
+'   new line to the log file
+' - When multiple strings are provided or a string contains vertical bars (|)
+'   the indicated items are writen aligned in columns to the log-file
+' ----------------------------------------------------------------------------
+    Dim i       As Long
+    Dim iCol    As Long
+    Dim s       As String
+    Dim v       As Variant
+    Dim lWidth  As Long
+    
+    If LBound(e) = UBound(e) Then
+        '~~ Only a single string has been provided
+        s = e(LBound(e))
+        If InStr(s, "|") <> 0 Then
+            '~~ The | in the string indicates items for being column aligned
+            '~~ and additionally the implicit width
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+            v = Split(s, "|")
+            AlignedByColumns = True
+            lColumns = UBound(v)
+            For i = LBound(v) To UBound(v)
+                iCol = i + 1
+                ColItem(iCol) = v(i)
+                If ColWidth(iCol) = 0 Then
+                    ColWidth(iCol) = Len(v(i))
+                End If
+            Next i
+            WriteItems
+        Else
+            AlignedByColumns = False
+            If bNewLog _
+            Then BeginOfNewLogEntries n_items:=False, n_line:=s
+            WriteLine s
+            bNewLog = False
+        End If
+    Else
+        '~~ When more than one string is provided this indicates items for being column aligned
+        AlignedByColumns = True
+        lColumns = UBound(e) + 1
+        For i = LBound(e) To UBound(e)
+            iCol = i + 1
+            If bNewLog Then ' the first row determines the items alignment
+                ColAlignmentItem(iCol) = Aligned(e(i))
+            End If
+            ColItem(iCol) = Trim$(e(i))
+            If ColWidth(iCol) = 0 Then
+                ColWidth(iCol) = Len(Trim(e(i))) + (Len(sColsMargin) * 2)
+            End If
+        Next i
+        WriteItems
+    End If
+        
+xt: Exit Sub
+End Sub
+
+Public Sub EntryItemsAlignment(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' When ColWidths are not provided the columns width defaults to the width of the
 ' colum headers plus 2 margin spaces.
@@ -524,139 +655,6 @@ Public Sub ColsAlignmentItem(ParamArray c_align() As Variant)
         ColAlignmentItem(iCol) = c_align(i)
     Next i
     
-End Sub
-
-Private Property Let ColItem(Optional ByVal c_col As Long, _
-                                      ByVal c_item As String)
-    If Not IsAllocated(aItems) Then
-        ReDim aItems(c_col)
-    ElseIf c_col > UBound(aItems) Then
-        ReDim Preserve aItems(c_col)
-    End If
-    aItems(c_col) = c_item
-
-End Property
-
-Private Property Get ColItem(Optional ByVal c_col As Long) As String
-' -----------------------------------------------------------------------------------
-' Returns the item of a column (c_col):
-' - Aligned as explicitely specified or, when not specified explicitely, aligned as
-'   indicated implicit by the very first.
-' - In the width explicitely specified and/or specified by the header's width or when
-'   no width is specified by the width of the very first row's item width.
-' Note 1: Any column(c_col) beyond UBound(aItems) is ignored, i.e. returns a
-'         vbNullString.
-' -----------------------------------------------------------------------------------
-    Dim lWidth  As Long
-    
-    If IsAllocated(aItems) Then
-        If c_col < lColumns Then
-            If ColWidth(c_col) = 0 Then
-                '~~ When yet no column width is specified, the first line's item specifies it
-                ColWidth(c_col) = Len(aItems(c_col))
-            End If
-            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin)
-        ElseIf c_col = lColumns Then
-            '~~ The rightmost column's width has no width limit and uses the lenght of the item
-            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin)  ' rightmost no lenght limit and left aligned
-            If bNewLog Then
-                '~~ When this is the first line of a new series of log entries
-                '~~ the width of the rightmost column matters for a correct
-                '~~ alignment of the headers - in case specified - and the width of the title - in case specified
-                lWidth = ColWidth(c_col)
-                ColWidth(c_col) = Max(Len(aItems(c_col)), lWidth)
-            End If
-        End If
-    End If
-    
-End Property
-
-Public Sub Headers(ParamArray c_headers() As Variant)
-' -----------------------------------------------------------------------------------
-' Note: ColsWidth defaults to the maximum of an already specified width and the width
-'       if the corresponding header string.
-' -----------------------------------------------------------------------------------
-    Const PROC = "Headers"
-    
-    On Error GoTo eh
-    Dim i       As Long
-    Dim j       As Long
-    Dim iCol    As Long
-    Dim s       As String
-    Dim v       As Variant
-    
-    aHeaders = vbNullString
-    For i = LBound(c_headers) To UBound(c_headers)
-        s = c_headers(i)
-        If InStr(s, sColsDelimiter) <> 0 Then
-            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
-            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
-            v = Split(s, sColsDelimiter)
-            For j = LBound(v) To UBound(v)
-                If v(j) <> vbNullString Then
-                    iCol = j + 1
-                    If ColAlignmentHeader(iCol) = vbNullString Then
-                        '~~ Implicit alignment when none has yet been specified explicitely
-                        ColAlignmentHeader(iCol) = Aligned(v(j))
-                    End If
-                    s = v(j)
-                    If Len(s) < Len(Trim(s)) + (2 * Len(sColsMargin)) Then
-                        '~~ The minimum width of a column header is the mere characters
-                        '~~ string enclosed in a leading and trailing sColsMargin
-                        s = sColsMargin & Trim(s) & sColsMargin
-                    End If
-                    ColHeader(iCol) = Trim(s)
-                    ColWidth(iCol) = Len(s) ' enclosed in || the width is implicit
-                End If
-            Next j
-        Else
-            iCol = i + 1
-            If ColAlignmentHeader(iCol) = vbNullString Then
-                '~~ Implicit alignment when none has been specified explicitely
-                ColAlignmentHeader(iCol) = Aligned(c_headers(i))
-            End If
-            ColHeader(iCol) = Trim(c_headers(i))
-            ColWidth(iCol) = Len(sColsMargin & Trim(c_headers(i)) & sColsMargin)
-        End If
-    Next i
-    
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Public Sub ColsWidth(ParamArray c_widths() As Variant)
-' -----------------------------------------------------------------------------------
-' Specifies the width of n columns which is the maximum of an already specified and
-' this one specified width.
-' -----------------------------------------------------------------------------------
-    Const PROC = "ColsWidth"
-    
-    On Error GoTo eh
-    Dim i       As Long
-    Dim iCol    As Long
-    
-    For i = LBound(c_widths) To UBound(c_widths)
-        iCol = i + 1
-        ColWidth(iCol) = c_widths(i)
-    Next i
-
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Public Sub Dsply()
-' -----------------------------------------------------------------------------------
-'
-' -----------------------------------------------------------------------------------
-    ShellRun sFileFullName
 End Sub
 
 Private Function ErrMsg(ByVal err_source As String, _
@@ -756,6 +754,88 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
+Public Sub Headers(ParamArray c_headers() As Variant)
+' -----------------------------------------------------------------------------------
+' Note: Widths defaults to the maximum of an already specified width and the width
+'       if the corresponding header string.
+' -----------------------------------------------------------------------------------
+    Const PROC = "Headers"
+    
+    On Error GoTo eh
+    Dim i       As Long
+    Dim j       As Long
+    Dim iCol    As Long
+    Dim s       As String
+    Dim v       As Variant
+    
+    aHeaders = vbNullString
+    For i = LBound(c_headers) To UBound(c_headers)
+        s = c_headers(i)
+        If InStr(s, "|") <> 0 Then
+            v = AsArrayOfStrings(s, "|")
+            For j = LBound(v) To UBound(v)
+                If v(j) <> vbNullString Then
+                    iCol = j + 1
+                    If ColAlignmentHeader(iCol) = vbNullString Then
+                        '~~ Implicit alignment when none has yet been specified explicitly
+                        ColAlignmentHeader(iCol) = Aligned(v(j))
+                    End If
+                    s = v(j)
+                    If Len(s) < Len(Trim(s)) + (2 * Len(sColsMargin)) Then
+                        '~~ The minimum width of a column header is the mere characters
+                        '~~ string enclosed in a leading and trailing sColsMargin
+                        s = WithMargins(s, sColsMargin)
+                    End If
+                    ColHeader(iCol) = Trim(s)
+                    ColWidth(iCol) = Len(s) ' enclosed in || the width is implicit
+                End If
+            Next j
+        Else
+            iCol = i + 1
+            If ColAlignmentHeader(iCol) = vbNullString Then
+                '~~ Implicit alignment when none has been specified explicitly
+                ColAlignmentHeader(iCol) = Aligned(c_headers(i))
+            End If
+            ColHeader(iCol) = Trim(c_headers(i))
+            ColWidth(iCol) = Len(WithMargins(c_headers(i), sColsMargin))
+        End If
+    Next i
+    
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
+Public Sub HeadersAlignment(ParamArray c_align() As Variant)
+' -----------------------------------------------------------------------------------
+' This method explicitly specifies the columns alignment of the column headers.
+' Only when no explicit header alignment had been specified, the alignment is considered
+' "implicit", indicated by the number of left and right spaces.
+' -----------------------------------------------------------------------------------
+    Dim i       As Long
+    Dim iCol    As Long
+    
+    For i = LBound(c_align) To UBound(c_align)
+        iCol = i + 1
+        ColAlignmentHeader(iCol) = Aligned(c_align(i))
+    Next i
+    
+End Sub
+
+Private Function IsAllocated(arr As Variant) As Boolean
+' -----------------------------------------------------------------------------------
+' Retruns TRUE when an array (arr) is allocated, i.e. when it has a valid LBound and
+' and an LBound which is less or equal its UBound.
+' -----------------------------------------------------------------------------------
+    On Error Resume Next
+    IsAllocated = IsArray(arr) _
+              And Not IsError(LBound(arr, 1)) _
+              And LBound(arr, 1) <= UBound(arr, 1)
+End Function
+
 Private Function Max(ParamArray va() As Variant) As Variant
 ' ----------------------------------------------------------------------------
 ' Returns the maximum value of all values provided (va).
@@ -781,6 +861,13 @@ Private Function Min(ParamArray va() As Variant) As Variant
     Next v
     
 End Function
+
+Public Sub NewLog()
+    bNewLog = True
+    aTitle = vbNullString
+    aHeaders = vbNullString
+    aItems = vbNullString
+End Sub
 
 Private Sub ProvideLogFile()
     With fso
@@ -856,6 +943,77 @@ Private Function TimeStamp() As String ' Public for test purpose only
     End If
 End Function
 
+Public Sub Title(ParamArray t() As Variant)
+' ----------------------------------------------------------------------------
+' Alternatively to the "Service" property!
+' ----------------------------------------------------------------------------
+    Dim i       As Long
+    Dim s       As String
+    Dim iLine   As Long
+    
+    sAlignmentTitle = "C" ' default
+    bNewLog = True
+    ReDim aTitle(UBound(t) + 1)
+    For i = LBound(t) To UBound(t)
+        s = t(i)
+        iLine = i + 1
+        If Left(s, 1) = "|" Then
+            If i = LBound(t) _
+            Then sAlignmentTitle = "L"
+            s = Right(s, Len(s) - 1)
+        End If
+        aTitle(iLine) = s
+    Next i
+    aItems = vbNullString
+
+End Sub
+
+Public Sub Widths(ParamArray c_widths() As Variant)
+' -----------------------------------------------------------------------------------
+' Specifies the minimum width of n columns. Each columns specified width may be
+' expanded by a) an implicite header width specification, b) the width of the first
+' _Entry_, i.e. finally it will be the maximum of the three.
+' -----------------------------------------------------------------------------------
+    Const PROC = "Widths"
+    
+    On Error GoTo eh
+    Dim i       As Long
+    Dim iCol    As Long
+    
+    For i = LBound(c_widths) To UBound(c_widths)
+        iCol = i + 1
+        ColWidth(iCol) = c_widths(i)
+    Next i
+
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
+Private Function WithMargins(ByVal w_string As String, _
+                             ByVal w_margin As String) As String
+' -----------------------------------------------------------------------------------
+' Returns a string (w_string) with a leading and trailing margin (w_margin) in case
+' the string (w_string) not already begins and/or ends with a margin (w_margin). A
+' margin = vbNullString is ignored.
+' -----------------------------------------------------------------------------------
+    Dim s As String
+    If w_margin <> vbNullString Then
+        If Left(w_string, 1) <> w_margin _
+        Then s = w_margin & w_string _
+        Else s = w_string
+        If Right(s, 1) <> w_margin _
+        Then s = s & w_margin
+        WithMargins = s
+    Else
+        WithMargins = w_string
+    End If
+    
+End Function
+
 Private Sub WriteItems()
 ' -----------------------------------------------------------------------------------
 ' Add a line to the log file aligned in columns.
@@ -914,107 +1072,3 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Sub BeginOfNewLogEntries(ByVal n_items As Boolean, _
-                                 ByVal n_line As String)
-' -----------------------------------------------------------------------------------
-' Implicitely performed with the writing of the first line of a new series of log
-' entries provided:
-' - A new instance of the Class-Module had been established
-' - The Title Property has been asigned a (new) title
-' - The _ColsHeader_ method had been used to specify new column headers
-' - A new log-file has been stablished
-'
-' Writes: - A delimiting line (=====) when the log-file already has entries, in the
-'           width of the about to be written line (n_line)
-'         - The specified Title(s) if any, , in the width of the about to be written
-'           line (n_line)
-'         - A column header, provided the about to be writen line (n_line) is for
-'           items aligned in columns (n_items = True)
-' -----------------------------------------------------------------------------------
-    Const PROC = "BeginOfNewLogEntries"
-    
-    On Error GoTo eh
-    Dim s                   As String
-    Dim sDelimiter          As String
-    Dim i                   As Long
-    Dim sColDelim           As String
-    Dim v                   As Variant
-    Dim lLenTitle           As Long
-    Dim sHeader             As String
-    Dim sHeaderUnderLine    As String
-    Dim sLogDelim           As String
-    Dim sTitle              As String
-    Dim lWidthEntry         As Long
-    Dim lLenHeader          As Long
-    Dim sTitleFill          As String
-    
-    ProvideLogFile
-    '~~ Calculate max title width
-    If IsAllocated(aTitle) Then
-        For i = LBound(aTitle) To UBound(aTitle)
-            If aTitle(i) <> vbNullString Then
-                lLenTitle = Max(lLenTitle, Len(aTitle(i)), Len(n_line))
-            End If
-        Next i
-    End If
-    
-    '~~ Assemble column header
-    sHeader = vbNullString
-    If IsAllocated(aHeaders) Then
-        For i = LBound(aHeaders) To UBound(aHeaders)
-            sHeader = sHeader & sColDelim & ColHeader(i)
-            sColDelim = sColsDelimiter
-            lLenHeader = Max(lLenHeader, Len(sHeader))
-        Next i
-    End If
-            
-    lWidthEntry = Max(lLenTitle, lLenHeader, Len(n_line))
-    '~~ New log delimiter line
-    If fso.GetFile(sFileFullName).Size <> 0 Then
-        '~~ Log entries delimiter
-        WriteLine String(lWidthEntry, "=")
-    End If
-    
-    If IsAllocated(aTitle) Then
-        '~~ Write (optionally multiline) title
-        If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
-        For i = LBound(aTitle) To UBound(aTitle)
-            If aTitle(i) <> vbNullString Then
-                sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", sTitleFill)
-                WriteLine sTitle
-            End If
-        Next i
-        '~~ Write title underline
-        WriteLine String(lWidthEntry, "-")
-    End If
-      
-    If sHeader <> vbNullString Then
-        WriteLine sHeader
-        '~~ Column header under-line based on the header line written
-        v = Split(sHeader, sColsDelimiter)
-        sHeaderUnderLine = vbNullString
-        sColDelim = vbNullString
-        For i = LBound(v) To UBound(v)
-            sHeaderUnderLine = sHeaderUnderLine & sColDelim & String(Len(v(i)), "-")
-            sColDelim = "+"
-        Next i
-        If Len(sHeaderUnderLine) < lWidthEntry Then
-            sHeaderUnderLine = sHeaderUnderLine & String(lWidthEntry - Len(sHeaderUnderLine), "-")
-        End If
-        WriteLine sHeaderUnderLine
-    End If
-        
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
-Public Sub NewLog()
-    bNewLog = True
-    aTitle = vbNullString
-    aHeaders = vbNullString
-    aItems = vbNullString
-End Sub

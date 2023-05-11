@@ -431,19 +431,12 @@ Private Sub Test_00_Regression()
         .Entry " 04", "xxxx", " yyyy       ", "         zzzzzz   "
         .Entry "04", "xxxx", " yyyyy       ", "zzzzzz "
         .NewLog
-        .ColsWidth 2, 10, 25, 30
+        .Widths 2, 10, 25, 30
+        .ColsDelimiter = " "
         .Headers " 05", "Column-01-Header", "Column-02-Header", "Column-03-Header"
         .Entry "05", "xxx", "yyyyyy", "zzzzzz"
         .Entry "05", "xxx", "yyyyyy", "zzzzzz"
         .Entry "05", "xxx", "yyyyyy", "zzzzzz"
-'        .Title "Method 'Entry' test: New title, with marging (1st Line)" _
-'             , "Method 'Entry' test: New title, with marging (2nd Line)"
-'        .ColsMargin = vbNullString
-'        .ColsHeader "Column-01-Header", "-Column-02-Header-", "--Column-03-Header--"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
-'        .Entry "xxx", "yyyyyy", "zzzzzz"
-'
         If Not mErH.Regression Then
             .Dsply
         End If
@@ -485,7 +478,7 @@ End Sub
 '        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
 '        .WithTimeStamp = bTimeStamp
 '        .Header " Header-01-Rigth", "Header-02-Left ", " Header-03-Centered "
-'        .ColsWidth 25, 25, 25
+'        .Widths 25, 25, 25
 '        .Entry "xxxxxx", "yyyyy", "zzzzzzzzzzz"
 '        If Not mErH.Regression Then
 '            .Dsply

@@ -23,9 +23,9 @@
  04 |  xxxx  |   yyyyyy | Rightmost column without width limit!
  04 |  xxxx  |     yyyy | zzzzzz
  04 |  xxxx  |    yyyyy | zzzzzz
-=============================================================
- 05 | Column-01-Header | Column-02-Header | Column-03-Header 
-----+------------------+------------------+------------------
- 05 |       xxx        |      yyyyyy      | zzzzzz
- 05 |       xxx        |      yyyyyy      | zzzzzz
- 05 |       xxx        |      yyyyyy      | zzzzzz
+======================================================
+ 05 Column-01-Header Column-02-Header Column-03-Header
+ -- ---------------- ---------------- ----------------
+05        xxx             yyyyyy      zzzzzz
+05        xxx             yyyyyy      zzzzzz
+05        xxx             yyyyyy      zzzzzz
