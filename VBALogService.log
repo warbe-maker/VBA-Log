@@ -1,31 +1,43 @@
+Regression test case 01: A single lines, centered title
+-------------------------------------------------------
  01 1. Single string, new log, no title. 
  01 2. Single string, new log, no title. 
-==============================
------- 02 New Log title ------
-------------------------------
+============================================================================
+Regression test case 02:                                                    
+The title implicitly indicates the begin of a new series of log entries.    
+Two trailing spaces (or more trailing than leading) of the first title      
+line's string indicates 'left adjusted'!.                                   
+Note: Without any space to the left and right or equal spaces indicates     
+centered which is quasi the default.                                        
+----------------------------------------------------------------------------
  02 1. Single string, new log.
  02 2. Single string without any width limit
-==========================================================
- 03 | xxxx | yyyyyy | Rightmost column without width limit
- 03 | xxxx |   yyyy | Method 'NewLog' indicated the begin of a new series of log entries
- 03 | xxxx |  yyyyy | Log entries wthout a title
-=====================================================================================
- 04 In this test the Header method implicitely specifies:                            
-    - Implicitely the alignment by means of leading and trailing spaces,             
-    - Implicitely the column widths by vertical bars (|)!                            
-    Note-1: The leading | (not printed) indicates left adjusted                      
-    Note-2: The header alignment is idependant from the items alignment              
-    Note-3: The column width is the max of any explicit specified, the header's width
-            and the first row's items width                                          
--------------------------------------------------------------------------------------
- Nr | Item-1 |  Item-2  | Item-3 (no width limit)             
-----+--------+----------+------------------------------------------------------------
- 04 |  xxxx  |   yyyyyy | Rightmost column without width limit!
- 04 |  xxxx  |     yyyy | zzzzzz
- 04 |  xxxx  |    yyyyy | zzzzzz
-======================================================
- 05 Column-01-Header Column-02-Header Column-03-Header
- -- ---------------- ---------------- ----------------
-05        xxx             yyyyyy      zzzzzz
-05        xxx             yyyyyy      zzzzzz
-05        xxx             yyyyyy      zzzzzz
+============================================================================
+   03  xxxx    yyyyyy Rightmost column without width limit
+   03  xxxx      yyyy Method 'NewLog' indicated the begin of a new series of log entries
+   03  xxxx     yyyyy Log entries wthout a title
+=================================================================================
+Regression test case 04:                                                         
+The 'Headers' method implicitely specifies:                                      
+- the alignment by means of leading and trailing spaces,                         
+- the column widths by vertical bars (|)!                                        
+- Headers with leading and trailing | indicate implicit width specification      
+- Leading and/or trailing spaces implicitly indicate the kind of alignment.      
+(Headers alignment is independant from the Entry alignment!)                     
+- The maximum column width is the maximimum of the implicit haeder and the first 
+- lines items' width.                                                            
+and the first row's items width                                                  
+---------------------------------------------------------------------------------
+| Nr | Item-1 |  Item-2  | Item-3 (no width limit)             
++----+--------+----------+-------------------------------------------------------
+|04 |  xxxx  |   yyyyyy | Rightmost column without width limit!
+| 04 |  xxxx  |     yyyy | zzzzzz
+| 04 |  xxxx  |    yyyyy | zzzzzz
+========================================================================================
+Regression test case 05:                                                                
+Because no 'Headers' are specified the ColsDelimiter defaults to a single space!        
+The first column item is (implicitly) right adjusted, all the others are left adjusted! 
+----------------------------------------------------------------------------------------
+ 05    xxx                        yyyyyy zzzzzz
+ 05    xxx                        yyyyyy zzzzzz
+ 05    xxx                        yyyyyy zzzzzz

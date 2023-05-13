@@ -410,33 +410,43 @@ Private Sub Test_00_Regression()
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
+        .Title "Regression test case 01: A single lines, centered title"
         .Entry " 01 1. Single string, new log, no title. "
         .Entry " 01 2. Single string, new log, no title. "
-        .Title " 02 New Log title" ' explicit indication of a new series of log entries
+        .Title " Regression test case 02:  " _
+             , " The title implicitly indicates the begin of a new series of log entries.  " _
+             , " Two trailing spaces (or more trailing than leading) of the first title" _
+             , " line's string indicates 'left adjusted'!." _
+             , "     Note: Without any space to the left and right or equal spaces indicates" _
+             , "           centered which is quasi the default."
         .Entry " 02 1. Single string, new log."
         .Entry " 02 2. Single string without any width limit"
         .NewLog ' explicit indication of a new series of log entries
         .Entry " 03", "xxxx", " yyyyyy", " Rightmost column without width limit"
         .Entry " 03", "xxxx", " yyyy       ", "Method 'NewLog' indicated the begin of a new series of log entries"
         .Entry " 03", "xxxx", " yyyyy       ", "Log entries wthout a title"
-        .Title "| 04 In this test the Header method implicitely specifies:" _
-             , "|    - Implicitely the alignment by means of leading and trailing spaces," _
-             , "|    - Implicitely the column widths by vertical bars (|)!" _
-             , "|    Note-1: The leading | (not printed) indicates left adjusted" _
-             , "|    Note-2: The header alignment is idependant from the items alignment" _
-             , "|    Note-3: The column width is the max of any explicit specified, the header's width" _
-             , "|            and the first row's items width"
+        .Title " Regression test case 04:  " _
+             , " The 'Headers' method implicitely specifies:" _
+             , " - the alignment by means of leading and trailing spaces," _
+             , " - the column widths by vertical bars (|)!" _
+             , " - Headers with leading and trailing | indicate implicit width specification" _
+             , " - Leading and/or trailing spaces implicitly indicate the kind of alignment." _
+             , "   (Headers alignment is independant from the Entry alignment!)" _
+             , " - The maximum column width is the maximimum of the implicit haeder and the first" _
+             , " - lines items' width." _
+             , "         and the first row's items width"
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
-        .Entry " 04", "xxxx", " yyyyyy", " Rightmost column without width limit!  "
-        .Entry " 04", "xxxx", " yyyy       ", "         zzzzzz   "
-        .Entry "04", "xxxx", " yyyyy       ", "zzzzzz "
+        .Entry " 04", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
+        .Entry " 04", "xxxx ", "yyyy       ", "         zzzzzz   "
+        .Entry "04", "xxxx ", "yyyyy       ", "zzzzzz "
         .NewLog
+        .Title " Regression test case 05:  " _
+             , " Because no 'Headers' are specified the ColsDelimiter defaults to a single space!  " _
+             , " The first column item is (implicitly) right adjusted, all the others are left adjusted!"
         .Widths 2, 10, 25, 30
-        .ColsDelimiter = " "
-        .Headers " 05", "Column-01-Header", "Column-02-Header", "Column-03-Header"
-        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
-        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
-        .Entry "05", "xxx", "yyyyyy", "zzzzzz"
+        .Entry " 05", "xxx ", "yyyyyy ", "zzzzzz "
+        .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
+        .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         If Not mErH.Regression Then
             .Dsply
         End If
