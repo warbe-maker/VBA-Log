@@ -381,7 +381,7 @@ Private Sub Test_00_Regression()
 '                           imp = implicit
 '                           exp = explicit (by method)
 '    |   NewLog  |   Col   | Time  |   Width   |
-' No | indicated | Aligned | Stamp | detemined |
+' No | indicated | AlignedImplicitly | Stamp | detemined |
 '    |    by     |         |       |    by     |
 ' ---+-----------+---------+-------+-----------+
 ' 01 | New File  |   no    |  no   | unlimited |
@@ -413,38 +413,36 @@ Private Sub Test_00_Regression()
         .Title "Regression test case 01: A single lines, centered title"
         .Entry " 01 1. Single string, new log, no title. "
         .Entry " 01 2. Single string, new log, no title. "
-        .Title " Regression test case 02:  " _
-             , " The title implicitly indicates the begin of a new series of log entries.  " _
-             , " Two trailing spaces (or more trailing than leading) of the first title" _
-             , " line's string indicates 'left adjusted'!." _
-             , "     Note: Without any space to the left and right or equal spaces indicates" _
-             , "           centered which is quasi the default."
+        .Title "Regression test case 02:  " _
+             , "- The title implicitly indicates the begin of a new series of log entries. " _
+             , "- A trailing space with the first specified title line indicates 'left adjusted'!." _
+             , "  Note: Without any space to the left and right or equal spaces indicates" _
+             , "        centered which is quasi the default."
         .Entry " 02 1. Single string, new log."
         .Entry " 02 2. Single string without any width limit"
-        .NewLog ' explicit indication of a new series of log entries
-        .Entry " 03", "xxxx", " yyyyyy", " Rightmost column without width limit"
-        .Entry " 03", "xxxx", " yyyy       ", "Method 'NewLog' indicated the begin of a new series of log entries"
-        .Entry " 03", "xxxx", " yyyyy       ", "Log entries wthout a title"
+        '~~ The change from non-column to column-aligned implicitly indicates the begin of a new series of log entries
+        .Entry " 03", "xxxx", " yyyyyy", " Alignments: R, C, R, L; Rightmost column without width limit"
+        .Entry " 03", "xxxx", " yyyy       ", "'NewLog' implicit due to the change from non- to column-aligned ..."
+        .Entry " 03", "xxxx", " yyyyy       ", "... because entries are without a title"
         .Title " Regression test case 04:  " _
-             , " The 'Headers' method implicitely specifies:" _
-             , " - the alignment by means of leading and trailing spaces," _
-             , " - the column widths by vertical bars (|)!" _
-             , " - Headers with leading and trailing | indicate implicit width specification" _
-             , " - Leading and/or trailing spaces implicitly indicate the kind of alignment." _
-             , "   (Headers alignment is independant from the Entry alignment!)" _
-             , " - The maximum column width is the maximimum of the implicit haeder and the first" _
-             , " - lines items' width." _
-             , "         and the first row's items width"
+             , "The 'Headers' method implicitely specifies: " _
+             , "- The alignment by means of leading and trailing spaces," _
+             , "- the column widths by vertical bars (|)!" _
+             , "- The maximum column width is the maximimum of the width implicitly specified by" _
+             , "  the 'Headers' first line's specificateion and the width of the first line's width." _
+             , "- Alignment-Headers (implicit): R, C, C, L" _
+             , "- Alignment-Items (implicit)  : R, L, L, L"
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
         .Entry " 04", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
         .Entry " 04", "xxxx ", "yyyy       ", "         zzzzzz   "
         .Entry "04", "xxxx ", "yyyyy       ", "zzzzzz "
         .NewLog
-        .Title " Regression test case 05:  " _
-             , " Because no 'Headers' are specified the ColsDelimiter defaults to a single space!  " _
-             , " The first column item is (implicitly) right adjusted, all the others are left adjusted!"
+        .Title "Regression test case 05:  " _
+             , "Because no 'Headers' are specified the ColsDelimiter defaults to a single space" _
+             , "and the ColsMargin is a vbNullString." _
+             , "Alignment-Items (implicit)  : R, L, C, R"
         .Widths 2, 10, 25, 30
-        .Entry " 05", "xxx ", "yyyyyy ", "zzzzzz "
+        .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         If Not mErH.Regression Then
