@@ -24,7 +24,7 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 ```
 >When no ***Widths*** are explicitly specified the columns width is determined by the width of the first row's items, the width of the rightmost column is unlimited by default. 
 
-### Class Module Methods
+### Methods
 | Method Name         | Function |
 |---------------------|----------|
 |***Dsply***              | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
@@ -35,8 +35,7 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 |***Title***               | ParamArray of strings, Specifies the - optionally multi-line - title of a new series of log entries. Triggers the writing of the column headers provided specified.<br>Examples:<br>- **"Any title"** will be centered,<br> - **"\| &nbsp;&nbsp;&nbsp;Any title"** will be left adjusted including all leading spaces.|
 |***Widths***              | ParamArray of integer values, explicitly specifies [the columns (minimum) width](#column-width-specification).|
 
-
-### Class Module Properties
+### Properties
 | Name          | Description |
 |---------------|-------------|
 |***FileFullName*** | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` [^1] with an ".log" extension |
@@ -46,37 +45,42 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 |***Path***         | String expression, defaults to the `ActiveWorkbook's` [^1] parent folder. |
 |***WithTimeStamp***| Boolean expression, defaults to true, when true each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
 
-
 ### Installation
 Download and open the dedicated development Workbook [VBLogService.xlsb][1] and in the VB-Editor copy (drag and drop) the clsLog Class-Module into your VB-Project. Alternatively copy the below to the clipboard and into a new Class-Module (throughout this README named ******clsLog******).
 ```
 Still waiting for the final code version!
 ```
-## Specifics
-### Columns margin and delimiter
-- With ***Headers*** specified: The Columns-Delimiter defaults to a single space and the Columns-Margin to a vbNullString.
-- Without ***Headers*** specified: The Columns-Delimiter defaults to a vertical bar (|) and the Columns-Margin to a single space.
+## Column alignment details
+### Margin and delimiter
+The columns margin and the columns delimiter are determined by the specification of column ***Headers***. When specified the columns delimiter defaults `|` (vertical bar) and the margin defaults to a  `" "` (single space). When no ***Headers*** were specified the columns delimiter defaults to a `" "` (single space and the margin defaults to a vbNullString.
+
 ### Column width specification
-- **Explicit specification**: When none is specified by means of the ***Widths*** method the width defaults to the maximum of the width of the corresponding column's header and the width of the very first entry's items width, whereby the rightmost columns width is unlimited by default. When no ***Headers*** had been specified the column width defaults to the first ***Entry***'s written item of the corresponding column. Examples:
+#### Explicit columns width specification
+An explicit column ***Widths*** specification is regarded the **minimum** width. It may be expanded by the width of the corresponding column's ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width (whereby the width of the rightmost column is unlimited.<br>Examples:
   - `|20|30|25|` specifies the minimum width for 3 columns
   - `20,30,25` same as above.
-- **Implicit specification**: See [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification)
+  - `,,,30` specifies the minimum width only for the 3rd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width 
+#### Implicit columns width specification
+See [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification)
 
 ### Column alignment specification
-- **Explicit (***HeadersAlignment***,  ***EntryItemsAlignment***)**:<br>When no alignment is explicitly specified by means of the corresponding method the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]: Examples for the explicit alignment specification:
+#### Explicit column alignment specification
+- For ***Headers***: ***HeadersAlignment*** method
+- For ***Entry*** items: ***EntryItemsAlignment*** method
+
+For each column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]
+
+Examples:
   - `|C|L|R|` specifies the alignments centered, left adjusted and right adjusted for the first 3 columns
   - `"C","L","R"` same as above.
   - >Note: Any string not beginning with C, L, or R defaults to **C**entered
-- **Explicit ***Entry*** items alignment**: When none is specified by means of the ***EntryItemsAlignment*** method and none is specified implicitly by means of the ***Entry*** method, the alignment defaults to **L**eft adjusted. Examples:
-  - `|C|L|R|` specifies the alignments centered, left adjusted and right adjusted for the first 3 columns
-  - `"C","L","R"` same as above.
 
 #### Implicit column width and alignment specification 
-In general the implicit specification is done by means of vertical bars (|) indicating columns. Note: Spaces are indicated by dots (.).
+For all columns the width and/or the alignment has not explicitly specified, both is derived from an implicit specification as follows. The specification may be a single vertical bar (|) delimited string or an array of string expressions.
 
-| &nbsp;&nbsp;&nbsp;&nbsp;Example&nbsp;&nbsp;&nbsp;&nbsp; | Adjustment | Width | Common rule |
-|---------------------|------------|-------|-------------|
-| `|xxx.|`<br>`|.xxxx..|` | left<br>left       | 5<br>7     | **Alignment**: A number of trailing spaces greater than the number of leading spaces indicates **L**eft adjusted.|
+| &nbsp;&nbsp;&nbsp;&nbsp;Example&nbsp;&nbsp;&nbsp;&nbsp; | Alignment | Width | Alignment Rule |
+|---------------------|:----------:|:-----:|-------------|
+| `|xxx.|`<br>`|.xxxx..|`<br>`"xxx."`<br>`".xxx.."` | left<br>left<br>left<br>left       | 5<br>7<br>5<br>7 | A number of trailing spaces greater than the number of leading spaces indicates **L**eft adjusted.|
 | `|xxx|`<br>`|.xxx.|`| centered   | 4     | None or an equal number of leading and trailing spaces indicates **C**entered. |
 | `|.xxx|`<br>`|....xxx..|`            | right<br>right      | 5<br>9     | A number of leading spaces less than the number of trailing spaces indicates **L**eft adjusted. |
 
