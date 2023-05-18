@@ -1,23 +1,23 @@
-23-05-15 16:05:12 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)
-23-05-15 16:05:12                 >> Begin execution trace 
-23-05-15 16:05:12 00,0000         |  >> mCompMan.ExportChangedComponents
-23-05-15 16:05:12 00,0006         |  |  >> mService.Initiate
-23-05-15 16:05:12 00,0043 00,0037 |  |  << mService.Initiate
-23-05-15 16:05:12 00,0797         |  |  >> mHskpng.CommComps
-23-05-15 16:05:12 00,1888 00,1091 |  |  << mHskpng.CommComps
-23-05-15 16:05:12 00,1890         |  |  >> mCompManDat.Hskpng
-23-05-15 16:05:12 00,2040 00,0150 |  |  << mCompManDat.Hskpng
-23-05-15 16:05:12 00,2042         |  |  >> mService.ExportChangedComponents
-23-05-15 16:05:12 00,2043         |  |  |  >> mHskpng.CommComps
-23-05-15 16:05:12 00,3122 00,1078 |  |  |  << mHskpng.CommComps
-23-05-15 16:05:12 00,3124         |  |  |  >> mExport.ChangedComponents
-23-05-15 16:05:12 00,3424         |  |  |  |  >> mCompManDat.Hskpng
-23-05-15 16:05:12 00,3564 00,0140 |  |  |  |  << mCompManDat.Hskpng
-23-05-15 16:05:13 00,5973         |  |  |  |  >> mService.RemoveTempRenamed
-23-05-15 16:05:13 00,5977 00,0003 |  |  |  |  << mService.RemoveTempRenamed
-23-05-15 16:05:13 00,5979 00,2855 |  |  |  << mExport.ChangedComponents
-23-05-15 16:05:13 00,5980 00,3938 |  |  << mService.ExportChangedComponents
-23-05-15 16:05:13 00,5982 00,5982 |  << mCompMan.ExportChangedComponents
-23-05-15 16:05:13 00,5982 00,5982 << End execution trace 
-23-05-15 16:05:13                 Impact on the overall performance (caused by the trace itself): 00,0001 seconds!
-23-05-15 16:05:13 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)
+23-05-18 19:47:00 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)
+23-05-18 19:47:00                 >> Begin execution trace 
+23-05-18 19:47:00 00,0000         |  >> mCompMan.ExportChangedComponents
+23-05-18 19:47:00 00,0010         |  |  >> mService.Initiate
+23-05-18 19:47:00 00,0053 00,0043 |  |  << mService.Initiate
+23-05-18 19:47:00 00,0690         |  |  >> mHskpng.CommComps
+23-05-18 19:47:00 00,1817 00,1127 |  |  << mHskpng.CommComps
+23-05-18 19:47:00 00,1820         |  |  >> mCompManDat.Hskpng
+23-05-18 19:47:00 00,1980 00,0160 |  |  << mCompManDat.Hskpng
+23-05-18 19:47:00 00,1982         |  |  >> mService.ExportChangedComponents
+23-05-18 19:47:00 00,1984         |  |  |  >> mHskpng.CommComps
+23-05-18 19:47:00 00,3095 00,1112 |  |  |  << mHskpng.CommComps
+23-05-18 19:47:00 00,3098         |  |  |  >> mExport.ChangedComponents
+23-05-18 19:47:00 00,3384         |  |  |  |  >> mCompManDat.Hskpng
+23-05-18 19:47:00 00,3540 00,0156 |  |  |  |  << mCompManDat.Hskpng
+23-05-18 19:47:01 00,5647         |  |  |  |  >> mService.RemoveTempRenamed
+23-05-18 19:47:01 00,5651 00,0004 |  |  |  |  << mService.RemoveTempRenamed
+23-05-18 19:47:01 00,5653 00,2555 |  |  |  << mExport.ChangedComponents
+23-05-18 19:47:01 00,5655 00,3673 |  |  << mService.ExportChangedComponents
+23-05-18 19:47:01 00,5657 00,5657 |  << mCompMan.ExportChangedComponents
+23-05-18 19:47:01 00,5657 00,5657 << End execution trace 
+23-05-18 19:47:01                 Impact on the overall performance (caused by the trace itself): 00,0002 seconds!
+23-05-18 19:47:01 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)

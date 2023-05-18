@@ -180,21 +180,31 @@ Private Function ResultAsserted(ByVal a_file As String, _
                                 ByRef a_line_result As Long, _
                                 ByRef a_lines As Long) As Boolean
 ' ------------------------------------------------------------------------------
-' Returns TRUE when the resut in the log-file conforms with the expected result
-' (a_expected())
+' Returns TRUE when the result in the log-file (a_result) is identical with the
+' expected result (a_expected). Any line preceeding TimeStamp is ignored.
 ' ------------------------------------------------------------------------------
     Dim vResult     As Variant
     Dim vExpected   As Variant
     Dim i           As Long
+    Dim sResult     As String
+    Dim sExpected   As String
     
     ResultAsserted = True
     vExpected = FileArry(sExpectedFile)
     vResult = FileArry(a_file)
     For i = LBound(vResult) To Min(UBound(vResult), UBound(vExpected))
-        If Not vResult(i) Like "*" & vExpected(i) Then
+        sResult = vResult(i)
+        If sResult Like "*-*-*-*:*:*" _
+        Then sResult = Right(sResult, Len(sResult) - Len("yy-mm-dd-hh:mm:ss"))
+        
+        sExpected = vExpected(i)
+        If sExpected Like "*-*-*-*:*:*" _
+        Then sExpected = Right(sExpected, Len(sExpected) - Len("yy-mm-dd-hh:mm:ss"))
+        
+        If Not sResult = sExpected Then
             ResultAsserted = False
-            a_result = vResult(i)
-            a_expected = vExpected(i)
+            a_result = sResult
+            a_expected = sExpected
             a_line_expected = i
             a_line_result = i
         End If
@@ -399,7 +409,7 @@ Private Sub Test_00_Regression()
     
     On Error GoTo eh
     Dim Log             As New clsLog
-    Dim bTimeStamp      As Boolean: bTimeStamp = False
+    Dim bTimeStamp      As Boolean: bTimeStamp = True
     Dim lLines          As Long
     
     sExpectedFile = ThisWorkbook.Path & "\RegressionExpectedResult.log"
@@ -445,6 +455,14 @@ Private Sub Test_00_Regression()
         .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
+         .Title " Regression test case 06:  " _
+              , " ColsDelimiter explicit specified as a single space"
+        .ColsDelimiter = " "
+        .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
+        .Entry " 06", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
+        .Entry " 06", "xxxx ", "yyyy       ", "         zzzzzz   "
+        .Entry "06", "xxxx ", "yyyyy       ", "zzzzzz "
+               
         If Not mErH.Regression Then
             .Dsply
         End If

@@ -10,30 +10,38 @@ Attribute VB_Exposed = False
 Option Explicit
 Option Base 1 ' ensures the index conforms with the column number
 ' -----------------------------------------------------------------------------------
-' Class Module clsLog
+' Class Module clsLog: Common services for writing a log file including writing
+' ==================== entries aligned in columns.
 '
 ' Methods/services:
 ' -----------------
-' - BeginOfNewLogEntries  Delimiter line, title, header, imlicitly when applicable
-'                         or explicitly when desired.
-' - Dsply                 Displays the Log-Files content.
-' - Entry                 - When a single string without any | is provided the string
-'                           is appended as a new line to the log file
-'                         - When multiple strings are provided or the string contains
-'                           vertical bars (|) the indicated items are writen aligned
-'                           in columns to the log-file
-' - EntryItemsAlignment   Explicitly specifies the alignment for each column's
-'                         item, defaults to "L"eft adjusted when not provided.
-' - Headers               Specifies the column headers
-' - HeadersAlignment      Explicitly specifies the alignment for each column's
-'                         header, defaults to "C"entered
-' - Title         w       Specifies the - optionally multiline - title of a new series
-'                         of log entries. Triggers the writing of the column headers
-'                         provided specified.
-' - Widths                Explicitly specifies each columns width, defaults to the
-'                         width of the corresponding column header string, is
-'                         adjusted to the width of the corresponding header string
-'                         when one is provided.
+' - AlignmentHeaders Explicitly specifies the alignment for each column's
+'                    header, defaults to "C"entered
+' - AlignmentItems   Explicitly specifies the alignment for each column's
+'                    item, defaults to "L"eft adjusted when not provided.
+' - ColsDelimiter    Defaults to | when Headers are specified and defaults to a
+'                    single space when no Headers are specified.
+' - Dsply            Displays the Log-Files content by means of ShellRun.
+' - Entry            Either writes a single string, i.e. one without any any |
+'                    and or subsequent string elements of writes an number of
+'                    provided strings or one string with vertical bars, both
+'                    indicating items to be writen alingned in columns.
+' - Headers          Specifies the column headers
+' - NewLog           Explicit indication that the next Entry is the first of a
+'                    new series of log entries. I.e. with the next Entry a
+'                    Delimiter line is written (provided its not a new log file).
+'                    In most cases this method is unnecessary because the begin
+'                    of a new series of log entries is implicitly considered
+'                    with the Title method, the Headers method and in case the
+'                    Entry changes from a single string to column aligned items
+'                    or vice versa.
+' - Title            Specifies the - optionally multiline - title of a new series
+'                    of log entries. Triggers the writing of the column headers
+'                    provided specified.
+' - Widths           Explicitly specifies each columns width, defaults to the
+'                    width of the corresponding column header string, is
+'                    adjusted to the width of the corresponding header string
+'                    when one is provided.
 '
 ' Properties:
 ' -----------
@@ -61,9 +69,9 @@ Private Const DEFAULT_COL_MARGIN            As String = " "
 Private aAlignmentsHeader   As Variant ' Public for test purpose only
 Private aAlignmentsItem     As Variant ' Public for test purpose only
 Private aHeaders            As Variant ' Public for test purpose only
-Private aWidths             As Variant ' Public for test purpose only
 Private aItems              As Variant
 Private aTitle              As Variant
+Private aWidths             As Variant ' Public for test purpose only
 Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
@@ -113,6 +121,10 @@ Private Sub Class_Initialize()
 ' Initializing defaults
 ' -----------------------------------------------------------------------------------
     Init
+    bWithTimeStamp = False
+    sFileFullName = ActiveWorkbook.Path & "\" & DefaultLogFileName
+    sFileName = DefaultLogFileName
+    sPath = ActiveWorkbook.Path
 End Sub
 
 Private Sub Class_Terminate()
@@ -123,6 +135,7 @@ Private Sub Class_Terminate()
     Set aWidths = Nothing
     Set aItems = Nothing
     Set aTitle = Nothing
+    sColsDelimiter = vbNullString
 End Sub
 
 Private Property Let AlignedByColumns(ByVal b As Boolean)
@@ -247,6 +260,10 @@ Private Property Let ColItem(Optional ByVal c_col As Long, _
     End If
     aItems(c_col) = c_item
 
+End Property
+
+Public Property Let ColsDelimiter(ByVal s As String)
+    sColsDelimiter = s
 End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
@@ -433,98 +450,6 @@ Public Function AsArray(ByVal a_string As String, _
     AsArray = Split(a_string, a_split_by)
 End Function
 
-Private Sub BeginOfNewLogEntries(ByVal n_items As Boolean, _
-                                 ByVal n_line As String)
-' -----------------------------------------------------------------------------------
-' Implicitely performed with the writing of the first line of a new series of log
-' entries provided:
-' - A new instance of the Class-Module had been established
-' - The Title Property has been asigned a (new) title
-' - The _ColsHeader_ method had been used to specify new column headers
-' - A new log-file has been stablished
-'
-' Writes: - A delimiting line (=====) when the log-file already has entries, in the
-'           width of the about to be written line (n_line)
-'         - The specified Title(s) if any, , in the width of the about to be written
-'           line (n_line)
-'         - A column header, provided the about to be writen line (n_line) is for
-'           items aligned in columns (n_items = True)
-' -----------------------------------------------------------------------------------
-    Const PROC = "BeginOfNewLogEntries"
-    
-    On Error GoTo eh
-    Dim s                   As String
-    Dim sDelimiter          As String
-    Dim i                   As Long
-    Dim sColDelim           As String
-    Dim v                   As Variant
-    Dim sHeader             As String
-    Dim sHeaderUnderLine    As String
-    Dim sLogDelim           As String
-    Dim sTitle              As String
-    Dim lWidthEntry         As Long
-    Dim lLenHeader          As Long
-    Dim sTitleFill          As String
-    
-    ProvideLogFile
-    
-    '~~ Assemble column header
-    sHeader = vbNullString
-    If IsAllocated(aHeaders) Then
-        For i = LBound(aHeaders) To UBound(aHeaders)
-            sHeader = sHeader & sColsDelimiter & ColHeader(i)
-            lLenHeader = Max(lLenHeader, Len(sHeader))
-        Next i
-    End If
-            
-    lLenTitle = Max(lLenTitle, Len(n_line))
-    lWidthEntry = Max(lLenTitle, lLenHeader, Len(n_line))
-    '~~ New log delimiter line
-    If fso.GetFile(sFileFullName).Size <> 0 Then
-        '~~ Log entries delimiter
-        WriteLine String(lWidthEntry, "=")
-    End If
-    
-    If IsAllocated(aTitle) Then
-        '~~ Write (optionally multiline) title
-        If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
-        For i = LBound(aTitle) To UBound(aTitle)
-            If aTitle(i) <> vbNullString Then
-                If lWidthEntry < lLenTitle _
-                Then sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", sTitleFill) _
-                Else sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, vbNullString, sTitleFill)
-                WriteLine sTitle
-            End If
-        Next i
-        '~~ Write title underline
-        WriteLine String(lWidthEntry, "-")
-    End If
-      
-    If sHeader <> vbNullString Then
-        WriteLine sHeader
-        '~~ Column header under-line based on the header line written
-        v = Split(sHeader, sColsDelimiter)
-        sHeaderUnderLine = vbNullString
-        sColDelim = vbNullString
-        For i = LBound(aHeaders) To UBound(aHeaders)
-            If sColsDelimiter = "|" _
-            Then sHeaderUnderLine = sHeaderUnderLine & "+" & String(Len(ColHeader(i)), "-") _
-            Else sHeaderUnderLine = sHeaderUnderLine & sColsDelimiter & String(Len(ColHeader(i)), "-")
-        Next i
-        If Len(sHeaderUnderLine) < lWidthEntry Then
-            sHeaderUnderLine = sHeaderUnderLine & String(lWidthEntry - Len(sHeaderUnderLine), "-")
-        End If
-        WriteLine sHeaderUnderLine
-    End If
-        
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
 Public Sub Dsply()
 ' -----------------------------------------------------------------------------------
 ' Displays the Log-Files content.
@@ -567,7 +492,7 @@ Public Sub Entry(ParamArray e() As Variant)
         Else
             AlignedByColumns = False
             If bNewLog _
-            Then BeginOfNewLogEntries n_items:=False, n_line:=s
+            Then NewLog n_items:=False, n_line:=s
             WriteLine s
             bNewLog = False
         End If
@@ -595,7 +520,7 @@ Public Sub Entry(ParamArray e() As Variant)
 xt: Exit Sub
 End Sub
 
-Public Sub EntryItemsAlignment(ParamArray c_align() As Variant)
+Public Sub AlignmentItems(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' Explicit specification of the items column alignment. When no explicit alignment is
 ' is specified or the first character is neither L, nor C, nor R, the alignment
@@ -763,8 +688,11 @@ Public Sub Headers(ParamArray c_headers() As Variant)
         End If
     Next i
     If IsAllocated(aHeaders) Then
-        sColsDelimiter = "|"
-        sColsMargin = " "
+        Select Case sColsDelimiter
+            Case vbNullString:      sColsDelimiter = "|":   sColsMargin = " "
+            Case "|":                                       sColsMargin = " "
+            Case " ":                                       sColsMargin = vbNullString
+        End Select
     End If
     
 xt: Exit Sub
@@ -775,7 +703,7 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Public Sub HeadersAlignment(ParamArray c_align() As Variant)
+Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
 ' This method explicitly specifies the columns alignment of the column headers.
 ' In case no explicit headers alignment is specified (or the specification's first
@@ -794,6 +722,18 @@ Public Sub HeadersAlignment(ParamArray c_align() As Variant)
         End Select
     Next i
     
+End Sub
+
+Private Sub Init()
+    aAlignmentsHeader = vbNullString
+    aAlignmentsItem = vbNullString
+    aHeaders = vbNullString
+    aItems = vbNullString
+    aTitle = vbNullString
+    bNewLog = True
+    lKeepDays = 1
+    sColsDelimiter = " "        ' Default when no Headers were specified
+    sColsMargin = vbNullString  ' Default when no Headers were specified
 End Sub
 
 Private Function IsAllocated(arr As Variant) As Boolean
@@ -833,31 +773,119 @@ Private Function Min(ParamArray va() As Variant) As Variant
     
 End Function
 
-Public Sub NewLog()
-    Init
+Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
+                  Optional ByVal n_line As String = vbNullString)
+' -----------------------------------------------------------------------------------
+' When not provided with any arguments this is an explicit indication that the next
+' Entry is the first of a new series of log entries. I.e. with the next Entry a
+' delimiter line (=====) is written - provided its not a new log file. In most cases
+' there is no need to call this method explicitly because is is called implicitly
+' with the next Entry method when a Title or Headers had been specified, or in case
+' the Entry changes from a single string to column aligned items or vice versa.
+' When called implicitly (n_line not a vbNullString) the method writes:
+' - A delimiting line (=====) when the log-file already has entries, in the width of
+'   the about to be written line (n_line)
+' - The specified Title(s) if any, , in the width of the about to be written line
+'   (n_line)
+' - A column header, provided the about to be writen line (n_line) is for items
+'   aligned in columns (n_items = True)
+' -----------------------------------------------------------------------------------
+    Const PROC = "NewLog"
+    
+    On Error GoTo eh
+    Dim s                   As String
+    Dim sDelimiter          As String
+    Dim i                   As Long
+    Dim sColDelim           As String
+    Dim v                   As Variant
+    Dim sHeader             As String
+    Dim sHeaderUnderLine    As String
+    Dim sLogDelim           As String
+    Dim sTitle              As String
+    Dim lWidthEntry         As Long
+    Dim lLenHeader          As Long
+    Dim sTitleFill          As String
+    Dim sUnderLineDelim     As String
+    
+    If n_line = vbNullString Then
+        '~~ Explicit call only indicates that the next Entry will write the first of
+        '~~ a series of new log entries
+        Init
+        GoTo xt
+    End If
+    
+    ProvideLogFile
+    
+    '~~ Assemble column header
+    sHeader = vbNullString
+    If IsAllocated(aHeaders) Then
+        For i = LBound(aHeaders) To UBound(aHeaders)
+            sHeader = sHeader & sColsDelimiter & ColHeader(i)
+            lLenHeader = Max(lLenHeader, Len(sHeader))
+        Next i
+    End If
+            
+    lLenTitle = Max(lLenTitle, Len(n_line))
+    lWidthEntry = Max(lLenTitle, lLenHeader, Len(n_line))
+    '~~ New log delimiter line
+    If fso.GetFile(sFileFullName).Size <> 0 Then
+        '~~ Log entries delimiter
+        WriteLine String(lWidthEntry, "=")
+    End If
+    
+    If IsAllocated(aTitle) Then
+        '~~ Write (optionally multiline) title
+        If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
+        For i = LBound(aTitle) To UBound(aTitle)
+            If aTitle(i) <> vbNullString Then
+                If lWidthEntry < lLenTitle _
+                Then sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", sTitleFill) _
+                Else sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, vbNullString, sTitleFill)
+                WriteLine sTitle
+            End If
+        Next i
+        '~~ Write title underline
+        WriteLine String(lWidthEntry, "-")
+    End If
+      
+    If sHeader <> vbNullString Then
+        WriteLine sHeader
+        '~~ Column header under-line based on the header line written
+        v = Split(sHeader, sColsDelimiter)
+        sHeaderUnderLine = vbNullString
+        sColDelim = vbNullString
+        If sColsDelimiter = "|" _
+        Then sUnderLineDelim = "+" _
+        Else sUnderLineDelim = " "
+        
+        For i = LBound(aHeaders) To UBound(aHeaders)
+            sHeaderUnderLine = sHeaderUnderLine & sUnderLineDelim & String(Len(ColHeader(i)), "-")
+        Next i
+        If Len(sHeaderUnderLine) < lWidthEntry Then
+            sHeaderUnderLine = sHeaderUnderLine & String(lWidthEntry - Len(sHeaderUnderLine), "-")
+        End If
+        WriteLine sHeaderUnderLine
+    End If
+        
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
-Private Sub Init()
-    aAlignmentsHeader = vbNullString
-    aAlignmentsItem = vbNullString
-    aHeaders = vbNullString
-    aItems = vbNullString
-    aTitle = vbNullString
-    bNewLog = True
-    bWithTimeStamp = False
-    lKeepDays = 1
-    sColsDelimiter = " "        ' Default when no Headers were specified
-    sColsMargin = vbNullString  ' Default when no Headers were specified
-    sFileFullName = ActiveWorkbook.Path & "\" & DefaultLogFileName
-    sFileName = DefaultLogFileName
-    sPath = ActiveWorkbook.Path
-End Sub
 Private Sub ProvideLogFile()
+    Dim lDaysAge As Long
+    Dim ts       As TextStream
     With fso
         If Not .FileExists(sFileFullName) Then
-            .CreateTextFile sFileFullName
+            Set ts = .CreateTextFile(sFileFullName)
+            ts.Close
+            Debug.Print .GetFile(sFileFullName).DateLastAccessed
         Else
-            If VBA.DateDiff("d", .GetFile(sFileFullName).DateCreated, Now()) > lKeepDays Then
+            lDaysAge = VBA.DateDiff("d", .GetFile(sFileFullName).DateLastAccessed, Now())
+            If lDaysAge > lKeepDays Then
                 .DeleteFile sFileFullName
                 .CreateTextFile sFileFullName
             End If
@@ -1018,7 +1046,7 @@ Private Sub WriteItems()
     Next i
     
     If bNewLog _
-    Then BeginOfNewLogEntries True, s
+    Then NewLog True, s
     
     WriteLine s
     bNewLog = False ' may be set to True again when a new Title is provided

@@ -27,29 +27,29 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 ### Methods
 | Method Name         | Function |
 |---------------------|----------|
+|***AlignmentHeaders***    | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-column-alignment-specification) for each column's item.<br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
+|***AlignmentItems*** | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-column-alignment-specification) for each column's item. <br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
 |***Dsply***              | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
 |***Entry***              | Specifies either a single string or a number of items written aligned in columns. For the latter see the [implicit column width ++and++ alignment specification](#implicit-column-width-and-alignment-specification).|
-|***EntryItemsAlignment*** | ParamArray if strings, Explicitly specifies the alignment for each column's item, defaults to **L**eft adjusted when not provided.. <br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
 |***Headers***             | ParamArray of strings, specifying any number number of strings written as a single line ***column*** header, written automatically with the first call of the ***Entry*** method provided it specifies column aligned items. The alignment of the header string defaults to centered. An implicit specification of the alignment is possible by means of vertical bars [\|).<br>Examples:<br>- **"\| xx\|yy \|zz\| aa \|"** xx=right adjusted, yy=left adjusted, zz, aa=centered.<br>- **"xxx", "yyyy", "zzz"** are written centered provided not specified explicitly by means of the ***HeaderAlignment*** method. |
-|***HeadersAlignment***    | Defaults to ***C***entered for each of the specified headers |
+|***NewLog***              | Explicit indication that the next ***Entry*** writes the first of a new series of log entries. I.e. with the next ***Entry*** a delimiter line (======) is written - provided its not a new log file. In most cases this method is unnecessary because the begin of a new series of log entries is implicitly considered with the ***Title*** method, the ***Headers****method and in case the ***Entry*** method changes from a single string to column aligned items or vice versa.|
 |***Title***               | ParamArray of strings, Specifies the - optionally multi-line - title of a new series of log entries. Triggers the writing of the column headers provided specified.<br>Examples:<br>- **"Any title"** will be centered,<br> - **"\| &nbsp;&nbsp;&nbsp;Any title"** will be left adjusted including all leading spaces.|
 |***Widths***              | ParamArray of integer values, explicitly specifies [the columns (minimum) width](#column-width-specification).|
 
 ### Properties
 | Name          | Description |
 |---------------|-------------|
-|***FileFullName*** | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook` [^1] with an ".log" extension |
+|***ColsDelimiter***| Defaults to a vertical bar (\|) when ***Headers*** are specified and defaults to a single space when no ***Headers*** are specified. |
+|***FileFullName*** | ReadWrite, string expression, specifies the full name of the log-file defaults to a file named like the `ActiveWorkbook`[^1] with an ".log" extension |
 |***FileName***     | Specifies the log-files name, defaults to the  `ActiveWorkbook's` [^1] BaseName with an `.log` file extension. |
 |***KeepDays***     | Specifies the number of days a new log-file is kept before it is deleted and re-created.|
 |***LogFile***      | Expression representing a file object. |
 |***Path***         | String expression, defaults to the `ActiveWorkbook's` [^1] parent folder. |
-|***WithTimeStamp***| Boolean expression, defaults to true, when true each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
+|***WithTimeStamp***| Boolean expression, defaults to `True`. When `True` each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
 
 ### Installation
-Download and open the dedicated development Workbook [VBLogService.xlsb][1] and in the VB-Editor copy (drag and drop) the clsLog Class-Module into your VB-Project. Alternatively copy the below to the clipboard and into a new Class-Module (throughout this README named ******clsLog******).
-```
-Still waiting for the final code version!
-```
+Download and open the dedicated development Workbook [VBLogService.xlsb][1] and in the VB-Editor copy (drag and drop) the clsLog Class-Module into your VB-Project. [^2]
+
 ## Column alignment details
 ### Margin and delimiter
 The columns margin and the columns delimiter are determined by the specification of column ***Headers***. When specified the columns delimiter defaults `|` (vertical bar) and the margin defaults to a  `" "` (single space). When no ***Headers*** were specified the columns delimiter defaults to a `" "` (single space and the margin defaults to a vbNullString.
@@ -65,8 +65,8 @@ See [Implicit column width and alignment specification](#implicit-column-width-a
 
 ### Column alignment specification
 #### Explicit column alignment specification
-- For ***Headers***: ***HeadersAlignment*** method
-- For ***Entry*** items: ***EntryItemsAlignment*** method
+- For ***Headers***: ***AlignmentHeaders*** method
+- For ***Entry*** items: ***AlignmentItems*** method
 
 For each column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]
 
@@ -88,5 +88,6 @@ For all columns the width and/or the alignment has not explicitly specified, bot
 
 [^1]: When the `ActiveWorkbook` is used as the default for the log-file's location the log-file is located in the serviced Workbook's parent folder. When the service writing the log is for the Workbook itself `ThisWorkbook` and `ActiveWorkbook` are the same, when the service is provided by another Workbook for the  servicing Workbook will be `ThisWorkbook` and the serviced Workbook will be the `ActiveWorkbook`. In both cases the log-file written into the **serviced Workbook's** parent folder.
  
+[^2]: The Workbook (its dedicated parent folder respectively) is dedicated to the Class-Module's development and test and provides a full regression test which compares the result of a series of test with a file containing the expected results.
 
 [1]: https://github.com/warbe-maker/VBA-Log-Service/blob/main/VBALogService.xlsb?raw=true
