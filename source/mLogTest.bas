@@ -420,8 +420,8 @@ Private Sub Test_00_Regression()
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .Title "Regression test case 01: A single lines, centered title"
-        .Entry " 01 1. Single string, new log, no title. "
+        .Title "Regression test case 01: Two single lines, title centered"
+        .Entry " 01 1. Single string, new log, no title.                                 "
         .Entry " 01 2. Single string, new log, no title. "
         .Title "Regression test case 02:  " _
              , "- The title implicitly indicates the begin of a new series of log entries. " _
@@ -434,8 +434,7 @@ Private Sub Test_00_Regression()
         .Entry " 03", "xxxx", " yyyyyy", " Alignments: R, C, R, L; Rightmost column without width limit"
         .Entry " 03", "xxxx", " yyyy       ", "'NewLog' implicit due to the change from non- to column-aligned ..."
         .Entry " 03", "xxxx", " yyyyy       ", "... because entries are without a title"
-        .Title " Regression test case 04:  " _
-             , "The 'Headers' method implicitely specifies: " _
+        .Title "Regression test case 04: The 'Headers' method implicitely specifies: " _
              , "- The alignment by means of leading and trailing spaces," _
              , "- the column widths by vertical bars (|)!" _
              , "- The maximum column width is the maximimum of the width implicitly specified by" _
@@ -447,21 +446,28 @@ Private Sub Test_00_Regression()
         .Entry " 04", "xxxx ", "yyyy       ", "         zzzzzz   "
         .Entry "04", "xxxx ", "yyyyy       ", "zzzzzz "
         .NewLog
-        .Title "Regression test case 05:  " _
-             , "Because no 'Headers' are specified the ColsDelimiter defaults to a single space" _
-             , "and the ColsMargin is a vbNullString." _
-             , "Alignment-Items (implicit)  : R, L, C, R"
-        .Widths 2, 10, 25, 30
+        .Title "Regression test case 05: Because no 'Headers' are specified the ColsDelimiter " _
+             , "defaults to a single space and the ColsMargin is a vbNullString." _
+             , "Items alignment (implicit): R, L, C, R"
+        .MinColWidths 2, 10, 25, 30
         .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
-         .Title " Regression test case 06:  " _
-              , " ColsDelimiter explicit specified as a single space"
+         .Title "Regression test case 06: The ColsDelimiter explicitly specified as a single space "
         .ColsDelimiter = " "
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
         .Entry " 06", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
         .Entry " 06", "xxxx ", "yyyy       ", "         zzzzzz   "
         .Entry "06", "xxxx ", "yyyyy       ", "zzzzzz "
+         .Title "Regression test case 07: Alignment items: " _
+              , "Column 1: Implicitly Right adjusted" _
+              , "Column 2: Explicitly Left adjusted filled with .....: " _
+              , "Column 3: Implicitly Left adjusted."
+        .MinColWidths , 30
+        .AlignmentItems , "L."
+        .Entry " 07", "xxxx ", " Rightmost column without width limit!  "
+        .Entry " 07", "xxxx ", "         zzzzzz   "
+        .Entry "07", "xxxx ", "zzzzzz "
                
         If Not mErH.Regression Then
             .Dsply

@@ -27,6 +27,10 @@ Option Base 1 ' ensures the index conforms with the column number
 '                    provided strings or one string with vertical bars, both
 '                    indicating items to be writen alingned in columns.
 ' - Headers          Specifies the column headers
+' - MinColWidths     Explicitly specifies each columns minimum width. The width of, defaults to the
+'                    width of the corresponding column header string, is
+'                    adjusted to the width of the corresponding header string
+'                    when one is provided.
 ' - NewLog           Explicit indication that the next Entry is the first of a
 '                    new series of log entries. I.e. with the next Entry a
 '                    Delimiter line is written (provided its not a new log file).
@@ -38,10 +42,6 @@ Option Base 1 ' ensures the index conforms with the column number
 ' - Title            Specifies the - optionally multiline - title of a new series
 '                    of log entries. Triggers the writing of the column headers
 '                    provided specified.
-' - Widths           Explicitly specifies each columns width, defaults to the
-'                    width of the corresponding column header string, is
-'                    adjusted to the width of the corresponding header string
-'                    when one is provided.
 '
 ' Properties:
 ' -----------
@@ -61,17 +61,13 @@ Option Base 1 ' ensures the index conforms with the column number
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' -----------------------------------------------------------------------------------
-Private Const DEFAULT_COL_ALIGNMENT_HEADER  As String = "C"
-Private Const DEFAULT_COL_ALIGNMENT_ITEM    As String = "L"
-Private Const DEFAULT_COL_DELIMITER         As String = "|"
-Private Const DEFAULT_COL_MARGIN            As String = " "
-
 Private aAlignmentsHeader   As Variant ' Public for test purpose only
 Private aAlignmentsItem     As Variant ' Public for test purpose only
 Private aHeaders            As Variant ' Public for test purpose only
 Private aItems              As Variant
 Private aTitle              As Variant
-Private aWidths             As Variant ' Public for test purpose only
+Private aMinColWidths             As Variant ' Public for test purpose only
+Private aFills()            As String
 Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
@@ -132,7 +128,7 @@ Private Sub Class_Terminate()
     Set aAlignmentsHeader = Nothing
     Set aAlignmentsItem = Nothing
     Set aHeaders = Nothing
-    Set aWidths = Nothing
+    Set aMinColWidths = Nothing
     Set aItems = Nothing
     Set aTitle = Nothing
     sColsDelimiter = vbNullString
@@ -175,6 +171,24 @@ Private Property Get ColAlignmentItem(Optional ByVal c_col As Long) As String
         If c_col <= UBound(aAlignmentsItem) _
         Then ColAlignmentItem = aAlignmentsItem(c_col)
     End If
+End Property
+
+Private Property Get ColFill(Optional ByVal c_col As Long) As String
+    If IsAllocated(aFills) Then
+        If c_col <= UBound(aFills) _
+        Then ColFill = aFills(c_col)
+    End If
+End Property
+
+Private Property Let ColFill(Optional ByVal c_col As Long, _
+                                      ByVal c_fill As String)
+    If Not IsAllocated(aFills) Then
+        ReDim aFills(c_col)
+    ElseIf c_col > UBound(aFills) Then
+        ReDim Preserve aFills(c_col)
+    End If
+    aFills(c_col) = c_fill
+    
 End Property
 
 Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
@@ -231,6 +245,7 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
 '         vbNullString.
 ' -----------------------------------------------------------------------------------
     Dim lWidth  As Long
+    Dim sFill   As String
     
     If IsAllocated(aItems) Then
         If bNewLog Then
@@ -240,12 +255,14 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
             lWidth = ColWidth(c_col)
             ColWidth(c_col) = Max(Len(aItems(c_col)), lWidth)
         End If
+        sFill = ColFill(c_col)
+        If sFill = vbNullString Then sFill = " "
         If c_col < lColumns Then
-            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin)
+            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin, sFill)
         ElseIf c_col = lColumns Then
             '~~ The width of the rightmost column is unlimited. A specified header however
             '~~ will consider the columns width which includes the width of the first lines's item.
-            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin)
+            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin, sFill)
         End If
     End If
     
@@ -267,9 +284,9 @@ Public Property Let ColsDelimiter(ByVal s As String)
 End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
-    If IsAllocated(aWidths) Then
-        If c_col <= UBound(aWidths) Then
-            ColWidth = aWidths(c_col)
+    If IsAllocated(aMinColWidths) Then
+        If c_col <= UBound(aMinColWidths) Then
+            ColWidth = aMinColWidths(c_col)
         End If
     End If
 End Property
@@ -278,12 +295,12 @@ Private Property Let ColWidth(Optional ByVal c_col As Long, _
                                        ByVal c_width As Long)
     Dim lWidth As Long
     
-    If Not IsAllocated(aWidths) Then
-        ReDim aWidths(c_col)
-    ElseIf c_col > UBound(aWidths) Then
-        ReDim Preserve aWidths(c_col)
+    If Not IsAllocated(aMinColWidths) Then
+        ReDim aMinColWidths(c_col)
+    ElseIf c_col > UBound(aMinColWidths) Then
+        ReDim Preserve aMinColWidths(c_col)
     End If
-    aWidths(c_col) = c_width
+    aMinColWidths(c_col) = c_width
     Debug.Print "WidthCol " & c_col & ": Width    =" & c_width
 
 End Property
@@ -363,15 +380,20 @@ Public Function Align(ByVal a_strng As String, _
 ' ----------------------------------------------------------------------------
 ' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_mode) filled
 ' with characters (a_fill).
-' Note: The length (a_lngth) of the string (a_strng) is considered including
-'       already the length of the column margin (a_margin) - if any.
+' Note 1: The length (a_lngth) of the string (a_strng) is considered including
+'         already the length of the column margin (a_margin) - if any.
+' Note 2: A fill (a_fill) = "." will fill with ".....:"
 ' ----------------------------------------------------------------------------
     Dim sFill   As String
     Dim s       As String
     
     Select Case Left(UCase(a_mode), 1)
         Case "L"
-            Align = Left$(a_margin & LTrim$(a_strng) & a_margin & String(a_lngth, a_fill), a_lngth)
+            If a_fill = " " Then
+                Align = Left$(a_margin & LTrim$(a_strng) & a_margin & String(a_lngth, a_fill), a_lngth)
+            ElseIf a_fill = "." Then
+                Align = Left$(a_margin & LTrim$(a_strng) & " " & String(a_lngth, a_fill), a_lngth) & ":"
+            End If
         Case "R"
             Align = Right$(String(a_lngth, a_fill) & a_margin & RTrim$(a_strng) & a_margin, a_lngth)
         Case "C"
@@ -464,6 +486,9 @@ Public Sub Entry(ParamArray e() As Variant)
 ' - When multiple strings are provided or a string contains vertical bars (|)
 '   the indicated items are writen aligned in columns to the log-file
 ' ----------------------------------------------------------------------------
+    Const PROC = "Entry"
+    
+    On Error GoTo eh
     Dim i       As Long
     Dim iCol    As Long
     Dim s       As String
@@ -497,7 +522,7 @@ Public Sub Entry(ParamArray e() As Variant)
             bNewLog = False
         End If
     Else
-        '~~ When more than one string is provided this indicates items for being column aligned
+        '~~ When more than one string is provided this indicates items for being aligned in columns
         AlignedByColumns = True
         lColumns = UBound(e) + 1
         For i = LBound(e) To UBound(e)
@@ -518,6 +543,11 @@ Public Sub Entry(ParamArray e() As Variant)
     End If
         
 xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Public Sub AlignmentItems(ParamArray c_align() As Variant)
@@ -525,19 +555,58 @@ Public Sub AlignmentItems(ParamArray c_align() As Variant)
 ' Explicit specification of the items column alignment. When no explicit alignment is
 ' is specified or the first character is neither L, nor C, nor R, the alignment
 ' default to the implicit specification of the first line's items.
+' Valid specifications: Spec        Meaning
+'                       ----------- -------------------------------
+'                       L           Left adjusted no fill
+'                       L.          Left adjusted filled with ....:
+'                       R           Right adjusted
+'                       C           Centered
+'                       -C-, C-, -C Centered with - fills
+'
 ' -----------------------------------------------------------------------------------
+    Const PROC = "AlignmentItems"
     Dim i       As Long
     Dim iCol    As Long
     Dim s       As String
+    Dim sAlign  As String
+    Dim sFill   As String
     
+    On Error GoTo eh
     For i = LBound(c_align) To UBound(c_align)
-        iCol = i + 1
-        s = UCase(Left(c_align(i), 1))
-        Select Case s
-            Case "L", "C", "R": ColAlignmentItem(iCol) = s
-        End Select
+        If Not IsError(c_align(i)) Then
+            '~~ IsError indicates a columns alignment 'not explicitly specified'.
+            '~~ The corresponding columns will be aligned implicitly specified
+            '~~ with the first entry's items specifications
+            iCol = i + 1
+            sFill = " " ' the default in case nothing else is specified
+            Select Case True
+                Case Left$(c_align(i), 1) = "-", Right$(c_align(i), 1) = "-"
+                    sAlign = UCase(Left(Replace$(c_align(i), "-", vbNullString), 1))
+                    sFill = "-"
+                Case Right$(c_align(i), 1) = "."
+                    sAlign = UCase(Left$(c_align(i), 1))
+                    sFill = "."
+            End Select
+            Select Case True
+                Case sAlign = "L" And sFill = vbNullString
+                Case sAlign = "L" And sFill = "."
+                Case sAlign = "R"
+                Case sAlign = "C" And sFill = vbNullString
+                Case sAlign = "C" And sFill = "-"
+                Case Else: Err.Raise AppErr(1), ErrSrc(PROC), "The specified alignment is invalid! Valid specs are:" & vbLf & _
+                                                              "L, L., R, C, -C, C-, -C-"
+            End Select
+            ColAlignmentItem(iCol) = sAlign
+            ColFill(iCol) = sFill
+        End If
     Next i
     
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Private Function ErrMsg(ByVal err_source As String, _
@@ -639,8 +708,7 @@ End Function
 
 Public Sub Headers(ParamArray c_headers() As Variant)
 ' -----------------------------------------------------------------------------------
-' Note: Widths defaults to the maximum of an already specified width and the width
-'       if the corresponding header string.
+' Spacifies the column headers for Entry items aligne in columns.
 ' -----------------------------------------------------------------------------------
     Const PROC = "Headers"
     
@@ -838,9 +906,14 @@ Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
         If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
         For i = LBound(aTitle) To UBound(aTitle)
             If aTitle(i) <> vbNullString Then
-                If lWidthEntry < lLenTitle _
-                Then sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", sTitleFill) _
-                Else sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, vbNullString, sTitleFill)
+                Select Case True
+                    Case lWidthEntry <= lLenTitle
+                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, vbNullString, sTitleFill)
+                    Case lWidthEntry > lLenTitle And sAlignmentTitle = "C"
+                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", "-")
+                    Case lWidthEntry > lLenTitle And sAlignmentTitle <> "C"
+                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", " ")
+                End Select
                 WriteLine sTitle
             End If
         Next i
@@ -981,21 +1054,25 @@ Public Sub Title(ParamArray t() As Variant)
 
 End Sub
 
-Public Sub Widths(ParamArray c_widths() As Variant)
+Public Sub MinColWidths(ParamArray c_widths() As Variant)
 ' -----------------------------------------------------------------------------------
 ' Specifies the minimum width of n columns. Each columns specified width may be
 ' expanded by a) an implicite header width specification, b) the width of the first
 ' _Entry_, i.e. finally it will be the maximum of the three.
 ' -----------------------------------------------------------------------------------
-    Const PROC = "Widths"
+    Const PROC = "MinColWidths"
     
     On Error GoTo eh
     Dim i       As Long
     Dim iCol    As Long
     
     For i = LBound(c_widths) To UBound(c_widths)
-        iCol = i + 1
-        ColWidth(iCol) = c_widths(i)
+        If Not IsError(c_widths(i)) Then
+            If Not IsError(Abs(CInt(c_widths(i)))) Then
+                iCol = i + 1
+                ColWidth(iCol) = c_widths(i)
+            End If
+        End If
     Next i
 
 xt: Exit Sub
