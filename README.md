@@ -1,28 +1,27 @@
 ## VBA-Service-Log
-### Summary
-Provides comprehensive methods/services and properties for writing a log file either with already formatted entries or column oriented entries.
-
-### Usage
-### Simple
-Writing log entries is as simple as possible thanks to sensible defaults
+### Usage examples
+Writing log entries is as simple as possible thanks to sensible defaults:
+#### Example 1
 ```vb
     Dim Log As New clsLog
     Log.Entry "This is a log entry line"
 ```
-Writes a single log entry to the default log file (see the properties ***FileFullName***, ***FileName***, and ***Path***).
+Writes a single log entry to the default log file (see the [properties](#properties) ***FileFullName***, ***FileName***, and ***Path***).
+#### Example 2
 ```vb
     Dim Log As New clsLog
-    Log.ColsDelimiter = " " ' defaults to |
-    Log.Entry "xxxxxxxxxx", "yyyyyyyyyyyyyyyyyyyy", "zzzzzzzz"
-    Log.Entry "xxxxxxxx", "yyyyyyyy", "zzzzzzzzz"
+    Log.Entry "xxxxxxxxxx ", "yyyyyyyyyyyyyyyyyyyy ", "zzzzzzzz " 
+    Log.Entry "xxx", "yyyyyyy", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 ```
-Writes two log entries **left aligned in columns**:<br>
+Writes two log entries aligned in columns, with the alignment and the column width [implicitly](#implicit-column-width-and-alignment-specification) specified:
 ```
-Item-1     Item-2               Item-3
+=====================================================================
 xxxxxxxxxx yyyyyyyyyyyyyyyyyyyy zzzzzzzz
 xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 ```
->When no ***Widths*** are explicitly specified the columns width is determined by the width of the first row's items, the width of the rightmost column is unlimited by default. 
+Note:
+- A delimiter line is automatically inserted when the new series of log entries is not the first in the log-file
+- When no [***MinColWidths***](#methods) are explicitly specified the columns width is determined by the width of the first row's items whereby the width of the rightmost column is unlimited by default. 
 
 ### Methods
 | Method Name         | Function |
