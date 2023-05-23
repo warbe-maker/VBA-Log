@@ -449,7 +449,7 @@ Private Sub Test_00_Regression()
         .Title "Regression test case 05: Because no 'Headers' are specified the ColsDelimiter " _
              , "defaults to a single space and the ColsMargin is a vbNullString." _
              , "Items alignment (implicit): R, L, C, R"
-        .MinColWidths 2, 10, 25, 30
+        .MaxItemLengths 2, 10, 25, 30
         .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
@@ -461,13 +461,14 @@ Private Sub Test_00_Regression()
         .Entry "06", "xxxx ", "yyyyy       ", "zzzzzz "
          .Title "Regression test case 07: Alignment items: " _
               , "Column 1: Implicitly Right adjusted" _
-              , "Column 2: Explicitly Left adjusted filled with .....: " _
+              , "Column 2: Length explicily specified = 20" _
+              , "          Alignment explicitly specified Left adjusted filled with .....: " _
               , "Column 3: Implicitly Left adjusted."
-        .MinColWidths , 30
+        .MaxItemLengths , 20
         .AlignmentItems , "L."
         .Entry " 07", "xxxx ", " Rightmost column without width limit!  "
-        .Entry " 07", "xxxx ", "         zzzzzz   "
-        .Entry "07", "xxxx ", "zzzzzz "
+        .Entry " 07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz   "
+        .Entry "07", "xxxxxxxxx", "zzzzzz "
                
         If Not mErH.Regression Then
             .Dsply

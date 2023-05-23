@@ -21,7 +21,7 @@ xxx        yyyyyyy              zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 ```
 Note:
 - A delimiter line is automatically inserted when the new series of log entries is not the first in the log-file
-- When no [***MinColWidths***](#methods) are explicitly specified the columns width is determined by the width of the first row's items whereby the width of the rightmost column is unlimited by default. 
+- When no [***MaxItemLengths***](#methods) is specified the columns width is determined by the width of the first row's items whereby the width of the rightmost column is unlimited by default. 
 
 ### Methods
 | Method Name         | Function |
@@ -31,7 +31,7 @@ Note:
 |***Dsply***              | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
 |***Entry***              | Specifies either a single string or a number of items written aligned in columns. For the latter see the [implicit column width ++and++ alignment specification](#implicit-column-width-and-alignment-specification).|
 |***Headers***             | ParamArray of strings, specifying any number number of strings written as a single line ***column*** header, written automatically with the first call of the ***Entry*** method provided it specifies column aligned items. The alignment of the header string defaults to centered. An implicit specification of the alignment is possible by means of vertical bars [\|).<br>Examples:<br>- **"\| xx\|yy \|zz\| aa \|"** xx=right adjusted, yy=left adjusted, zz, aa=centered.<br>- **"xxx", "yyyy", "zzz"** are written centered provided not specified explicitly by means of the ***HeaderAlignment*** method. |
-|***MinColWidths***        | ParamArray of integer values, explicitly specifies [the columns (minimum) width](#column-width-specification).|
+|***MaxItemLengths***        | ParamArray of integer values, specifies the [maximum lenght of items aligned in columns](#column-width).|
 |***NewLog***              | Explicit indication that the next ***Entry*** writes the first of a new series of log entries. I.e. with the next ***Entry*** a delimiter line (======) is written - provided its not a new log file. In most cases this method is unnecessary because the begin of a new series of log entries is implicitly considered with the ***Title*** method, the ***Headers****method and in case the ***Entry*** method changes from a single string to column aligned items or vice versa.|
 |***Title***               | ParamArray of strings, Specifies the - optionally multi-line - title of a new series of log entries. Triggers the writing of the column headers provided specified.<br>Examples:<br>- **"Any title"** will be centered,<br> - **"\| &nbsp;&nbsp;&nbsp;Any title"** will be left adjusted including all leading spaces.|
 
@@ -50,19 +50,33 @@ Note:
 Download and open the dedicated development Workbook [VBLogService.xlsb][1] and in the VB-Editor copy (drag and drop) the clsLog Class-Module into your VB-Project. [^2]
 
 ## Column alignment details
-### Margin and delimiter
-The columns margin and the columns delimiter are determined by the specification of column ***Headers***. When specified the columns delimiter defaults `|` (vertical bar) and the margin defaults to a  `" "` (single space). When no ***Headers*** were specified the columns delimiter defaults to a `" "` (single space and the margin defaults to a vbNullString.
+### The Columns Delimiter
+When ***Headers*** are specified the columns delimiter defaults to a  `|` (vertical bar), else to a single space.
+### The Columns Margin
+When the [columns delimiter](#the-columns-delimiter) is a `|` (vertical bar) the margin defaults to a single space, when it is a single space the margin is a `vbNullString`.
 
-### Column width specification
-The column width is the mere space available within a column to display an item. The final space occupied by a column depends on the ColsDelimiter and the columns margin.
-#### Explicit columns minimum width specification
-An explicit column ***Widths*** specification is regarded the **minimum** width. It may be expanded by the width of the corresponding column's ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width (whereby the width of the rightmost column is unlimited.<br>Examples:
-  - `|20|30|25|` specifies the minimum width for 3 columns
+### Column Width
+The column width is the space between two [column delimiters] which may be a `|` (vertical bar) or a single space. The final width of a column considers:
+ - the ***MaxItemLengths*** (when specified for the column)
+ - a leading and trailing column margin which depends on the ***ColsDelimiter***
+ - the width of the columns ***Headers*** (when specified)
+ - the length of the first ***Entry*** item.
+ 
+ Examples with a ***MaxItemLengths*** = 30 explicitly specified for a column's items:
+
+| Example | Conditions | Final Cols Width |
+| --------|------------|------------------|
+|<nobr>`| <--max-item-length-column-n--> |`| The cols delimiter is a `|` (vertical bar), the case by default when ***Headers*** are specified of when ***ColsDelimiter*** explicitly specifies it. In both cases the columns margin is a single leading and trailing space.| 32 |
+|<nobr>` <--max-item-length-column-n--> `| The columns delimiter is a single space, either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***| 30 |
+|<nobr>` <--max-item-length-column-n--> .: `| - The columns delimiter is a "&nbsp;" (single space), either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***<br>- The ***AlignmentIems*** specified `"L."` for the column indicating fill with `.`(dots) terminated by a `:`(colon) | 33 |
+
+#### The maximum items' length specification
+The explicit specification of the maximum items' length ensures enough column space in case neither the header nor the first ***Entry***'s items specifies the length/width implicitly. Since this usually is unlikely the case an explicit maximum length specification is rather common.
+The specified [***MaxItemLengths***](#methods) becomes the minimum width of the corresponding column. This width may still be expanded by the width of the corresponding column's ***Headers*** (when specified and greater).<br>Examples:
+  - `|20|30|25|` specifies the maximum item length for column 1, 2, and 3
   - `20,30,25` same as above.
-  - `,,,30` specifies the minimum width only for the 3rd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width
-  
-> An explicit minimum width specification ensures enough space within the columns in case neither the header nor the first ***Entry***'s items specifies them  implicitly. Since this usually is unlikely the case an explicit minimum width specification is rather common.  
-
+  - `,,,30` specifies the maximum item length only for the 3rd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width
+ 
 #### Implicit columns width specification
 See [Implicit column width and alignment specification specification](#implicit-column-width-and-alignment-specification)
 

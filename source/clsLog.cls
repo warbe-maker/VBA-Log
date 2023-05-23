@@ -27,7 +27,7 @@ Option Base 1 ' ensures the index conforms with the column number
 '                    provided strings or one string with vertical bars, both
 '                    indicating items to be writen alingned in columns.
 ' - Headers          Specifies the column headers
-' - MinColWidths     Explicitly specifies each columns minimum width. The width of, defaults to the
+' - MaxItemLengths     Explicitly specifies each columns minimum width. The width of, defaults to the
 '                    width of the corresponding column header string, is
 '                    adjusted to the width of the corresponding header string
 '                    when one is provided.
@@ -66,7 +66,7 @@ Private aAlignmentsItem     As Variant ' Public for test purpose only
 Private aHeaders            As Variant ' Public for test purpose only
 Private aItems              As Variant
 Private aTitle              As Variant
-Private aMinColWidths             As Variant ' Public for test purpose only
+Private aMaxItemLengths             As Variant ' Public for test purpose only
 Private aFills()            As String
 Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
@@ -128,7 +128,7 @@ Private Sub Class_Terminate()
     Set aAlignmentsHeader = Nothing
     Set aAlignmentsItem = Nothing
     Set aHeaders = Nothing
-    Set aMinColWidths = Nothing
+    Set aMaxItemLengths = Nothing
     Set aItems = Nothing
     Set aTitle = Nothing
     sColsDelimiter = vbNullString
@@ -207,16 +207,16 @@ Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
 End Property
 
 Private Property Get ColHeader(Optional ByVal c_col As Long) As String
-    Dim s   As String
-    Dim l   As Long
+    Dim s       As String
+    Dim lWidth  As Long
     
     If IsAllocated(aHeaders) Then
         If c_col <= UBound(aHeaders) Then
-            s = WithMargins(aHeaders(c_col), sColsMargin)
-            l = Len(s)
-            l = Max(ColWidth(c_col), l) ' width with marging may be greater than originally calculated
-            ColWidth(c_col) = l
-            ColHeader = Align(aHeaders(c_col), l, ColAlignmentHeader(c_col), sColsMargin)
+            s = WithMargins(aHeaders(c_col))
+            lWidth = Len(s)
+            lWidth = Max(ColWidth(c_col), lWidth) ' width with marging may be greater than originally calculated
+            ColWidth(c_col) = lWidth
+            ColHeader = Align(aHeaders(c_col), lWidth, ColAlignmentHeader(c_col), sColsMargin)
         End If
     End If
 End Property
@@ -231,7 +231,6 @@ Private Property Let ColHeader(Optional ByVal c_col As Long, _
     End If
     aHeaders(c_col) = c_header
     
-    
 End Property
 
 Private Property Get ColItem(Optional ByVal c_col As Long) As String
@@ -244,6 +243,9 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
 ' Note 1: Any column(c_col) beyond UBound(aItems) is ignored, i.e. returns a
 '         vbNullString.
 ' -----------------------------------------------------------------------------------
+    Const PROC = "ColItem-Get"
+    
+    On Error GoTo eh
     Dim lWidth  As Long
     Dim sFill   As String
     
@@ -255,17 +257,21 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
             lWidth = ColWidth(c_col)
             ColWidth(c_col) = Max(Len(aItems(c_col)), lWidth)
         End If
-        sFill = ColFill(c_col)
-        If sFill = vbNullString Then sFill = " "
+        
         If c_col < lColumns Then
-            ColItem = Align(aItems(c_col), ColWidth(c_col), ColAlignmentItem(c_col), sColsMargin, sFill)
+            ColItem = Align(aItems(c_col), ColWidthFinal(c_col), ColAlignmentItem(c_col), sColsMargin, ColFill(c_col))
         ElseIf c_col = lColumns Then
-            '~~ The width of the rightmost column is unlimited. A specified header however
-            '~~ will consider the columns width which includes the width of the first lines's item.
-            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin, sFill)
+            '~~ The width of the rightmost column is unlimited and left aligned.
+            ColItem = Align(aItems(c_col), Len(aItems(c_col)) + Len(sColsMargin), "L", sColsMargin, " ")
         End If
     End If
     
+xt: Exit Property
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Property
 
 Private Property Let ColItem(Optional ByVal c_col As Long, _
@@ -284,9 +290,9 @@ Public Property Let ColsDelimiter(ByVal s As String)
 End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
-    If IsAllocated(aMinColWidths) Then
-        If c_col <= UBound(aMinColWidths) Then
-            ColWidth = aMinColWidths(c_col)
+    If IsAllocated(aMaxItemLengths) Then
+        If c_col <= UBound(aMaxItemLengths) Then
+            ColWidth = aMaxItemLengths(c_col)
         End If
     End If
 End Property
@@ -295,12 +301,12 @@ Private Property Let ColWidth(Optional ByVal c_col As Long, _
                                        ByVal c_width As Long)
     Dim lWidth As Long
     
-    If Not IsAllocated(aMinColWidths) Then
-        ReDim aMinColWidths(c_col)
-    ElseIf c_col > UBound(aMinColWidths) Then
-        ReDim Preserve aMinColWidths(c_col)
+    If Not IsAllocated(aMaxItemLengths) Then
+        ReDim aMaxItemLengths(c_col)
+    ElseIf c_col > UBound(aMaxItemLengths) Then
+        ReDim Preserve aMaxItemLengths(c_col)
     End If
-    aMinColWidths(c_col) = c_width
+    aMaxItemLengths(c_col) = c_width
     Debug.Print "WidthCol " & c_col & ": Width    =" & c_width
 
 End Property
@@ -368,6 +374,16 @@ Public Property Let Path(ByVal v As Variant)
     
 End Property
 
+Private Function ColWidthFinal(ByVal c_col As Long) As Long
+' -----------------------------------------------------------------------------------
+' Returns the final width of a column by considering the either implicitly or
+' explicitly specified width and the fill string in case one is specified.
+' -----------------------------------------------------------------------------------
+    If ColFill(c_col) = "." _
+    Then ColWidthFinal = ColWidth(c_col) + 2 _
+    Else ColWidthFinal = ColWidth(c_col)
+End Function
+
 Public Property Let WithTimeStamp(ByVal b As Boolean)
     bWithTimeStamp = b
 End Property
@@ -384,9 +400,13 @@ Public Function Align(ByVal a_strng As String, _
 '         already the length of the column margin (a_margin) - if any.
 ' Note 2: A fill (a_fill) = "." will fill with ".....:"
 ' ----------------------------------------------------------------------------
+    Const PROC = "Align"
+    
+    On Error GoTo eh
     Dim sFill   As String
     Dim s       As String
     
+    If a_fill = vbNullString Then a_fill = " "
     Select Case Left(UCase(a_mode), 1)
         Case "L"
             If a_fill = " " Then
@@ -405,6 +425,12 @@ Public Function Align(ByVal a_strng As String, _
             End If
     End Select
 
+xt: Exit Function
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Function
 
 Public Function AlignedImplicitly(ByVal a_string As String) As String
@@ -496,7 +522,7 @@ Public Sub Entry(ParamArray e() As Variant)
     Dim lWidth  As Long
     
     If LBound(e) = UBound(e) Then
-        '~~ Only a single string has been provided
+        '~~ The log-entry is only one single string
         s = e(LBound(e))
         If InStr(s, "|") <> 0 Then
             '~~ The | in the string indicates items for being column aligned
@@ -510,6 +536,8 @@ Public Sub Entry(ParamArray e() As Variant)
                 iCol = i + 1
                 ColItem(iCol) = CStr(v(i))
                 If ColWidth(iCol) = 0 Then
+                    '~~ Only in case no column width has explicitly been
+                    '~~ spcified by means of the MaxItemLengths method
                     ColWidth(iCol) = Len(v(i))
                 End If
             Next i
@@ -522,7 +550,8 @@ Public Sub Entry(ParamArray e() As Variant)
             bNewLog = False
         End If
     Else
-        '~~ When more than one string is provided this indicates items for being aligned in columns
+        '~~ The Entry is built up of more than one string,
+        '~~ indicating items aligned to be aligned in columns
         AlignedByColumns = True
         lColumns = UBound(e) + 1
         For i = LBound(e) To UBound(e)
@@ -536,7 +565,9 @@ Public Sub Entry(ParamArray e() As Variant)
             ColItem(iCol) = sColsMargin & Trim$(CStr(e(i))) & sColsMargin
             
             If ColWidth(iCol) = 0 Then
-                ColWidth(iCol) = Len(ColItem(iCol))
+                '~~ Only in case no column width has explicitly been
+                '~~ spcified by means of the MaxItemLengths method
+                ColWidth(iCol) = Len(Trim$(ColItem(iCol)))
             End If
         Next i
         WriteItems
@@ -737,7 +768,7 @@ Public Sub Headers(ParamArray c_headers() As Variant)
                     If Len(s) < Len(Trim(s)) + (2 * Len(sColsMargin)) Then
                         '~~ The minimum width of a column header is the mere characters
                         '~~ string enclosed in a leading and trailing sColsMargin
-                        s = WithMargins(s, sColsMargin)
+                        s = WithMargins(s)
                     End If
                     ColHeader(iCol) = Trim(s)
                     lWidth = ColWidth(iCol)
@@ -752,14 +783,14 @@ Public Sub Headers(ParamArray c_headers() As Variant)
             End If
             ColHeader(iCol) = Trim(c_headers(i))
             lWidth = ColWidth(iCol)
-            ColWidth(iCol) = Max(Len(WithMargins(c_headers(i), sColsMargin)), lWidth)
+            ColWidth(iCol) = Max(Len(WithMargins(c_headers(i))), lWidth)
         End If
     Next i
     If IsAllocated(aHeaders) Then
         Select Case sColsDelimiter
-            Case vbNullString:      sColsDelimiter = "|":   sColsMargin = " "
-            Case "|":                                       sColsMargin = " "
-            Case " ":                                       sColsMargin = vbNullString
+            Case vbNullString:      sColsMargin = " ":          sColsDelimiter = "|"
+            Case "|":               sColsMargin = " "
+            Case " ":               sColsMargin = vbNullString
         End Select
     End If
     
@@ -800,8 +831,8 @@ Private Sub Init()
     aTitle = vbNullString
     bNewLog = True
     lKeepDays = 1
-    sColsDelimiter = " "        ' Default when no Headers were specified
-    sColsMargin = vbNullString  ' Default when no Headers were specified
+    sColsDelimiter = " "        ' Default in case no Headers are specified
+    sColsMargin = vbNullString  ' Default in case no Headers are specified
 End Sub
 
 Private Function IsAllocated(arr As Variant) As Boolean
@@ -1054,13 +1085,12 @@ Public Sub Title(ParamArray t() As Variant)
 
 End Sub
 
-Public Sub MinColWidths(ParamArray c_widths() As Variant)
+Public Sub MaxItemLengths(ParamArray c_widths() As Variant)
 ' -----------------------------------------------------------------------------------
-' Specifies the minimum width of n columns. Each columns specified width may be
-' expanded by a) an implicite header width specification, b) the width of the first
-' _Entry_, i.e. finally it will be the maximum of the three.
+' Specifies the maximum length for the items aligned in columns which will become the
+' minimum column width. The corresponding final columns widths may be greater however.
 ' -----------------------------------------------------------------------------------
-    Const PROC = "MinColWidths"
+    Const PROC = "MaxItemLengths"
     
     On Error GoTo eh
     Dim i       As Long
@@ -1083,20 +1113,19 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Function WithMargins(ByVal w_string As String, _
-                             ByVal w_margin As String) As String
+Private Function WithMargins(ByVal w_string As String) As String
 ' -----------------------------------------------------------------------------------
 ' Returns a string (w_string) with a leading and trailing margin (w_margin) in case
 ' the string (w_string) not already begins and/or ends with a margin (w_margin). A
 ' margin = vbNullString is ignored.
 ' -----------------------------------------------------------------------------------
     Dim s As String
-    If w_margin <> vbNullString Then
-        If Left(w_string, 1) <> w_margin _
-        Then s = w_margin & w_string _
+    If sColsMargin <> vbNullString Then
+        If Left(w_string, 1) <> sColsMargin _
+        Then s = sColsMargin & w_string _
         Else s = w_string
-        If Right(s, 1) <> w_margin _
-        Then s = s & w_margin
+        If Right(s, 1) <> sColsMargin _
+        Then s = s & sColsMargin
         WithMargins = s
     Else
         WithMargins = w_string
