@@ -441,7 +441,7 @@ Private Sub Test_00_Regression()
              , "  the 'Headers' first line's specificateion and the width of the first line's width." _
              , "- Alignment-Headers (implicit): R, C, C, L" _
              , "- Alignment-Items (implicit)  : R, L, L, L"
-        .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
+        .Headers "|  Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
         .Entry " 04", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
         .Entry " 04", "xxxx ", "yyyy       ", "         zzzzzz   "
         .Entry "04", "xxxx ", "yyyyy       ", "zzzzzz "
@@ -453,22 +453,41 @@ Private Sub Test_00_Regression()
         .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
         .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
-         .Title "Regression test case 06: The ColsDelimiter explicitly specified as a single space "
+         .Title "Regression test case 06: " _
+              , "- The ColsDelimiter explicitly specifies as a single space " _
+              , "- The Header alignments are implicitly: R, C, L, L" _
+              , "- The item alignments are implicitly: R, L, C (filled with -), L" _
+              , "- Leading spaces with left aligned items are preserved by default"
         .ColsDelimiter = " "
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
-        .Entry " 06", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
+        .Entry " 06", "xxxx ", "- yyyyyy -", " Rightmost column without width limit!  "
         .Entry " 06", "xxxx ", "yyyy       ", "         zzzzzz   "
         .Entry "06", "xxxx ", "yyyyy       ", "zzzzzz "
-         .Title "Regression test case 07: Alignment items: " _
+         
+         .Title "Regression test case 07: " _
+              , "- The ColsDelimiter explicitly specifies as a single space " _
+              , "- The Header alignments are explicitly: R, C, L, L" _
+              , "- The item alignments are explicitly: R, L, C (filled with -), L" _
+              , "- Leading spaces with left aligned items are preserved by default"
+        .ColsDelimiter = " "
+        .Headers "|Nr|Item-1|Item-2|Item-3 (no width limit)"
+        .AlignmentHeaders "R", "C", "L", "L"
+        .AlignmentItems "R", "L", "- C -"
+        .MaxItemLengths 3, 10, 25, 30
+        .Entry "07", "xxxx", "yyyyyy", " Rightmost column without width limit!  "
+        .Entry "07", "xxxx", "yyyy  ", "         zzzzzz   "
+        .Entry "07", "xxxx", "yyyyy ", "zzzzzz "
+         
+         .Title "Regression test case 08: Alignment items: " _
               , "Column 1: Implicitly Right adjusted" _
               , "Column 2: Length explicily specified = 20" _
               , "          Alignment explicitly specified Left adjusted filled with .....: " _
               , "Column 3: Implicitly Left adjusted."
         .MaxItemLengths , 20
-        .AlignmentItems , "L."
-        .Entry " 07", "xxxx ", " Rightmost column without width limit!  "
-        .Entry " 07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz   "
-        .Entry "07", "xxxxxxxxx", "zzzzzz "
+        .AlignmentItems , "L.:"
+        .Entry " 08", "xxxx ", " Rightmost column without width limit!  "
+        .Entry " 08", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz   "
+        .Entry "08", "xxxxxxxxx", "zzzzzz "
                
         If Not mErH.Regression Then
             .Dsply

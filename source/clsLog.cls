@@ -155,14 +155,8 @@ End Property
 
 Private Property Let ColAlignmentHeader(Optional ByVal c_col As Long, _
                                                 ByVal c_align As String)
-    If Not IsAllocated(aAlignmentsHeader) Then
-        ReDim aAlignmentsHeader(c_col)
-    ElseIf c_col > UBound(aAlignmentsHeader) Then
-        ReDim Preserve aAlignmentsHeader(c_col)
-    End If
+    ColArry aAlignmentsHeader, c_col
     aAlignmentsHeader(c_col) = c_align
-    
-    Debug.Print "Head-Col " & c_col & ": Alignment=" & c_align
 
 End Property
 
@@ -182,28 +176,17 @@ End Property
 
 Private Property Let ColFill(Optional ByVal c_col As Long, _
                                       ByVal c_fill As String)
-    If Not IsAllocated(aFills) Then
-        ReDim aFills(c_col)
-    ElseIf c_col > UBound(aFills) Then
-        ReDim Preserve aFills(c_col)
-    End If
+    ColArry aFills, c_col
     aFills(c_col) = c_fill
     
 End Property
 
 Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
                                                ByVal c_align As String)
-    Dim lAlignmentLine As Long
-    
-    If Not IsAllocated(aAlignmentsItem) Then
-        ReDim aAlignmentsItem(c_col)
-    ElseIf c_col > UBound(aAlignmentsItem) Then
-        ReDim Preserve aAlignmentsItem(c_col)
-    End If
+    ColArry aAlignmentsItem, c_col
     If aAlignmentsItem(c_col) = vbNullString _
     Then aAlignmentsItem(c_col) = c_align
-    
-    Debug.Print "Item-Col " & c_col & ": Alignment=" & c_align
+
 End Property
 
 Private Property Get ColHeader(Optional ByVal c_col As Long) As String
@@ -224,14 +207,20 @@ End Property
 Private Property Let ColHeader(Optional ByVal c_col As Long, _
                                         ByVal c_header As String)
     
-    If Not IsAllocated(aHeaders) Then
-        ReDim aHeaders(c_col)
-    Else
-        ReDim Preserve aHeaders(Max(UBound(aHeaders), c_col))
-    End If
+    ColArry aHeaders, c_col
     aHeaders(c_col) = c_header
     
 End Property
+
+Private Sub ColArry(ByRef c_arry As Variant, _
+                    ByVal c_col As Long)
+' -----------------------------------------------------------------------------------
+' Returns the array (c_arry) redimed with the number of required columns (c_col).
+' -----------------------------------------------------------------------------------
+    If Not IsAllocated(c_arry) _
+    Then ReDim c_arry(c_col) _
+    Else ReDim Preserve c_arry(Max(UBound(c_arry), c_col))
+End Sub
 
 Private Property Get ColItem(Optional ByVal c_col As Long) As String
 ' -----------------------------------------------------------------------------------
@@ -276,17 +265,15 @@ End Property
 
 Private Property Let ColItem(Optional ByVal c_col As Long, _
                                       ByVal c_item As String)
-    If Not IsAllocated(aItems) Then
-        ReDim aItems(c_col)
-    ElseIf c_col > UBound(aItems) Then
-        ReDim Preserve aItems(c_col)
-    End If
+    ColArry aItems, c_col
     aItems(c_col) = c_item
-
 End Property
 
 Public Property Let ColsDelimiter(ByVal s As String)
-    sColsDelimiter = s
+    Select Case s
+        Case " ": sColsDelimiter = s: sColsMargin = vbNullString
+        Case "|": sColsDelimiter = s: sColsMargin = " "
+    End Select
 End Property
 
 Private Property Get ColWidth(Optional ByVal c_col As Long) As Long
@@ -299,16 +286,8 @@ End Property
 
 Private Property Let ColWidth(Optional ByVal c_col As Long, _
                                        ByVal c_width As Long)
-    Dim lWidth As Long
-    
-    If Not IsAllocated(aMaxItemLengths) Then
-        ReDim aMaxItemLengths(c_col)
-    ElseIf c_col > UBound(aMaxItemLengths) Then
-        ReDim Preserve aMaxItemLengths(c_col)
-    End If
+    ColArry aMaxItemLengths, c_col
     aMaxItemLengths(c_col) = c_width
-    Debug.Print "WidthCol " & c_col & ": Width    =" & c_width
-
 End Property
 
 Private Property Get DefaultLogFileName() As String
@@ -390,15 +369,16 @@ End Property
 
 Public Function Align(ByVal a_strng As String, _
                       ByVal a_lngth As Long, _
-             Optional ByVal a_mode As String = "L", _
-             Optional ByVal a_margin As String = vbNullString, _
+             Optional ByVal a_align As String = "L", _
+             Optional ByVal a_margn As String = vbNullString, _
              Optional ByVal a_fill As String = " ") As String
 ' ----------------------------------------------------------------------------
-' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_mode) filled
-' with characters (a_fill).
-' Note 1: The length (a_lngth) of the string (a_strng) is considered including
-'         already the length of the column margin (a_margin) - if any.
-' Note 2: A fill (a_fill) = "." will fill with ".....:"
+' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_align) and
+' filled with (a_fill).
+' Preconditions:
+' - The length (a_lngth) is the final lenght including any specific fillss
+' - The string (a_strn) may contain already leading or trailing preserved
+'   spaces.
 ' ----------------------------------------------------------------------------
     Const PROC = "Align"
     
@@ -407,18 +387,26 @@ Public Function Align(ByVal a_strng As String, _
     Dim s       As String
     
     If a_fill = vbNullString Then a_fill = " "
-    Select Case Left(UCase(a_mode), 1)
+    Select Case Left(UCase(a_align), 1)
         Case "L"
-            If a_fill = " " Then
-                Align = Left$(a_margin & LTrim$(a_strng) & a_margin & String(a_lngth, a_fill), a_lngth)
-            ElseIf a_fill = "." Then
-                Align = Left$(a_margin & LTrim$(a_strng) & " " & String(a_lngth, a_fill), a_lngth) & ":"
-            End If
+            a_strng = WithMargins(a_strng)
+            Select Case a_fill
+                Case " "
+                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                Case ".:"
+                    If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth) & ":"
+                Case "."
+                    If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+            End Select
         Case "R"
-            Align = Right$(String(a_lngth, a_fill) & a_margin & RTrim$(a_strng) & a_margin, a_lngth)
+            Align = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
         Case "C"
-            s = a_margin & Trim$(a_strng) & a_margin
-            sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
+            s = " " & Trim$(a_strng) & " "
+            If Len(s) < a_lngth Then
+                sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
+            End If
             Align = sFill & s & sFill
             If Len(Align) < a_lngth Then
                 Align = Align & VBA.String$(a_lngth - Len(Align), a_fill)
@@ -433,46 +421,118 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Function
 
-Public Function AlignedImplicitly(ByVal a_string As String) As String
+Public Sub Alignment(ByVal a_string As String, _
+            Optional ByRef a_return As String, _
+            Optional ByRef a_fill As String, _
+            Optional ByRef a_align As String)
 ' -----------------------------------------------------------------------------------
-' Function returns the alignment specified implicitly in accordance with the
-' following rules: - (L)eft adjusted  = Leading spaces > trailing spaces
-'                  - (C)entered       = Leading spaces = trailing spaces
-'                  - (R)ight adjusted = Leading spaces < trailing spaces.
+' Returns the alignment derived from a string (a_string), whereby the string may be
+' an item (implicit alignment spec) or an explicit alignment spec.
+' When a_align = vbNullString the following is returned:
+'      - the alignment specified implicitly (a_align) in accordance with the
+'        following rules:
+'        - (L)eft adjusted  = Leading spaces > trailing spaces
+'        - (C)entered       = Leading spaces = trailing spaces
+'        - (R)ight adjusted = Leading spaces < trailing spaces.
+'      - the fill string (a_fill) if any
+'      - the provided string (a_string) unstripped from any implicit alignment/fill
+'        specs whereby leading spaces are preserved with "L"eft adjusted and
+'        trailing spaces are preserved with "R"ight adjusted.
 '
-' Examples:  |   (L)eft  |(C)entered|  (R)ight  |
-'            |-----------+----------+-----------|
-'            | "xxx "    | "xxx"    | " xxxx"   |
-'            | " xxxx  " | " xxxx " | "  xxxx " |
+'      Examples:  |   (L)eft  |(C)entered |  (R)ight  | Fill |
+'                 |-----------+-----------+-----------+------|
+'                 | "xxx "    | "xxx"     | " xxxx"   |      |
+'                 | " xxxx  " | " xxxx "  | "  xxxx " |
+'                 | "xxx ."   |           |           | "."
+'                 | "xxx .:"  |           |           | ".:"
+'                 |           | "- xxx -" |           | "-"
+' Else (a_align <> vbNullString)
+'      The string (a_align) is returned (a_return) with leading and/or trailing
+'      spaces unstripped in accordance with the provided alignment (a_align).
 '
+' Important to understand:
+' In case an alignment (a_align) is already provided only the returned string
+' is unstripped from irrelevant leading and/or trailing spaces.
 ' -----------------------------------------------------------------------------------
     Dim lLeft   As Long
     Dim lRight  As Long
     Dim i       As Long
     
-    For i = 1 To Len(a_string)
-        If i = 1 Then
-            If Left(a_string, 1) <> " " Then Exit For
-        Else
-            If Mid$(a_string, i, 1) <> " " Then Exit For
-        End If
-        lLeft = lLeft + 1
-    Next i
-    For i = Len(a_string) To 1 Step -1
-        If i = Len(a_string) Then
-            If Right(a_string, 1) <> " " Then Exit For
-        Else
-            If Mid$(a_string, i, 1) <> " " Then Exit For
-        End If
-        lRight = lRight + 1
-    Next i
     Select Case True
-        Case lLeft = lRight:    AlignedImplicitly = "C"
-        Case lLeft < lRight:    AlignedImplicitly = "L"
-        Case lLeft > lRight:    AlignedImplicitly = "R"
+        Case Right$(a_string, 3) = " .:"
+            If a_align = vbNullString Then
+                a_align = "L"
+                a_fill = ".:"
+            End If
+            a_return = Left$(a_string, Len(a_string) - 3)   ' unstrip the alignment/fill spec
+        
+        Case Right$(a_string, 2) = ".:"
+            If a_align = vbNullString Then
+                a_align = "L"
+                a_fill = ".:"
+            End If
+            a_return = Left$(a_string, Len(a_string) - 2)   ' unstrip the alignment/fill spec
+        
+        Case Right$(a_string, 2) = " ."
+            If a_align = vbNullString Then
+                a_align = "L"
+                a_fill = "."
+            End If
+            a_return = Left$(a_string, Len(a_string) - 2)   ' unstrip the alignment/fill spec
+        
+        Case Right$(a_string, 1) = "."
+            If a_align = vbNullString Then
+                a_align = "L"
+                a_fill = "."
+            End If
+            a_return = Left$(a_string, Len(a_string) - 1)   ' unstrip the alignment/fill spec
+        
+        Case Left$(a_string, 2) = "- " And Right$(a_string, 2) = " -"
+            If a_align = vbNullString Then
+                a_align = "C"
+                a_fill = "-"
+            End If
+            a_return = Mid$(a_string, 3, Len(a_string) - 4) ' unstrip the alignment/fill spec
+        
+        Case Else
+            '~~ No fill string is provided with the implicit specified alignment
+            If a_align = vbNullString Then
+                '~~ The alignment is still to be returned
+                For i = 1 To Len(a_string)
+                    '~~ Count leading spaces
+                    If i = 1 Then
+                        If Left(a_string, 1) <> " " Then Exit For
+                    Else
+                        If Mid$(a_string, i, 1) <> " " Then Exit For
+                    End If
+                    lLeft = lLeft + 1
+                Next i
+                For i = Len(a_string) To 1 Step -1
+                    '~~ Count trailing spaces
+                    If i = Len(a_string) Then
+                        If Right(a_string, 1) <> " " Then Exit For
+                    Else
+                        If Mid$(a_string, i, 1) <> " " Then Exit For
+                    End If
+                    lRight = lRight + 1
+                Next i
+                Select Case True
+                    Case lLeft = lRight:    a_align = "C"
+                    Case lLeft < lRight:    a_align = "L"
+                    Case lLeft > lRight:    a_align = "R"
+                End Select
+            End If
+            
+            '~~ Untrip leading and/or trailing spaces in accordance with the alignment (analysed or provide)
+            Select Case a_align
+                Case "C":    a_return = Trim$(a_string)  ' unstrip any leading and trailing spaces
+                Case "L":    a_return = RTrim$(a_string) ' unstrip trailing spaces
+                Case "R":    a_return = LTrim$(a_string) ' unstrip leading spaces
+            End Select
+    
     End Select
 
-End Function
+End Sub
 
 Private Function AppErr(ByVal app_err_no As Long) As Long
 ' ------------------------------------------------------------------------------
@@ -520,6 +580,9 @@ Public Sub Entry(ParamArray e() As Variant)
     Dim s       As String
     Dim v       As Variant
     Dim lWidth  As Long
+    Dim sItem   As String
+    Dim sFill   As String
+    Dim sAlign  As String
     
     If LBound(e) = UBound(e) Then
         '~~ The log-entry is only one single string
@@ -540,34 +603,44 @@ Public Sub Entry(ParamArray e() As Variant)
                     '~~ spcified by means of the MaxItemLengths method
                     ColWidth(iCol) = Len(v(i))
                 End If
+                sAlign = ColAlignmentItem(iCol)
+                Alignment v(i), sItem, sFill, sAlign
+                
             Next i
             WriteItems
         Else
             AlignedByColumns = False
-            If bNewLog _
-            Then NewLog n_items:=False, n_line:=s
+            If bNewLog Then
+                '~~ NewLog with an Entry (s) to be written indicates that
+                '~~ writing a delimiter line, a title (if specified) and a header
+                '~~ (when specified) are to be written beforehand.
+                NewLog n_items:=False, n_line:=s
+            End If
             WriteLine s
             bNewLog = False
         End If
     Else
-        '~~ The Entry is built up of more than one string,
-        '~~ indicating items aligned to be aligned in columns
+        '~~ The Entry provides more than just one string, thereby
+        '~~ indicating that these items are to be aligned in columns
         AlignedByColumns = True
         lColumns = UBound(e) + 1
         For i = LBound(e) To UBound(e)
             iCol = i + 1
-            If bNewLog Then
-                '~~ When yet no alignment had been specified explicitly
-                '~~ the first row determines the items alignment
-                If ColAlignmentItem(iCol) = vbNullString _
-                Then ColAlignmentItem(iCol) = AlignedImplicitly(e(i))
-            End If
-            ColItem(iCol) = sColsMargin & Trim$(CStr(e(i))) & sColsMargin
+            sAlign = ColAlignmentItem(iCol)
+            sFill = ColFill(iCol)
+            '~~ The Alignment will return the item (sItem) unstripped
+            '~~ from irrelevant leading and/or trailing spaces.
+            '~~ Only in case no alignment has already been specified,
+            '~~ it - and the fill if any will be returned else it will remain unchanged.
+            Alignment e(i), sItem, sFill, sAlign
+            ColAlignmentItem(iCol) = sAlign
+            ColFill(iCol) = sFill
+            ColItem(iCol) = sItem
             
             If ColWidth(iCol) = 0 Then
                 '~~ Only in case no column width has explicitly been
                 '~~ spcified by means of the MaxItemLengths method
-                ColWidth(iCol) = Len(Trim$(ColItem(iCol)))
+                ColWidth(iCol) = Len(sItem)
             End If
         Next i
         WriteItems
@@ -609,18 +682,12 @@ Public Sub AlignmentItems(ParamArray c_align() As Variant)
             '~~ The corresponding columns will be aligned implicitly specified
             '~~ with the first entry's items specifications
             iCol = i + 1
-            sFill = " " ' the default in case nothing else is specified
+            sFill = " "
+            Alignment c_align(i), sAlign, sFill
             Select Case True
-                Case Left$(c_align(i), 1) = "-", Right$(c_align(i), 1) = "-"
-                    sAlign = UCase(Left(Replace$(c_align(i), "-", vbNullString), 1))
-                    sFill = "-"
-                Case Right$(c_align(i), 1) = "."
-                    sAlign = UCase(Left$(c_align(i), 1))
-                    sFill = "."
-            End Select
-            Select Case True
-                Case sAlign = "L" And sFill = vbNullString
+                Case sAlign = "L" And sFill = " "
                 Case sAlign = "L" And sFill = "."
+                Case sAlign = "L" And sFill = ".:"
                 Case sAlign = "R"
                 Case sAlign = "C" And sFill = vbNullString
                 Case sAlign = "C" And sFill = "-"
@@ -750,6 +817,16 @@ Public Sub Headers(ParamArray c_headers() As Variant)
     Dim s       As String
     Dim v       As Variant
     Dim lWidth  As Long
+    Dim sAlign  As String
+    Dim sHeader As String
+    
+    '~~ When column headers are specified and the ColsDelimiter is still not
+    '~~ specified the delimiter defaults to a vertical bar.
+    Select Case sColsDelimiter
+        Case vbNullString:      sColsMargin = " ":          sColsDelimiter = "|"
+        Case "|":               sColsMargin = " "
+        Case " ":               sColsMargin = vbNullString
+    End Select
     
     aHeaders = vbNullString
     For i = LBound(c_headers) To UBound(c_headers)
@@ -759,40 +836,34 @@ Public Sub Headers(ParamArray c_headers() As Variant)
             For j = LBound(v) To UBound(v)
                 If v(j) <> vbNullString Then
                     iCol = j + 1
+                    sAlign = vbNullString
+                    Alignment v(j), sHeader, , sAlign
                     If ColAlignmentHeader(iCol) = vbNullString Then
                         '~~ The first specification of a column's header triggers the
                         '~~ implicit alignment specification - provided none has yet been specified explicitly
-                        ColAlignmentHeader(iCol) = AlignedImplicitly(v(j))
+                        ColAlignmentHeader(iCol) = sAlign
                     End If
-                    s = v(j)
-                    If Len(s) < Len(Trim(s)) + (2 * Len(sColsMargin)) Then
-                        '~~ The minimum width of a column header is the mere characters
-                        '~~ string enclosed in a leading and trailing sColsMargin
-                        s = WithMargins(s)
-                    End If
-                    ColHeader(iCol) = Trim(s)
+                    ColHeader(iCol) = sHeader
                     lWidth = ColWidth(iCol)
-                    ColWidth(iCol) = Max(Len(s), lWidth)
+                    ColWidth(iCol) = Max(Len(WithMargins(sHeader)), lWidth)
                 End If
             Next j
         Else
             iCol = i + 1
-            If ColAlignmentHeader(iCol) = vbNullString Then
-                '~~ Implicit alignment when none has been specified explicitly
-                ColAlignmentHeader(iCol) = AlignedImplicitly(c_headers(i))
+            If Not IsError(c_headers(i)) Then
+                '~~ Skip column without a specified header
+                sAlign = vbNullString
+                Alignment c_headers(i), sHeader, , sAlign
+                If ColAlignmentHeader(iCol) = vbNullString Then
+                    '~~ Implicit alignment when none has been specified explicitly
+                    ColAlignmentHeader(iCol) = sAlign
+                End If
+                ColHeader(iCol) = sHeader
+                lWidth = ColWidth(iCol)
+                ColWidth(iCol) = Max(Len(WithMargins(sHeader)), lWidth)
             End If
-            ColHeader(iCol) = Trim(c_headers(i))
-            lWidth = ColWidth(iCol)
-            ColWidth(iCol) = Max(Len(WithMargins(c_headers(i))), lWidth)
         End If
     Next i
-    If IsAllocated(aHeaders) Then
-        Select Case sColsDelimiter
-            Case vbNullString:      sColsMargin = " ":          sColsDelimiter = "|"
-            Case "|":               sColsMargin = " "
-            Case " ":               sColsMargin = vbNullString
-        End Select
-    End If
     
 xt: Exit Sub
 
@@ -804,21 +875,26 @@ End Sub
 
 Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
-' This method explicitly specifies the columns alignment of the column headers.
-' In case no explicit headers alignment is specified (or the specification's first
+' Explicit headers column alignment specification, overwrites any already specified
+' alignment (possibly implicitly specified).
 ' character is neither L, nor C, nor R, the alignment is considered "implicit",
 ' indicated by the number of left and right spaces.
 ' -----------------------------------------------------------------------------------
     Dim i       As Long
     Dim iCol    As Long
-    Dim s       As String
+    Dim sAlign  As String
+    Dim sFill   As String
     
     For i = LBound(c_align) To UBound(c_align)
         iCol = i + 1
-        s = UCase(Left(c_align(i), 1))
-        Select Case s
-            Case "L", "C", "R": ColAlignmentHeader(iCol) = s
-        End Select
+        sAlign = vbNullString
+        If Not IsError(c_align(i)) Then
+            '~~ Skippes not specified columns
+            Alignment c_align(i), sAlign, sFill
+            Select Case UCase(Left$(sAlign, 1))
+                Case "L", "C", "R": ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+            End Select
+        End If
     Next i
     
 End Sub
@@ -831,7 +907,8 @@ Private Sub Init()
     aTitle = vbNullString
     bNewLog = True
     lKeepDays = 1
-    sColsDelimiter = " "        ' Default in case no Headers are specified
+    sAlignmentTitle = vbNullString
+    sColsDelimiter = vbNullString        ' Default in case no Headers are specified
     sColsMargin = vbNullString  ' Default in case no Headers are specified
 End Sub
 
@@ -1062,26 +1139,17 @@ Public Sub Title(ParamArray t() As Variant)
 ' Note: The first title line implicitly specifies the title's alignment.
 ' ----------------------------------------------------------------------------
     Dim i       As Long
-    Dim s       As String
-    Dim iLine   As Long
+    Dim sTitle  As String
     
-    sAlignmentTitle = "C" ' default
     If Not bNewLog Then Init
     ReDim aTitle(UBound(t) + 1)
     lLenTitle = 0
     For i = LBound(t) To UBound(t)
-        s = t(i)
-        If i = LBound(t) Then sAlignmentTitle = AlignedImplicitly(s)
-        iLine = i + 1
-        Select Case sAlignmentTitle
-            Case "L": s = RTrim$(s)
-            Case "C": s = Trim$(s)
-            Case "R": s = LTrim$(s)
-        End Select
-        aTitle(iLine) = s
-        lLenTitle = Max(lLenTitle, Len(s))
+        Alignment t(i), sTitle, , sAlignmentTitle
+        lLenTitle = Max(lLenTitle, Len(sTitle))
+        aTitle(i + 1) = sTitle
     Next i
-    aItems = vbNullString
+    aItems = vbNullString ' a new title clears any previous items
 
 End Sub
 
@@ -1116,8 +1184,8 @@ End Sub
 Private Function WithMargins(ByVal w_string As String) As String
 ' -----------------------------------------------------------------------------------
 ' Returns a string (w_string) with a leading and trailing margin (w_margin) in case
-' the string (w_string) not already begins and/or ends with a margin (w_margin). A
-' margin = vbNullString is ignored.
+' the string (w_string) not already begins and/or ends with a currently specified
+' margin (sColsMargin). A margin = vbNullString is ignored.
 ' -----------------------------------------------------------------------------------
     Dim s As String
     If sColsMargin <> vbNullString Then
@@ -1147,6 +1215,13 @@ Private Sub WriteItems()
     Dim s           As String
     Dim sElement    As String
         
+    '~~ When the ColsDelimiter is yet not specified
+    '~~ delimiter defaults to a single space.
+    If sColsDelimiter = vbNullString Then
+        sColsMargin = ""
+        sColsDelimiter = " "
+    End If
+
     For i = LBound(aItems) To UBound(aItems)
         s = s & sColsDelimiter & ColItem(i)
     Next i
