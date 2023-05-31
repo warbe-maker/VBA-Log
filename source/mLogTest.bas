@@ -386,24 +386,8 @@ End Sub
 
 Private Sub Test_00_Regression()
 ' ------------------------------------------------------------------------------
-' Regression-Test approach: n/a = not applicable
-'                           n/p = not provided
-'                           imp = implicit
-'                           exp = explicit (by method)
-'    |   NewLog  |   Col   | Time  |   Width   |
-' No | indicated | AlignedImplicitly | Stamp | detemined |
-'    |    by     |         |       |    by     |
-' ---+-----------+---------+-------+-----------+
-' 01 | New File  |   no    |  no   | unlimited |
-' 02 | Title     |   no    |  no   | unlimited |
-' 03 | NewLog    |   imp   |  yes  |   imp     |
-' 04 | Title     |   yes   |  no   |  Header   |
-' 05 | Title     |   yes   |  no   | ColsWidth |
-' 06 |           |         |  no   |           |
-' 07 |           |         |  no   |           |
-' 08 |           |         |  no   |           |
-' 09 |           |         |  no   |           |
-'
+' Regression-Test: See inline doku and or the log title (if any) for the test
+' description.
 ' ------------------------------------------------------------------------------
     Const PROC = "Test_00_Regression"
     
@@ -420,74 +404,96 @@ Private Sub Test_00_Regression()
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
         .WithTimeStamp = bTimeStamp
-        .Title "Regression test case 01: Two single lines, title centered"
-        .Entry " 01 1. Single string, new log, no title.                                 "
-        .Entry " 01 2. Single string, new log, no title. "
-        .Title "Regression test case 02:  " _
-             , "- The title implicitly indicates the begin of a new series of log entries. " _
-             , "- A trailing space with the first specified title line indicates 'left adjusted'!." _
-             , "  Note: Without any space to the left and right or equal spaces indicates" _
-             , "        centered which is quasi the default."
-        .Entry " 02 1. Single string, new log."
-        .Entry " 02 2. Single string without any width limit"
-        '~~ The change from non-column to column-aligned implicitly indicates the begin of a new series of log entries
-        .Entry " 03", "xxxx", " yyyyyy", " Alignments: R, C, R, L; Rightmost column without width limit"
-        .Entry " 03", "xxxx", " yyyy       ", "'NewLog' implicit due to the change from non- to column-aligned ..."
-        .Entry " 03", "xxxx", " yyyyy       ", "... because entries are without a title"
-        .Title "Regression test case 04: The 'Headers' method implicitely specifies: " _
-             , "- The alignment by means of leading and trailing spaces," _
-             , "- the column widths by vertical bars (|)!" _
-             , "- The maximum column width is the maximimum of the width implicitly specified by" _
-             , "  the 'Headers' first line's specificateion and the width of the first line's width." _
-             , "- Alignment-Headers (implicit): R, C, C, L" _
-             , "- Alignment-Items (implicit)  : R, L, L, L"
-        .Headers "|  Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
-        .Entry " 04", "xxxx ", "yyyyyy ", " Rightmost column without width limit!  "
-        .Entry " 04", "xxxx ", "yyyy       ", "         zzzzzz   "
-        .Entry "04", "xxxx ", "yyyyy       ", "zzzzzz "
+        '~~ --------------------
+        '~~ Test 01: Title tests
+        '~~ --------------------
+        .Title "Regression test case 01-1: " _
+             , "- Single log line" _
+             , "- Title left adjusted"
+        .Entry "01-1 1. Single string, new log, Single string, new log."
+        .Entry "01-1 2. Single string, new log, no title. "
+        
+        .Title "Regression test case 01-2: Title centered"
+        .Entry "01-2 1. Single string, new log, Single string, new log."
+        .Entry "01-2 2. Single string without any width limit"
+        
+        .Title "- Regression test case 01-3: Title centered (with -) -"
+        .Entry "01-3 1. Single string, new log. Extra long text to force title with fill characters"
+        .Entry "01-3 2. Single string without any width limit"
+        
+        .Title "Regression test case 01-4:"
+        .Title "Three title lines (centered)"
+        .Title "Each line specified by an individual method call"
+        .Entry "01-4 1. Single string, new log. Extra long text to force title with fill characters"
+        .Entry "01-4 2. Single string without any width limit"
+        
+        '~~ ------------------------------------------------------------------
+        '~~ Test 02: - The change from non-column to column-aligned implicitly
+        '~~            indicates the begin of a new series of log entries
+        '~~          - The first line implicitly specifies the columnns
+        '~~            alignment: R, C, R, L
+        '~~ ------------------------------------------------------------------
+        .Entry " 02", "xxxx", " yyyyyy", "Alignments: R, C, R, L; Rightmost column without width limit"
+        .Entry "02", "xxxx", " yyyy", "'NewLog' implicit due to the change from non- to column-aligned ..."
+        .Entry "02", "xxxx", " yyyyy", "... because entries are without a title"
+        
+        .Title "Regression test case 04: " _
+             , "- The 'Headers' method:" _
+             , "  - implicitely specifies the alignment by means of leading and trailing spaces (R, C, C, L)" _
+             , "  - specifies two header lines each by an individual method call" _
+             , "- The maximum column width is the maximimum of the width implicitly specified by:" _
+             , "  - the 'Headers' first line's specificateion" _
+             , "  - the width of the first line's items width." _
+             , "- The Entry-Items alignment is implicitly specifiedby the first line's items: R, L, L, L"
+        .Headers " Nr", "Item", "Item", "Item 3 "
+        .Headers "   ", " 1  ", " 2  ", "(no width limit) "
+        .Entry " 03", "xxxx ", "yyyyyy ", " Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header) "
+        .Entry "03", "xxxx", "yyyy", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)"
+        .Entry "03", "xxxx", "yyyyy", "zzzzzz "
         .NewLog
-        .Title "Regression test case 05: Because no 'Headers' are specified the ColsDelimiter " _
+        .Title "Regression test case 04: Because no 'Headers' are specified the ColsDelimiter " _
              , "defaults to a single space and the ColsMargin is a vbNullString." _
              , "Items alignment (implicit): R, L, C, R"
         .MaxItemLengths 2, 10, 25, 30
-        .Entry " 05", "xxx ", "yyyyyy", "     zzzzzz"
-        .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
-        .Entry "05", "xxx ", "yyyyyy ", "zzzzzz "
-         .Title "Regression test case 06: " _
+        .Entry " 04", "xxx ", "yyyyyy", "     zzzzzz"
+        .Entry "04", "xxx ", "yyyyyy ", "zzzzzz "
+        .Entry "04", "xxx ", "yyyyyy ", "zzzzzz "
+         .Title "Regression test case 05: " _
               , "- The ColsDelimiter explicitly specifies as a single space " _
               , "- The Header alignments are implicitly: R, C, L, L" _
               , "- The item alignments are implicitly: R, L, C (filled with -), L" _
               , "- Leading spaces with left aligned items are preserved by default"
         .ColsDelimiter = " "
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
-        .Entry " 06", "xxxx ", "- yyyyyy -", " Rightmost column without width limit!  "
-        .Entry " 06", "xxxx ", "yyyy       ", "         zzzzzz   "
-        .Entry "06", "xxxx ", "yyyyy       ", "zzzzzz "
+        .Entry " 05", "xxxx ", "- yyyyyy -", " Rightmost column without width limit!  "
+        .Entry " 05", "xxxx ", "yyyy       ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)"
+        .Entry "05", "xxxx ", "yyyyy       ", "zzzzzz "
          
-         .Title "Regression test case 07: " _
-              , "- The ColsDelimiter explicitly specifies as a single space " _
-              , "- The Header alignments are explicitly: R, C, L, L" _
-              , "- The item alignments are explicitly: R, L, C (filled with -), L" _
-              , "- Leading spaces with left aligned items are preserved by default"
+        .Title "Regression test case 06: "
+        .Title "- The ColsDelimiter explicitly specifies as a single space "
+        .Title "- The Header alignments are explicitly: R, C, L, L"
+        .Title "- The item alignments are explicitly: R, L, C (filled with -), L"
+        .Title "- Leading spaces with left aligned items are preserved by default"
+        .Title "- The columns width is explicitly specified by the MaxItemsLength method (3,10,25,30)"
         .ColsDelimiter = " "
         .Headers "|Nr|Item-1|Item-2|Item-3 (no width limit)"
-        .AlignmentHeaders "R", "C", "L", "L"
+        .AlignmentHeaders "|R|C|L|L|"
         .AlignmentItems "R", "L", "- C -"
         .MaxItemLengths 3, 10, 25, 30
-        .Entry "07", "xxxx", "yyyyyy", " Rightmost column without width limit!  "
-        .Entry "07", "xxxx", "yyyy  ", "         zzzzzz   "
-        .Entry "07", "xxxx", "yyyyy ", "zzzzzz "
+        .Entry "06", "xxxx", "yyyyyy", " Rightmost column without width limit!  "
+        .Entry "06", "xxxx", "yyyy  ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)   "
+        .Entry "06", "xxxx", "yyyyy ", "zzzzzz "
          
-         .Title "Regression test case 08: Alignment items: " _
+         .Title "Regression test case 07: Alignment items: " _
               , "Column 1: Implicitly Right adjusted" _
               , "Column 2: Length explicily specified = 20" _
               , "          Alignment explicitly specified Left adjusted filled with .....: " _
               , "Column 3: Implicitly Left adjusted."
         .MaxItemLengths , 20
         .AlignmentItems , "L.:"
-        .Entry " 08", "xxxx ", " Rightmost column without width limit!  "
-        .Entry " 08", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz   "
-        .Entry "08", "xxxxxxxxx", "zzzzzz "
+        .Entry " 07", "xxxx ", " Rightmost column without width limit!  "
+        .Entry "07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
+        .Entry "07", "xxxxxxxxx", "zzzzzz"
                
         If Not mErH.Regression Then
             .Dsply
@@ -520,46 +526,4 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-'Private Sub Test_07_Header_AlignedImplicit()
-'    Const PROC = "Test_07_Header_AlignedImplicit"
-'
-'    Dim bTimeStamp As Boolean: bTimeStamp = True
-'
-'    BoP ErrSrc(PROC)
-'    With New clsLog
-'        If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
-'        .WithTimeStamp = bTimeStamp
-'        .Header " Header-01-Rigth", "Header-02-Left ", " Header-03-Centered "
-'        .Widths 25, 25, 25
-'        .Entry "xxxxxx", "yyyyy", "zzzzzzzzzzz"
-'        If Not mErH.Regression Then
-'            .Dsply
-'        Else
-'            If Not ResultAsserted(.LogFile _
-'                                , bTimeStamp _
-'                                , sExpected _
-'                                , sResult _
-'                                , "|  Column-01-Header  |   -Column-02-Header-    |     --Column-03-Header--     " _
-'                                , "|--------------------+-------------------------+------------------------------" _
-'                                , "| xxxxxx             | yyyyy                   | zzzzzzzzzzz                  ") Then
-'                sRegTestResult = " f a i l e d !" & vbLf & _
-'                                 "Expected: " & sExpected & vbLf & _
-'                                 "Provided: " & sResult
-'                bRegTestFailed = True
-'            Else
-'                sRegTestResult = " p a s s e d !"
-'            End If
-'        End If
-'    End With
-'
-'xt: EoP ErrSrc(PROC)
-'    If mErH.Regression Then mTrc.LogInfo = "Test " & sRegTestResult
-'    Exit Sub
-'
-'eh: Select Case ErrMsg(ErrSrc(PROC))
-'        Case vbResume:  Stop: Resume
-'        Case Else:      GoTo xt
-'    End Select
-'End Sub
-'
 

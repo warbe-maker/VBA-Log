@@ -80,20 +80,34 @@ The specified [***MaxItemLengths***](#methods) becomes the minimum width of the 
 #### Implicit columns width specification
 See [Implicit column width and alignment specification specification](#implicit-column-width-and-alignment-specification)
 
-### Column alignment specification
-#### Explicit column alignment specification
+### Alignment specification
+Columns alignment may be specified explicitly (***AlignmentHeaders*** for headers, ***AlignmentItems*** for items) or implicitly (***Headers*** for headers, ***Entry*** for items).
+
+| Examples for 3 columns | ***AlignmentHeaders*** | ***AlignmentItems*** | ***Headers*** | ***Entry*** |
+|---------------|:----------------------:|:--------------------:|:-------------:|:-----------:|
+| <nobr>`"|C|L|R|"`   |    x                   |          x           |     x         |             |
+| <nobr>`"C","L","R"` |    x                   |          x           |     x         |             |
+| <nobr>`"|x|x | x|"`     |    x                   |          x           |     x         |    x        |
+| <nobr>`"|- x -|x.:| x|` |                    |                      |               |             |
+
+
+### Headers
+Explicit column alignment specification for
 - For ***Headers***: ***AlignmentHeaders*** method
 - For ***Entry*** items: ***AlignmentItems*** method
 
-For each column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]
 
-##### Examples:
+
+##### Examples ***AlignmentHeaders***
   - `|C|L|R|` specifies the alignments centered, left adjusted and right adjusted for the first 3 columns
   - `"C","L","R"` same as above.
-  - >Note: Any string not beginning with C, L, or R defaults to **C**entered
-##### Special alignment cases
-- ***AlignmentHeaders***: `"-C", "C-", or "-C-"` specifies **Centered** filled with `-`.
-- ***AlignmentItems***: `"L.` specifies **Left adjusted** filled with `.` and terminated with `:`. Example: `xxxxx ...........:`.
+  - `"|x|x | x|"` same as above (this syntax follows the [implicit alignment specification](#implicit-column-width-and-alignment-specification)
+  
+For each column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]
+
+##### Examples ***AlignmentItems***
+
+: `"L.` specifies **Left adjusted** filled with `.` and terminated with `:`. Example: `xxxxx ...........:`.
 
 #### Implicit column width and alignment specification 
 For all columns the width and/or the alignment has not explicitly specified, both is derived from an implicit specification as follows. The specification may be a single vertical bar (|) delimited string or an array of string expressions.

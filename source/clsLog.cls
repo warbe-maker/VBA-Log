@@ -61,12 +61,13 @@ Option Base 1 ' ensures the index conforms with the column number
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' -----------------------------------------------------------------------------------
-Private aAlignmentsHeader   As Variant ' Public for test purpose only
-Private aAlignmentsItem     As Variant ' Public for test purpose only
-Private aHeaders            As Variant ' Public for test purpose only
+Private aAlignmentsHeader   As Variant
+Private aAlignmentsItem     As Variant
+Private aHeaders            As Variant
+Private aHeaderLines        As Variant
 Private aItems              As Variant
-Private aTitle              As Variant
-Private aMaxItemLengths             As Variant ' Public for test purpose only
+Private aTitleLines         As Variant
+Private aMaxItemLengths     As Variant ' Public for test purpose only
 Private aFills()            As String
 Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
@@ -75,7 +76,7 @@ Private fso                 As New FileSystemObject
 Private lColumns            As Long
 Private lKeepDays           As Long
 Private lLenTitle           As Long
-Private sAlignmentTitle     As String
+Private sTitleAlignment     As String
 Private sColsDelimiter      As String
 Private sColsMargin         As String
 Private sEntry              As String
@@ -86,6 +87,7 @@ Private sPath               As String
 Private sServicedItem       As String
 Private sServicedItemName   As String
 Private sServicedItemType   As String
+Private sTitleFill          As String
 
 #If Not MsgComp = 1 Then
     ' -------------------------------------------------------------------------------
@@ -128,9 +130,10 @@ Private Sub Class_Terminate()
     Set aAlignmentsHeader = Nothing
     Set aAlignmentsItem = Nothing
     Set aHeaders = Nothing
+    Set aHeaderLines = Nothing
     Set aMaxItemLengths = Nothing
     Set aItems = Nothing
-    Set aTitle = Nothing
+    Set aTitleLines = Nothing
     sColsDelimiter = vbNullString
 End Sub
 
@@ -155,7 +158,7 @@ End Property
 
 Private Property Let ColAlignmentHeader(Optional ByVal c_col As Long, _
                                                 ByVal c_align As String)
-    ColArry aAlignmentsHeader, c_col
+    ArryRedim aAlignmentsHeader, c_col
     aAlignmentsHeader(c_col) = c_align
 
 End Property
@@ -176,24 +179,27 @@ End Property
 
 Private Property Let ColFill(Optional ByVal c_col As Long, _
                                       ByVal c_fill As String)
-    ColArry aFills, c_col
+    ArryRedim aFills, c_col
     aFills(c_col) = c_fill
     
 End Property
 
 Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
                                                ByVal c_align As String)
-    ColArry aAlignmentsItem, c_col
+    ArryRedim aAlignmentsItem, c_col
     If aAlignmentsItem(c_col) = vbNullString _
     Then aAlignmentsItem(c_col) = c_align
 
 End Property
 
-Private Property Get ColHeader(Optional ByVal c_col As Long) As String
+Private Property Get ColHeader(Optional ByVal c_col As Long, _
+                               Optional ByVal c_line As Long = 1) As String
     Dim s       As String
     Dim lWidth  As Long
+    Dim v       As Variant
     
-    If IsAllocated(aHeaders) Then
+    If IsAllocated(aHeaderLines) Then
+        aHeaders = aHeaderLines(c_line)
         If c_col <= UBound(aHeaders) Then
             s = WithMargins(aHeaders(c_col))
             lWidth = Len(s)
@@ -205,21 +211,24 @@ Private Property Get ColHeader(Optional ByVal c_col As Long) As String
 End Property
 
 Private Property Let ColHeader(Optional ByVal c_col As Long, _
+                               Optional ByVal c_line As Long = 1, _
                                         ByVal c_header As String)
     
-    ColArry aHeaders, c_col
+    ArryRedim aHeaderLines, c_line
+    ArryRedim aHeaders, c_col
     aHeaders(c_col) = c_header
+    aHeaderLines(c_line) = aHeaders
     
 End Property
 
-Private Sub ColArry(ByRef c_arry As Variant, _
-                    ByVal c_col As Long)
+Private Sub ArryRedim(ByRef a_arry As Variant, _
+                      ByVal a_items As Long)
 ' -----------------------------------------------------------------------------------
-' Returns the array (c_arry) redimed with the number of required columns (c_col).
+' Returns the array (a_arry) redimed with the number of required columns (a_items).
 ' -----------------------------------------------------------------------------------
-    If Not IsAllocated(c_arry) _
-    Then ReDim c_arry(c_col) _
-    Else ReDim Preserve c_arry(Max(UBound(c_arry), c_col))
+    If Not IsAllocated(a_arry) _
+    Then ReDim a_arry(a_items) _
+    Else ReDim Preserve a_arry(Max(UBound(a_arry), a_items))
 End Sub
 
 Private Property Get ColItem(Optional ByVal c_col As Long) As String
@@ -265,7 +274,7 @@ End Property
 
 Private Property Let ColItem(Optional ByVal c_col As Long, _
                                       ByVal c_item As String)
-    ColArry aItems, c_col
+    ArryRedim aItems, c_col
     aItems(c_col) = c_item
 End Property
 
@@ -286,7 +295,7 @@ End Property
 
 Private Property Let ColWidth(Optional ByVal c_col As Long, _
                                        ByVal c_width As Long)
-    ColArry aMaxItemLengths, c_col
+    ArryRedim aMaxItemLengths, c_col
     aMaxItemLengths(c_col) = c_width
 End Property
 
@@ -804,13 +813,14 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
-Public Sub Headers(ParamArray c_headers() As Variant)
+Public Sub Headers(ParamArray h_col_headers() As Variant)
 ' -----------------------------------------------------------------------------------
 ' Spacifies the column headers for Entry items aligne in columns.
 ' -----------------------------------------------------------------------------------
     Const PROC = "Headers"
     
     On Error GoTo eh
+    Static lLine As Long
     Dim i       As Long
     Dim j       As Long
     Dim iCol    As Long
@@ -820,6 +830,10 @@ Public Sub Headers(ParamArray c_headers() As Variant)
     Dim sAlign  As String
     Dim sHeader As String
     
+    If Not IsAllocated(aHeaderLines) Then
+        lLine = 0
+    End If
+
     '~~ When column headers are specified and the ColsDelimiter is still not
     '~~ specified the delimiter defaults to a vertical bar.
     Select Case sColsDelimiter
@@ -828,42 +842,38 @@ Public Sub Headers(ParamArray c_headers() As Variant)
         Case " ":               sColsMargin = vbNullString
     End Select
     
-    aHeaders = vbNullString
-    For i = LBound(c_headers) To UBound(c_headers)
-        s = c_headers(i)
+    If Not IsError(h_col_headers(LBound(h_col_headers))) Then
+        s = h_col_headers(LBound(h_col_headers))
         If InStr(s, "|") <> 0 Then
-            v = AsArray(s, "|")
-            For j = LBound(v) To UBound(v)
-                If v(j) <> vbNullString Then
-                    iCol = j + 1
-                    sAlign = vbNullString
-                    Alignment v(j), sHeader, , sAlign
-                    If ColAlignmentHeader(iCol) = vbNullString Then
-                        '~~ The first specification of a column's header triggers the
-                        '~~ implicit alignment specification - provided none has yet been specified explicitly
-                        ColAlignmentHeader(iCol) = sAlign
-                    End If
-                    ColHeader(iCol) = sHeader
-                    lWidth = ColWidth(iCol)
-                    ColWidth(iCol) = Max(Len(WithMargins(sHeader)), lWidth)
-                End If
-            Next j
+            '~~ The | in the string indicates an alternative how column aligned
+            '~~ headers may be specified
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1) ' remove trailing vertical bar - if any
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1) ' remove leading vertical bar - if any
+            v = Split(s, "|")
         Else
-            iCol = i + 1
-            If Not IsError(c_headers(i)) Then
-                '~~ Skip column without a specified header
-                sAlign = vbNullString
-                Alignment c_headers(i), sHeader, , sAlign
-                If ColAlignmentHeader(iCol) = vbNullString Then
-                    '~~ Implicit alignment when none has been specified explicitly
-                    ColAlignmentHeader(iCol) = sAlign
-                End If
-                ColHeader(iCol) = sHeader
-                lWidth = ColWidth(iCol)
-                ColWidth(iCol) = Max(Len(WithMargins(sHeader)), lWidth)
+            '~~ The headers are all elements of the ParamArray
+            v = h_col_headers
+        End If
+    End If
+    
+    lLine = lLine + 1
+    For i = LBound(v) To UBound(v)
+        iCol = i + 1
+        If Not IsError(v(i)) Then
+            '~~ Skip column without a specified header
+            sAlign = vbNullString
+            Alignment v(i), sHeader, , sAlign
+            If ColAlignmentHeader(iCol) = vbNullString Then
+                '~~ Implicit alignment when none has yet been specified
+                '~~ - e.g. explicitly or with a previous header line
+                ColAlignmentHeader(iCol) = sAlign
             End If
+            ColHeader(iCol, lLine) = sHeader
+            lWidth = ColWidth(iCol)
+            ColWidth(iCol) = Max(Len(WithMargins(sHeader)), lWidth)
         End If
     Next i
+    Set aHeaders = Nothing
     
 xt: Exit Sub
 
@@ -880,23 +890,61 @@ Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
 ' character is neither L, nor C, nor R, the alignment is considered "implicit",
 ' indicated by the number of left and right spaces.
 ' -----------------------------------------------------------------------------------
+    Const PROC = "AlignmentHeaders"
+    
+    On Error GoTo eh
     Dim i       As Long
     Dim iCol    As Long
     Dim sAlign  As String
+    Dim sReturn As String
     Dim sFill   As String
+    Dim s       As String
+    Dim v       As Variant
+        
+    If Not IsError(c_align(LBound(c_align))) Then
+        If InStr(c_align(LBound(c_align)), "|") <> 0 Then
+            '~~ The | in the string indicates an alternative how column aligned
+            '~~ headers may be specified
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+            v = Split(s, "|")
+        Else
+            '~~ The headers are all elements of the ParamArray
+            v = c_align
+        End If
+    End If
     
-    For i = LBound(c_align) To UBound(c_align)
+    For i = LBound(v) To UBound(v)
         iCol = i + 1
         sAlign = vbNullString
-        If Not IsError(c_align(i)) Then
+        If Not IsError(v(i)) Then
             '~~ Skippes not specified columns
-            Alignment c_align(i), sAlign, sFill
-            Select Case UCase(Left$(sAlign, 1))
-                Case "L", "C", "R": ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+            Select Case UCase$(v(i))
+                Case "L", "C", "R"
+                    ColAlignmentHeader(iCol) = UCase(v(i))
+                Case Else
+                    Alignment v(i), sReturn, sFill, sAlign
+                    Select Case UCase(Left$(sAlign, 1))
+                        Case "L", "C", "R"
+                            ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                        Case Else
+                            Select Case UCase(Left$(sReturn, 1))
+                                Case "L", "C", "R"
+                                    ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                                Case Else
+                                    Err.Raise AppErr(1), ErrSrc(PROC), "The alignment for column " & iCol & " is neither L, nor R, nor C!"
+                            End Select
+                    End Select
             End Select
         End If
     Next i
     
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Private Sub Init()
@@ -904,10 +952,8 @@ Private Sub Init()
     aAlignmentsItem = vbNullString
     aHeaders = vbNullString
     aItems = vbNullString
-    aTitle = vbNullString
     bNewLog = True
     lKeepDays = 1
-    sAlignmentTitle = vbNullString
     sColsDelimiter = vbNullString        ' Default in case no Headers are specified
     sColsMargin = vbNullString  ' Default in case no Headers are specified
 End Sub
@@ -969,19 +1015,23 @@ Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
     Const PROC = "NewLog"
     
     On Error GoTo eh
-    Dim s                   As String
-    Dim sDelimiter          As String
     Dim i                   As Long
+    Dim lLenHeaderLine      As Long
+    Dim lLine               As Long
+    Dim lWidthEntry         As Long
+    Dim s                   As String
     Dim sColDelim           As String
-    Dim v                   As Variant
-    Dim sHeader             As String
+    Dim sDelimiter          As String
+    Dim sHeaderLine         As String
+    Dim sHeaderLines        As String
     Dim sHeaderUnderLine    As String
+    Dim sLineBreak          As String
     Dim sLogDelim           As String
     Dim sTitle              As String
-    Dim lWidthEntry         As Long
-    Dim lLenHeader          As Long
     Dim sTitleFill          As String
     Dim sUnderLineDelim     As String
+    Dim vLines                   As Variant
+    Dim vLine               As Variant
     
     If n_line = vbNullString Then
         '~~ Explicit call only indicates that the next Entry will write the first of
@@ -992,47 +1042,48 @@ Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
     
     ProvideLogFile
     
-    '~~ Assemble column header
-    sHeader = vbNullString
-    If IsAllocated(aHeaders) Then
-        For i = LBound(aHeaders) To UBound(aHeaders)
-            sHeader = sHeader & sColsDelimiter & ColHeader(i)
-            lLenHeader = Max(lLenHeader, Len(sHeader))
-        Next i
+    '~~ Assemble column headers, header lines
+    sHeaderLine = vbNullString
+    If IsAllocated(aHeaderLines) Then
+        For lLine = LBound(aHeaderLines) To UBound(aHeaderLines)
+            aHeaders = aHeaderLines(lLine)
+            For i = LBound(aHeaders) To UBound(aHeaders)
+                sHeaderLine = sHeaderLine & sColsDelimiter & ColHeader(i, lLine)
+                lLenHeaderLine = Max(lLenHeaderLine, Len(sHeaderLine))
+            Next i
+            sHeaderLines = sHeaderLines & sLineBreak & sHeaderLine
+            sHeaderLine = vbNullString
+            sLineBreak = vbLf
+        Next lLine
     End If
             
     lLenTitle = Max(lLenTitle, Len(n_line))
-    lWidthEntry = Max(lLenTitle, lLenHeader, Len(n_line))
+    lWidthEntry = Max(lLenTitle, lLenHeaderLine, Len(n_line))
     '~~ New log delimiter line
     If fso.GetFile(sFileFullName).Size <> 0 Then
         '~~ Log entries delimiter
         WriteLine String(lWidthEntry, "=")
     End If
     
-    If IsAllocated(aTitle) Then
-        '~~ Write (optionally multiline) title
-        If sAlignmentTitle = "C" Then sTitleFill = "-" Else sTitleFill = " "
-        For i = LBound(aTitle) To UBound(aTitle)
-            If aTitle(i) <> vbNullString Then
-                Select Case True
-                    Case lWidthEntry <= lLenTitle
-                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, vbNullString, sTitleFill)
-                    Case lWidthEntry > lLenTitle And sAlignmentTitle = "C"
-                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", "-")
-                    Case lWidthEntry > lLenTitle And sAlignmentTitle <> "C"
-                        sTitle = Align(aTitle(i), lWidthEntry, sAlignmentTitle, " ", " ")
-                End Select
-                WriteLine sTitle
+    If IsAllocated(aTitleLines) Then
+        '~~ Write the specified title lines
+        For i = LBound(aTitleLines) To UBound(aTitleLines)
+            If aTitleLines(i) <> vbNullString Then
+                WriteLine Align(aTitleLines(i), lWidthEntry, sTitleAlignment, vbNullString, sTitleFill)
             End If
         Next i
         '~~ Write title underline
         WriteLine String(lWidthEntry, "-")
+        Set aTitleLines = Nothing
     End If
       
-    If sHeader <> vbNullString Then
-        WriteLine sHeader
+    If sHeaderLines <> vbNullString Then
         '~~ Column header under-line based on the header line written
-        v = Split(sHeader, sColsDelimiter)
+        vLines = Split(sHeaderLines, vbLf)
+        For i = LBound(vLines) To UBound(vLines)
+            WriteLine vLines(i)
+        Next i
+        vLine = Split(vLines(LBound(vLines)), sColsDelimiter)
         sHeaderUnderLine = vbNullString
         sColDelim = vbNullString
         If sColsDelimiter = "|" _
@@ -1046,6 +1097,8 @@ Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
             sHeaderUnderLine = sHeaderUnderLine & String(lWidthEntry - Len(sHeaderUnderLine), "-")
         End If
         WriteLine sHeaderUnderLine
+        Set aHeaders = Nothing
+        Set aHeaderLines = Nothing
     End If
         
 xt: Exit Sub
@@ -1132,22 +1185,35 @@ Private Function TimeStamp() As String ' Public for test purpose only
     If bWithTimeStamp Then TimeStamp = Format(Now(), "yy-mm-dd-hh:mm:ss") & TimeStamp
 End Function
 
-Public Sub Title(ParamArray t() As Variant)
+Public Sub Title(ParamArray t_lines() As Variant)
 ' ----------------------------------------------------------------------------
 ' Method for specifying an - optionally multi-lined - title for an
 ' (implicitly specified) new series of log entries.
-' Note: The first title line implicitly specifies the title's alignment.
+' Note 1: The first title line implicitly specifies the title's alignment.
+' Note 2: Multiple lines may be specified with one method call (with serveral
+'         ParamArray items) or with several method calls (each for one line).
 ' ----------------------------------------------------------------------------
-    Dim i       As Long
-    Dim sTitle  As String
+    Static lLine    As Long
+    Dim i           As Long
+    Dim sFill       As String
+    Dim sTitle      As String
+    
+    If Not IsAllocated(aTitleLines) Then
+        lLine = 0
+        lLenTitle = 0
+        sTitleAlignment = vbNullString
+    End If
     
     If Not bNewLog Then Init
-    ReDim aTitle(UBound(t) + 1)
-    lLenTitle = 0
-    For i = LBound(t) To UBound(t)
-        Alignment t(i), sTitle, , sAlignmentTitle
+    
+    For i = LBound(t_lines) To UBound(t_lines)
+        lLine = lLine + 1
+        ArryRedim aTitleLines, lLine
+'        If lLine = 1 Then
+            Alignment t_lines(i), sTitle, sTitleFill, sTitleAlignment
+'        End If
         lLenTitle = Max(lLenTitle, Len(sTitle))
-        aTitle(i + 1) = sTitle
+        aTitleLines(lLine) = sTitle
     Next i
     aItems = vbNullString ' a new title clears any previous items
 
