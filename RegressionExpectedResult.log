@@ -1,86 +1,88 @@
-23-05-31-18:02:10 Regression test case 01-1:                             
-23-05-31-18:02:10 - Single log line                                      
-23-05-31-18:02:10 - Title left adjusted                                  
-23-05-31-18:02:10 -------------------------------------------------------
-23-05-31-18:02:10 01-1 1. Single string, new log, Single string, new log.
-23-05-31-18:02:10 01-1 2. Single string, new log, no title. 
-23-05-31-18:02:10 =======================================================
-23-05-31-18:02:10        Regression test case 01-2: Title centered       
-23-05-31-18:02:10 -------------------------------------------------------
-23-05-31-18:02:10 01-2 1. Single string, new log, Single string, new log.
-23-05-31-18:02:10 01-2 2. Single string without any width limit
-23-05-31-18:02:10 ===================================================================================
-23-05-31-18:02:10                 Regression test case 01-3: Title centered (with -)                 
-23-05-31-18:02:10 -----------------------------------------------------------------------------------
-23-05-31-18:02:10 01-3 1. Single string, new log. Extra long text to force title with fill characters
-23-05-31-18:02:10 01-3 2. Single string without any width limit
-23-05-31-18:02:10 ===================================================================================
-23-05-31-18:02:10                             Regression test case 01-4:                             
-23-05-31-18:02:10                            Three title lines (centered)                            
-23-05-31-18:02:10                  Each line specified by an individual method call                  
-23-05-31-18:02:10 -----------------------------------------------------------------------------------
-23-05-31-18:02:10 01-4 1. Single string, new log. Extra long text to force title with fill characters
-23-05-31-18:02:10 01-4 2. Single string without any width limit
-23-05-31-18:02:10 ===================================================================================
-23-05-31-18:02:10  02  xxxx  yyyyyy Alignments: R, C, R, L; Rightmost column without width limit
-23-05-31-18:02:10  02  xxxx    yyyy 'NewLog' implicit due to the change from non- to column-aligned ..
-23-05-31-18:02:10  02  xxxx   yyyyy ... because entries are without a title
-23-05-31-18:03:54 ======================================================================================================================================================
-23-05-31-18:03:54  Regression test case 04:                                                                                                                             
-23-05-31-18:03:54  - The 'Headers' method:                                                                                                                              
-23-05-31-18:03:54   - implicitely specifies the alignment by means of leading and trailing spaces (R, C, C, L)                                                          
-23-05-31-18:03:54   - specifies two header lines each by an individual method call                                                                                      
-23-05-31-18:03:54  - The maximum column width is the maximimum of the width implicitly specified by:                                                                    
-23-05-31-18:03:54   - the 'Headers' first line's specificateion                                                                                                         
-23-05-31-18:03:54   - the width of the first line's items width                                                                                                         
-23-05-31-18:03:54  - The Entry-Items alignment is implicitly specifiedby the first line's items: R, L, L, L                                                             
-23-05-31-18:03:54 ------------------------------------------------------------------------------------------------------------------------------------------------------
-23-05-31-18:03:54 | Nr | Item | Item | Item 3                                                                                                                          
-23-05-31-18:03:54 |    |  1   |  2   | (no width limit)                                                                                                                
-23-05-31-18:03:54 +----+------+------+----------------------------------------------------------------------------------------------------------------------------------
-23-05-31-18:03:54 | 03 | xxxx | yyyyy| Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header)
-23-05-31-18:03:54 | 03 | xxxx | yyyy | zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-05-31-18:03:54 | 03 | xxxx | yyyyy| zzzzzz
-23-05-31-18:03:54 =============================================================================
-23-05-31-18:03:54 Regression test case 04: Because no 'Headers' are specified the ColsDelimiter
-23-05-31-18:03:54 defaults to a single space and the ColsMargin is a vbNullString              
-23-05-31-18:03:54 Items alignment (implicit): R, L, C, R                                       
-23-05-31-18:03:54 -----------------------------------------------------------------------------
-23-05-31-18:03:54  04 xxx                 yyyyyy           zzzzzz
-23-05-31-18:03:54  04 xxx                 yyyyyy           zzzzzz 
-23-05-31-18:03:54  04 xxx                 yyyyyy           zzzzzz 
-23-05-31-18:03:54 ===============================================================================
-23-05-31-18:03:54 Regression test case 05:                                                       
-23-05-31-18:03:54 - The ColsDelimiter explicitly specifies as a single space                     
-23-05-31-18:03:54 - The Header alignments are implicitly: R, C, L, L                             
-23-05-31-18:03:54 - The item alignments are implicitly: R, L, C (filled with -), L               
-23-05-31-18:03:54 - Leading spaces with left aligned items are preserved by default              
-23-05-31-18:03:54 -------------------------------------------------------------------------------
-23-05-31-18:03:54  Nr   Item-1            Item-2           Item-3 (no width limit)               
-23-05-31-18:03:54  -- ---------- ------------------------- --------------------------------------
-23-05-31-18:03:54  05 xxxx       -------- yyyyyy ---------  Rightmost column without width limit!
-23-05-31-18:03:54  05 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-05-31-18:03:54  05 xxxx       --------- yyyyy --------- zzzzzz
-23-05-31-18:03:55 =====================================================================================
-23-05-31-18:03:55 Regression test case 06:                                                             
-23-05-31-18:03:55 - The ColsDelimiter explicitly specifies as a single space                           
-23-05-31-18:03:55 - The Header alignments are explicitly: R, C, L, L                                   
-23-05-31-18:03:55 - The item alignments are explicitly: R, L, C (filled with -), L                     
-23-05-31-18:03:55 - Leading spaces with left aligned items are preserved by default                    
-23-05-31-18:03:55 - The columns width is explicitly specified by the MaxItemsLength method (3,10,25,30)
-23-05-31-18:03:55 -------------------------------------------------------------------------------------
-23-05-31-18:03:55   Nr    Item-1            Item-2                  Item-3 (no width limit)        
-23-05-31-18:03:55  ---- ---------- ------------------------- ------------------------------------------
-23-05-31-18:03:55   06 xxxx       -------- yyyyyy ---------  Rightmost column without width limit!
-23-05-31-18:03:55   06 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-05-31-18:03:55   06 xxxx       --------- yyyyy --------- zzzzzz
-23-05-31-18:03:55 =========================================================================
-23-05-31-18:03:55 Regression test case 07: Alignment items:                                
-23-05-31-18:03:55 Column 1: Implicitly Right adjusted                                      
-23-05-31-18:03:55 Column 2: Length explicily specified = 20                                
-23-05-31-18:03:55           Alignment explicitly specified Left adjusted filled with .....:
-23-05-31-18:03:55 Column 3: Implicitly Left adjusted                                       
-23-05-31-18:03:55 -------------------------------------------------------------------------
-23-05-31-18:03:55   07 xxxx ...............:  Rightmost column without width limit!
-23-05-31-18:03:55   07 xxxxxxxxxxxxxxxxxxxx:          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-05-31-18:03:55   07 xxxxxxxxx ..........: zzzzzz
+23-05-31-21:21:33 Regression test case 01-1:                             
+23-05-31-21:21:33 - Single log line                                      
+23-05-31-21:21:33 - Title left adjusted                                  
+23-05-31-21:21:33 -------------------------------------------------------
+23-05-31-21:21:33 01-1 1. Single string, new log, Single string, new log.
+23-05-31-21:21:33 01-1 2. Single string, new log, no title. 
+23-05-31-21:21:33 =======================================================
+23-05-31-21:21:33        Regression test case 01-2: Title centered       
+23-05-31-21:21:33 -------------------------------------------------------
+23-05-31-21:21:33 01-2 1. Single string, new log, Single string, new log.
+23-05-31-21:21:33 01-2 2. Single string without any width limit
+23-05-31-21:21:33 ===================================================================================
+23-05-31-21:21:33                 Regression test case 01-3: Title centered (with -)                 
+23-05-31-21:21:33 -----------------------------------------------------------------------------------
+23-05-31-21:21:33 01-3 1. Single string, new log. Extra long text to force title with fill characters
+23-05-31-21:21:33 01-3 2. Single string without any width limit
+23-05-31-21:21:33 ===================================================================================
+23-05-31-21:21:33                             Regression test case 01-4:                             
+23-05-31-21:21:33                            Three title lines (centered)                            
+23-05-31-21:21:33                  Each line specified by an individual method call                  
+23-05-31-21:21:33 -----------------------------------------------------------------------------------
+23-05-31-21:21:33 01-4 1. Single string, new log. Extra long text to force title with fill characters
+23-05-31-21:21:33 01-4 2. Single string without any width limit
+23-05-31-21:21:33 ===================================================================================
+23-05-31-21:21:33  02  xxxx  yyyyyy Alignments: R, C, R, L; Rightmost column without width limit
+23-05-31-21:21:33  02  xxxx    yyyy 'NewLog' implicit due to the change from non- to column-aligned ..
+23-05-31-21:21:33  02  xxxx   yyyyy ... because entries are without a title
+23-05-31-21:21:33 ======================================================================================================================================================
+23-05-31-21:21:33  Regression test case 04:                                                                                                                             
+23-05-31-21:21:33  - The 'Headers' method:                                                                                                                              
+23-05-31-21:21:33   - implicitely specifies the alignment by means of leading and trailing spaces (R, C, C, L)                                                          
+23-05-31-21:21:33   - specifies two header lines each by an individual method call                                                                                      
+23-05-31-21:21:33  - The maximum column width is the maximimum of the width implicitly specified by:                                                                    
+23-05-31-21:21:33   - the 'Headers' first line's specificateion                                                                                                         
+23-05-31-21:21:33   - the width of the first line's items width                                                                                                         
+23-05-31-21:21:33  - The Entry-Items alignment is implicitly specifiedby the first line's items: R, L, L, L                                                             
+23-05-31-21:21:33 ------------------------------------------------------------------------------------------------------------------------------------------------------
+23-05-31-21:21:33 | Nr | Item | Item | Item 3                                                                                                                          
+23-05-31-21:21:33 |    |  1   |  2   | (no width limit)                                                                                                                
+23-05-31-21:21:33 +----+------+------+----------------------------------------------------------------------------------------------------------------------------------
+23-05-31-21:21:33 | 03 | xxxx | yyyyy| Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header)
+23-05-31-21:21:33 | 03 | xxxx | yyyy | zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-05-31-21:21:33 | 03 | xxxx | yyyyy| zzzzzz
+23-05-31-21:21:33 =============================================================================
+23-05-31-21:21:33 Regression test case 04: Because no 'Headers' are specified the ColsDelimiter
+23-05-31-21:21:33 defaults to a single space and the ColsMargin is a vbNullString              
+23-05-31-21:21:33 Items alignment (implicit): R, L, C, R                                       
+23-05-31-21:21:33 -----------------------------------------------------------------------------
+23-05-31-21:21:33  04 xxx                 yyyyyy           zzzzzz
+23-05-31-21:21:33  04 xxx                 yyyyyy           zzzzzz 
+23-05-31-21:21:33  04 xxx                 yyyyyy           zzzzzz 
+23-05-31-21:21:33 ==============================================================================
+23-05-31-21:21:33 Regression test case 05:                                                      
+23-05-31-21:21:33 - The ColsDelimiter explicitly specifies as a single space                    
+23-05-31-21:21:33 - The Header alignments are implicitly: R, C, L, L                            
+23-05-31-21:21:33 - The item alignments are implicitly: R, L, C (filled with -), L              
+23-05-31-21:21:33 - Leading spaces with left aligned items are preserved by default             
+23-05-31-21:21:33 ------------------------------------------------------------------------------
+23-05-31-21:21:33  Nr   Item-1            Item-2           Item-3 (no width limit)              
+23-05-31-21:21:33  -- ---------- ------------------------- -------------------------------------
+23-05-31-21:21:33  05 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
+23-05-31-21:21:33  05 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-05-31-21:21:33  05 xxxx       --------- yyyyy --------- zzzzzz
+23-05-31-21:21:33 =====================================================================================
+23-05-31-21:21:33 Regression test case 06:                                                             
+23-05-31-21:21:33 - The ColsDelimiter explicitly specifies as a single space                           
+23-05-31-21:21:33 - The Header alignments are explicitly: R, C, L, L                                   
+23-05-31-21:21:33 - The item alignments are explicitly: R, L, C (filled with -), L                     
+23-05-31-21:21:33 - Leading spaces with left aligned items are preserved by default                    
+23-05-31-21:21:33 - The columns width is explicitly specified by the MaxItemsLength method (3,10,25,30)
+23-05-31-21:21:33 -------------------------------------------------------------------------------------
+23-05-31-21:21:33   Nr   Item-1   Item-2                    Item-3 (no width limit)              
+23-05-31-21:21:33  --- ---------- ------------------------- -------------------------------------------
+23-05-31-21:21:33   06 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
+23-05-31-21:21:33   06 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-05-31-21:21:33   06 xxxx       --------- yyyyy --------- zzzzzz
+23-05-31-21:21:33 =========================================================================
+23-05-31-21:21:33 Regression test case 07: Alignment items:                                
+23-05-31-21:21:33 Column 1: Implicitly Right adjusted                                      
+23-05-31-21:21:33 Column 2: Length explicily specified = 20                                
+23-05-31-21:21:33           Alignment explicitly specified Left adjusted filled with .....:
+23-05-31-21:21:33 Column 3: Implicitly Left adjusted                                       
+23-05-31-21:21:33 -------------------------------------------------------------------------
+23-05-31-21:21:33   Nr           Item                          Comment               
+23-05-31-21:21:33  ---- ----------------------- -------------------------------------------
+23-05-31-21:21:33    07 xxxx .................: Rightmost column without width limit!
+23-05-31-21:21:33    07 xxxxxxxxxxxxxxxxxxxx .:          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-05-31-21:21:33    07 xxxxxxxxx ............: zzzzzz

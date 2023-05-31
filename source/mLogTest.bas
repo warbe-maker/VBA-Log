@@ -465,7 +465,7 @@ Private Sub Test_00_Regression()
               , "- Leading spaces with left aligned items are preserved by default"
         .ColsDelimiter = " "
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
-        .Entry " 05", "xxxx ", "- yyyyyy -", " Rightmost column without width limit!  "
+        .Entry " 05", "xxxx ", "- yyyyyy -", "Rightmost column without width limit! "
         .Entry " 05", "xxxx ", "yyyy       ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)"
         .Entry "05", "xxxx ", "yyyyy       ", "zzzzzz "
          
@@ -476,11 +476,11 @@ Private Sub Test_00_Regression()
         .Title "- Leading spaces with left aligned items are preserved by default"
         .Title "- The columns width is explicitly specified by the MaxItemsLength method (3,10,25,30)"
         .ColsDelimiter = " "
-        .Headers "|Nr|Item-1|Item-2|Item-3 (no width limit)"
         .AlignmentHeaders "|R|C|L|L|"
+        .Headers "|Nr|Item-1|Item-2|Item-3 (no width limit)"
         .AlignmentItems "R", "L", "- C -"
         .MaxItemLengths 3, 10, 25, 30
-        .Entry "06", "xxxx", "yyyyyy", " Rightmost column without width limit!  "
+        .Entry "06", "xxxx", "yyyyyy", "Rightmost column without width limit! "
         .Entry "06", "xxxx", "yyyy  ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)   "
         .Entry "06", "xxxx", "yyyyy ", "zzzzzz "
          
@@ -491,7 +491,9 @@ Private Sub Test_00_Regression()
               , "Column 3: Implicitly Left adjusted."
         .MaxItemLengths , 20
         .AlignmentItems , "L.:"
-        .Entry " 07", "xxxx ", " Rightmost column without width limit!  "
+        .Headers "| Nr | Item | Comment |"
+        .ColsDelimiter = " "
+        .Entry " 07", "xxxx ", "Rightmost column without width limit! "
         .Entry "07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
         .Entry "07", "xxxxxxxxx", "zzzzzz"
                

@@ -203,8 +203,7 @@ Private Property Get ColHeader(Optional ByVal c_col As Long, _
         If c_col <= UBound(aHeaders) Then
             s = WithMargins(aHeaders(c_col))
             lWidth = Len(s)
-            lWidth = Max(ColWidth(c_col), lWidth) ' width with marging may be greater than originally calculated
-            ColWidth(c_col) = lWidth
+            lWidth = Max(ColWidth(c_col), lWidth, ColWidthFinal(c_col)) ' width with marging may be greater than originally calculated
             ColHeader = Align(aHeaders(c_col), lWidth, ColAlignmentHeader(c_col), sColsMargin)
         End If
     End If
@@ -250,7 +249,7 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
     If IsAllocated(aItems) Then
         If bNewLog Then
             '~~ When this is the first line of a new series of log entries the width
-            '~~ may still be expanded when the item's wdth is greater than the
+            '~~ may still be expanded when the item's width is greater than the
             '~~ already specified - in case
             lWidth = ColWidth(c_col)
             ColWidth(c_col) = Max(Len(aItems(c_col)), lWidth)
@@ -367,9 +366,11 @@ Private Function ColWidthFinal(ByVal c_col As Long) As Long
 ' Returns the final width of a column by considering the either implicitly or
 ' explicitly specified width and the fill string in case one is specified.
 ' -----------------------------------------------------------------------------------
-    If ColFill(c_col) = "." _
-    Then ColWidthFinal = ColWidth(c_col) + 2 _
-    Else ColWidthFinal = ColWidth(c_col)
+    Select Case ColFill(c_col)
+        Case ".":   ColWidthFinal = ColWidth(c_col) + 2
+        Case ".:":  ColWidthFinal = ColWidth(c_col) + 3
+        Case Else:  ColWidthFinal = ColWidth(c_col)
+    End Select
 End Function
 
 Public Property Let WithTimeStamp(ByVal b As Boolean)
@@ -404,7 +405,7 @@ Public Function Align(ByVal a_strng As String, _
                     Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
                 Case ".:"
                     If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
-                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth) & ":"
+                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
                 Case "."
                     If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
                     Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
@@ -683,22 +684,36 @@ Public Sub AlignmentItems(ParamArray c_align() As Variant)
     Dim s       As String
     Dim sAlign  As String
     Dim sFill   As String
+    Dim v       As Variant
     
     On Error GoTo eh
-    For i = LBound(c_align) To UBound(c_align)
-        If Not IsError(c_align(i)) Then
-            '~~ IsError indicates a columns alignment 'not explicitly specified'.
-            '~~ The corresponding columns will be aligned implicitly specified
-            '~~ with the first entry's items specifications
+    If Not IsError(c_align(LBound(c_align))) Then
+        '~~ IsError indicates a columns alignment 'not explicitly specified'.
+        '~~ The corresponding columns will be aligned implicitly specified
+        '~~ with the first entry's items specifications
+        s = c_align(LBound(c_align))
+        If InStr(s, "|") <> 0 Then
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+            v = Split(s, "|")
+        Else
+            v = c_align
+        End If
+    Else
+        v = c_align
+    End If
+                
+    For i = LBound(v) To UBound(v)
+        If Not IsError(v(i)) Then
             iCol = i + 1
             sFill = " "
-            Alignment c_align(i), sAlign, sFill
+            Alignment v(i), sAlign, sFill
             Select Case True
                 Case sAlign = "L" And sFill = " "
                 Case sAlign = "L" And sFill = "."
                 Case sAlign = "L" And sFill = ".:"
                 Case sAlign = "R"
-                Case sAlign = "C" And sFill = vbNullString
+                Case sAlign = "C" And sFill = " "
                 Case sAlign = "C" And sFill = "-"
                 Case Else: Err.Raise AppErr(1), ErrSrc(PROC), "The specified alignment is invalid! Valid specs are:" & vbLf & _
                                                               "L, L., R, C, -C, C-, -C-"
@@ -854,12 +869,14 @@ Public Sub Headers(ParamArray h_col_headers() As Variant)
             '~~ The headers are all elements of the ParamArray
             v = h_col_headers
         End If
+    Else
+        v = h_col_headers
     End If
     
     lLine = lLine + 1
     For i = LBound(v) To UBound(v)
-        iCol = i + 1
         If Not IsError(v(i)) Then
+            iCol = i + 1
             '~~ Skip column without a specified header
             sAlign = vbNullString
             Alignment v(i), sHeader, , sAlign
@@ -905,6 +922,7 @@ Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
         If InStr(c_align(LBound(c_align)), "|") <> 0 Then
             '~~ The | in the string indicates an alternative how column aligned
             '~~ headers may be specified
+            s = c_align(LBound(c_align))
             If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
             If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
             v = Split(s, "|")
@@ -912,30 +930,34 @@ Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
             '~~ The headers are all elements of the ParamArray
             v = c_align
         End If
+    Else
+        v = c_align
     End If
     
     For i = LBound(v) To UBound(v)
-        iCol = i + 1
-        sAlign = vbNullString
         If Not IsError(v(i)) Then
-            '~~ Skippes not specified columns
-            Select Case UCase$(v(i))
-                Case "L", "C", "R"
-                    ColAlignmentHeader(iCol) = UCase(v(i))
-                Case Else
-                    Alignment v(i), sReturn, sFill, sAlign
-                    Select Case UCase(Left$(sAlign, 1))
-                        Case "L", "C", "R"
-                            ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
-                        Case Else
-                            Select Case UCase(Left$(sReturn, 1))
-                                Case "L", "C", "R"
-                                    ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
-                                Case Else
-                                    Err.Raise AppErr(1), ErrSrc(PROC), "The alignment for column " & iCol & " is neither L, nor R, nor C!"
-                            End Select
-                    End Select
-            End Select
+            iCol = i + 1
+            sAlign = vbNullString
+            If Not IsError(v(i)) Then
+                '~~ Skippes not specified columns
+                Select Case UCase$(v(i))
+                    Case "L", "C", "R"
+                        ColAlignmentHeader(iCol) = UCase(v(i))
+                    Case Else
+                        Alignment v(i), sReturn, sFill, sAlign
+                        Select Case UCase(Left$(sAlign, 1))
+                            Case "L", "C", "R"
+                                ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                            Case Else
+                                Select Case UCase(Left$(sReturn, 1))
+                                    Case "L", "C", "R"
+                                        ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                                    Case Else
+                                        Err.Raise AppErr(1), ErrSrc(PROC), "The alignment for column " & iCol & " is neither L, nor R, nor C!"
+                                End Select
+                        End Select
+                End Select
+            End If
         End If
     Next i
     

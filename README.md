@@ -13,7 +13,7 @@ Writes a single log entry to the default log file (see the [properties](#propert
     Log.Entry "xxxxxxxxxx ", "yyyyyyyyyyyyyyyyyyyy ", "zzzzzzzz " 
     Log.Entry "xxx", "yyyyyyy", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 ```
-Writes two log entries aligned in columns, with the alignment and the column width [implicitly](#implicit-column-width-and-alignment-specification) specified:
+Writes two log entries aligned in columns, with the alignment and the column width [implicitly](#implicit-column-alignment-specification) specified:
 ```
 =====================================================================
 xxxxxxxxxx yyyyyyyyyyyyyyyyyyyy zzzzzzzz
@@ -26,11 +26,11 @@ Note:
 ### Methods
 | Method Name         | Function |
 |---------------------|----------|
-|***AlignmentHeaders***    | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-column-alignment-specification) for each column's item.<br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
+|***AlignmentHeaders***    | ParamArray of string expressions, specifies a header line with column headers, may be repeated for multiple column headers, optionally implicitly specifies the [alignment](#explicit-column-alignment-specification) for each column's item.<br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
 |***AlignmentItems*** | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-column-alignment-specification) for each column's item. <br>Example:<br>**"L","C","R","L"** col1=Left, col2=centered, col3=rigth. |
 |***Dsply***              | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
-|***Entry***              | Specifies either a single string or a number of items written aligned in columns. For the latter see the [implicit column width ++and++ alignment specification](#implicit-column-width-and-alignment-specification).|
-|***Headers***             | ParamArray of strings, specifying any number number of strings written as a single line ***column*** header, written automatically with the first call of the ***Entry*** method provided it specifies column aligned items. The alignment of the header string defaults to centered. An implicit specification of the alignment is possible by means of vertical bars [\|).<br>Examples:<br>- **"\| xx\|yy \|zz\| aa \|"** xx=right adjusted, yy=left adjusted, zz, aa=centered.<br>- **"xxx", "yyyy", "zzz"** are written centered provided not specified explicitly by means of the ***HeaderAlignment*** method. |
+|***Entry***              | Specifies either a single string or a number of items written aligned in columns. For the latter see the [implicit column width ++and++ alignment specification](#implicit-column-alignment-specification).|
+|***Headers***             | ParamArray of string expressions, specifies a header line with column headers, may be repeated for multiple column headers, optionally implicitly specifies the column headers' alignment |
 |***MaxItemLengths***        | ParamArray of integer values, specifies the [maximum lenght of items aligned in columns](#column-width).|
 |***NewLog***              | Explicit indication that the next ***Entry*** writes the first of a new series of log entries. I.e. with the next ***Entry*** a delimiter line (======) is written - provided its not a new log file. In most cases this method is unnecessary because the begin of a new series of log entries is implicitly considered with the ***Title*** method, the ***Headers****method and in case the ***Entry*** method changes from a single string to column aligned items or vice versa.|
 |***Title***               | ParamArray of strings, Specifies the - optionally multi-line - title of a new series of log entries. Triggers the writing of the column headers provided specified.<br>Examples:<br>- **"Any title"** will be centered,<br> - **"\| &nbsp;&nbsp;&nbsp;Any title"** will be left adjusted including all leading spaces.|
@@ -76,53 +76,70 @@ The specified [***MaxItemLengths***](#methods) becomes the minimum width of the 
   - `|20|30|25|` specifies the maximum item length for column 1, 2, and 3
   - `20,30,25` same as above.
   - `,,,30` specifies the maximum item length only for the 3rd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width
- 
+
 #### Implicit columns width specification
-See [Implicit column width and alignment specification specification](#implicit-column-width-and-alignment-specification)
+
+See [Implicit column width and alignment specification specification](#implicit-column-alignment-specification)
 
 ### Alignment specification
-Columns alignment may be specified explicitly (***AlignmentHeaders*** for headers, ***AlignmentItems*** for items) or implicitly (***Headers*** for headers, ***Entry*** for items).
+Columns alignment may be specified
+- **explicitly**
+  - for [headers](#explicit-headers-alignment-specification): by the ***AlignmentHeaders*** method
+  - for ***Entry*** [items](#explicit-items-alignment-specification) by the ***AlignmentItems*** method
+- **implicitly**
+  - for [headers](#implicit-headers-alignment-specification) by the ***Headers*** method
+  - for items by the ***Entry*** method
+  - for log title lines by the ***Title*** method.
 
-| Examples for 3 columns | ***AlignmentHeaders*** | ***AlignmentItems*** | ***Headers*** | ***Entry*** |
-|---------------|:----------------------:|:--------------------:|:-------------:|:-----------:|
-| <nobr>`"|C|L|R|"`   |    x                   |          x           |     x         |             |
-| <nobr>`"C","L","R"` |    x                   |          x           |     x         |             |
-| <nobr>`"|x|x | x|"`     |    x                   |          x           |     x         |    x        |
-| <nobr>`"|- x -|x.:| x|` |                    |                      |               |             |
+#### Explicit headers alignment specification
+```vbs
+    .AlignmentHeaders "|C|L|R|"     ' centered, left adjusted and right adjusted
+    .AlignmentHeaders "C","L","R"   ' same as above
+    .AlignmentHeaders "|x|x | x|"   ' same as above, follows the same rules as the implicit alignment soec 
+```
+For each header column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-alignment-specification). [^2]
 
+##### Explicit items alignment specification
+```vb
+    ' 1: centered, 2: left adjusted, 3: right adjusted
+    .AlignmentItems "|C|L|R|"     
+    ' 1: centered, 2: left adjusted filled with . (dots), 3: right adjusted
+    .AlignmentItems "|C|L.|R|"
+    ' 1: centered, 2: left adjusted filled with . (dots) teminated by a : (colon), 3: right adjusted
+    .AlignmentItems "|C|L.:|R|"   
+    
+    ' same as above but with individual (ParamArray) strings
+    .AlignmentItems "C","L","R"
+    .AlignmentItems "C","L.","R"
+    .AlignmentItems "C","L.:","R"
+    
+    ' same as above, follows the same rules as the implicit alignment spec 
+    .AlignmentItems "|x|x | x|"   
+    .AlignmentItems "|x|x.| x|"     ' xxxxx .........  
+    .AlignmentItems "|x|x.:| x|"    ' xxxxx ........:    
+```
 
-### Headers
-Explicit column alignment specification for
-- For ***Headers***: ***AlignmentHeaders*** method
-- For ***Entry*** items: ***AlignmentItems*** method
+#### Implicit headers alignment specification
+For headers the implicit alignment specification will be the common method since the header is a fixed string. Example of a 3 line header: Note that the alignment is specified by the first line only and subsequent lines are aligned accordingly.
+```vb
+    .Headers "|  Column  | Column  |  Column |"
+    .Headers "|     1    |   2     |    3    |"
+    .Headers "|(centered)| (left)  | (right) |"
+```
 
-
-
-##### Examples ***AlignmentHeaders***
-  - `|C|L|R|` specifies the alignments centered, left adjusted and right adjusted for the first 3 columns
-  - `"C","L","R"` same as above.
-  - `"|x|x | x|"` same as above (this syntax follows the [implicit alignment specification](#implicit-column-width-and-alignment-specification)
-  
-For each column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-width-and-alignment-specification). [^2]
-
-##### Examples ***AlignmentItems***
-
-: `"L.` specifies **Left adjusted** filled with `.` and terminated with `:`. Example: `xxxxx ...........:`.
-
-#### Implicit column width and alignment specification 
-For all columns the width and/or the alignment has not explicitly specified, both is derived from an implicit specification as follows. The specification may be a single vertical bar (|) delimited string or an array of string expressions.
-
-| &nbsp;&nbsp;&nbsp;&nbsp;Example&nbsp;&nbsp;&nbsp;&nbsp; | Alignment | Width | Alignment Rule |
-|---------------------|:----------:|:-----:|-------------|
-| `|xxx.|`<br>`|.xxxx..|`<br>`"xxx."`<br>`".xxx.."` | left<br>left<br>left<br>left       | 5<br>7<br>5<br>7 | A number of trailing spaces greater than the number of leading spaces indicates **L**eft adjusted.|
-| `|xxx|`<br>`|.xxx.|`| centered   | 4     | None or an equal number of leading and trailing spaces indicates **C**entered. |
-| `|.xxx|`<br>`|....xxx..|`            | right<br>right      | 5<br>9     | A number of leading spaces less than the number of trailing spaces indicates **L**eft adjusted. |
+#### Implicit alignment specification rules
+| Alignment      | Rule |
+|----------------|------|
+| Left adjusted  | 1. The number of leading spaces is less than the number of trailing spaces.<br>2. Leading  spaces are preserved. |
+| Centered       | 1. The number of leading and trailing spaces is equal (may be 0)<br>2. Leading and trailing spaces are dropped. |
+| Right adjusted | 1. The number of trailing spaces is less than the number of leading spaces.<br>2. Trailing spaces are preserved.
 
 ### The columns margin (depending on the columns delimiter)
-| Columns Delimiter | Columns Margin | Comment |
-|-------------------|----------------|---------|
-| `|` (vertical bar)| single space   | Default when ***Headers*** are specified. The final column width will thus add two spaces.  |
-| single space      | vbNullString   | Default when no ***Headers*** are specified. The final width will be the maximum of the minimum width specifed expanded in case the ***Headers*** or the first ***Entry*** items occupy more space. |
+
+| Columns Delimiter        | Columns Margin              | Comment |
+|--------------------------|-----------------------------|---------|
+|<nobr>`"|"` (vertical bar)|<nobr>" " (single space)     | Default when ***Headers*** are specified. The final column width will thus add two spaces.  |
+| " " (single space)       |<nobr> "" (`vbNullString`)   | Default when no ***Headers*** are specified. The final width will be the maximum of the minimum width specifed expanded in case the ***Headers*** or the first ***Entry*** items occupy more space. |
 
 [^1]: When the `ActiveWorkbook` is used as the default for the log-file's location the log-file is located in the serviced Workbook's parent folder. When the service writing the log is for the Workbook itself `ThisWorkbook` and `ActiveWorkbook` are the same, when the service is provided by another Workbook for the  servicing Workbook will be `ThisWorkbook` and the serviced Workbook will be the `ActiveWorkbook`. In both cases the log-file written into the **serviced Workbook's** parent folder.
  
