@@ -74,38 +74,36 @@ When column ***Headers*** are specified the delimiter defaults to a  `|` (vertic
 #### Columns Width
 The column width is the space between two [column delimiters] which may be a `|` (vertical bar) or a single space. The final width of a column considers:
  - the ***MaxItemLengths*** (when specified for the column)
- - a leading and trailing column margin which depends on the ***ColsDelimiter***
+ - a leading and trailing single space when the ***ColsDelimiter*** is a vertical bar - which is the default when ***Headers*** were specified
  - the width of the columns ***Headers*** (when specified)
- - the length of the first ***Entry*** item.
+ - the length of the first ***Entry*** item
+ - the special left [alignment](#alignment-specification) fill option `.:` which extends the width by 3.
  
- Examples with a ***MaxItemLengths*** = 30 explicitly specified for a column's items:
+ Examples with a ***MaxItemLengths*** = 10 explicitly specified for a column's items:
 
 | Example | Conditions | Final Cols Width |
-| --------|------------|------------------|
-|<nobr>`| <--max-item-length-column-n--> |`| The cols delimiter is a `|` (vertical bar), the case by default when ***Headers*** are specified of when ***ColsDelimiter*** explicitly specifies it. In both cases the columns margin is a single leading and trailing space.| 32 |
-|<nobr>` <--max-item-length-column-n--> `| The columns delimiter is a single space, either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***| 30 |
-|<nobr>` <--max-item-length-column-n--> .: `| - The columns delimiter is a "&nbsp;" (single space), either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***<br>- The ***AlignmentIems*** specified `"L."` for the column indicating fill with `.`(dots) terminated by a `:`(colon) | 33 |
+| --------|------------|:----------------:|
+|<nobr>`| xxxxxxxxxx |`| The cols delimiter is a `|` (vertical bar) - the default either when ***Headers*** are specified of when the ***ColsDelimiter*** explicitly specifies it. In both cases the columns margin is a single leading and trailing space.| ***MaxItemLengths*** + 2 |
+|<nobr>` xxxxxxxxxx `| The columns delimiter is a single space, either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***| ***MaxItemLengths*** |
+|<nobr>` xxxxxxxxxx .: `| - The columns delimiter is a ` `(single space), either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***<br>- The ***AlignmentIems*** specified `"L.:"` for the column indicating fill with `.`(dots) terminated by a `:`(colon) | ***MaxItemLengths*** + 3 |
 
 #### The maximum items' length specification
-The explicit specification of the maximum items' length ensures enough column space in case neither the header nor the first ***Entry***'s items specifies the length/width implicitly. Since this usually is unlikely the case an explicit maximum length specification is rather common.
-The specified [***MaxItemLengths***](#methods) becomes the minimum width of the corresponding column. This width may still be expanded by the width of the corresponding column's ***Headers*** (when specified and greater).<br>Examples:
-  - `|20|30|25|` specifies the maximum item length for column 1, 2, and 3
-  - `20,30,25` same as above.
-  - `,,,30` specifies the maximum item length only for the 3rd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width
+The explicit specification of the maximum items' length ensures enough column space in case neither the header nor the first ***Entry***'s items implicitly specifies enough space - which most likely is not the case. The specified [***MaxItemLengths***](#methods) becomes the minimum width for the corresponding column. This width may still be expanded by the width of the corresponding column's ***Headers*** (when specified and greater).
 
-#### Implicit columns width specification
-
-See [Implicit column width and alignment specification specification](#implicit-column-alignment-specification)
+| Example                            | Result |
+|------------------------------------|--------|
+|<nobr>`.MaxItemLengths "|20|30|25|"`| the minimum width for the column 1, 2, and 3 |
+|<nobr>`.MaxItemLengths 20, 30, 25`  | same as above. |
+|<nobr>`.MaxItemLengths , ,30`       | the minimum column width is only specified for the 2nd column. For all the other columns the width is determined by the ***Headers*** (when specified) and the width of the very first ***Entry*** line's items width.|
 
 ### Alignment specification
-Columns alignment may be specified
-- **explicitly**
-  - for [headers](#explicit-headers-alignment-specification): by the ***AlignmentHeaders*** method
-  - for ***Entry*** [items](#explicit-items-alignment-specification) by the ***AlignmentItems*** method
-- **implicitly**
-  - for [headers](#implicit-headers-alignment-specification) by the ***Headers*** method
-  - for items by the ***Entry*** method
-  - for log title lines by the ***Title*** method.
+| Explicitly<br>implicitly | for | Method |
+|:--------------:|:----------------------------------------------------------:|-----------------------|
+| **explicitly** |[headers](#explicit-headers-alignment-specification)        | ***AlignmentHeaders***|
+| **explicitly** |***Entry*** [items](#explicit-items-alignment-specification)| ***AlignmentItems***  |
+| **implicitly** |[headers](#implicit-headers-alignment-specification)        | ***Headers***         |
+| **implicitly** |***Entry*** [items](#implicit-alignment-specification-rules)| ***Entry***           |
+| **implicitly** |log title lines                                             | ***Title***           |
 
 #### Explicit headers alignment specification
 ```vbs
