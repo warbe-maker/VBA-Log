@@ -1,4 +1,3 @@
-[[_TOC_]]
 ## VBA-Service-Log
 ### The service at a glance
 ```vb
