@@ -277,7 +277,7 @@ Private Property Let ColItem(Optional ByVal c_col As Long, _
     aItems(c_col) = c_item
 End Property
 
-Public Property Let ColsDelimiter(ByVal s As String)
+Friend Property Let ColsDelimiter(ByVal s As String)
     Select Case s
         Case " ": sColsDelimiter = s: sColsMargin = vbNullString
         Case "|": sColsDelimiter = s: sColsMargin = " "
@@ -302,9 +302,9 @@ Private Property Get DefaultLogFileName() As String
     DefaultLogFileName = fso.GetBaseName(ActiveWorkbook.Name) & ".log"
 End Property
 
-Public Property Get FileFullName() As String:   FileFullName = sFileFullName:   End Property
+Friend Property Get FileFullName() As String:   FileFullName = sFileFullName:   End Property
 
-Public Property Let FileFullName(ByVal s As String)
+Friend Property Let FileFullName(ByVal s As String)
 ' ----------------------------------------------------------------------------
 ' Explicitly specifies the log file's name and location. This is an
 ' alternative to the provision of FileName and Path
@@ -316,12 +316,12 @@ Public Property Let FileFullName(ByVal s As String)
     End With
 End Property
 
-Public Property Let FileName(ByVal s As String)
+Friend Property Let FileName(ByVal s As String)
     sFileName = s
     sFileFullName = Replace(sPath & "\" & sFileName, "\\", "\")
 End Property
 
-Public Property Let KeepDays(ByVal l As Long): lKeepDays = l: End Property
+Friend Property Let KeepDays(ByVal l As Long): lKeepDays = l: End Property
 
 Friend Property Get LogFile() As File
 ' -----------------------------------------------------------------------------------
@@ -334,7 +334,7 @@ Friend Property Get LogFile() As File
 
 End Property
 
-Public Property Let Path(ByVal v As Variant)
+Friend Property Let Path(ByVal v As Variant)
 ' -----------------------------------------------------------------------------------
 ' Specifies the location (folder) for the log file based on the provided information
 ' which may be a string, a Workbook, or a folder object.
@@ -373,7 +373,7 @@ Private Function ColWidthFinal(ByVal c_col As Long) As Long
     End Select
 End Function
 
-Public Property Let WithTimeStamp(ByVal b As Boolean)
+Friend Property Let WithTimeStamp(ByVal b As Boolean)
     bWithTimeStamp = b
 End Property
 
