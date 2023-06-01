@@ -1,8 +1,8 @@
 ## VBA-Service-Log
-### The service at a glance
+### The service at a glance (impression of methods and properties)
 ```vb
     Dim Log As New clsLog
-    '~~ Log Class-Module preparation
+    '~~ Preparation
     With Log
         .WithTimeStamp = True               ' defaults to False when ommited
         .AlignmentItems "|C|L.:|L|"         ' explicit items alignment spec
@@ -10,11 +10,12 @@
         .Headers "| Nr | Item | Comment |"  ' implicitly aligned centered
         .ColsDelimiter = " "                ' would default to | otherwise since headers are specified
     End With
+    
     '~~ Any code
+    
     Log.Entry "xxxx", "yyyyyy", "zzzzzzzz"
     Log.Entry "xxx", "yyyyyyyyyyyyyyy", "zzzzzzzzzzzzzzzzzzzzz"
     Log.Dsply
-
 ```
 Displays the following log-file entries:
 ```
@@ -25,8 +26,8 @@ Displays the following log-file entries:
 23-05-31-20:37:02   xxx   yyyyyyyyyyyyyyy .: zzzzzzzzzzzzzzzzzzzzz
 ```
 Notes:
-1. The top split line is only written when the log entries were not the first written to a new log file.
-2. The specification of the header would default to a columns delimiter | (vertical bar), inappropriate with the special alignment of the 2nd column
+1. The top split line is only written when there are already preceding log entries in the log file.
+2. The specification of the header would default to a columns delimiter | (vertical bar) - which would be inappropriate in the context of the special left alignment spec for the 2nd column
 3. The specific alignment for the 2nd column increased the column width from 15 to 18
 
 ### Methods
