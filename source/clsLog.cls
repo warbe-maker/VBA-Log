@@ -402,22 +402,31 @@ Public Function Align(ByVal a_strng As String, _
             a_strng = WithMargins(a_strng)
             Select Case a_fill
                 Case " "
-                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                        Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
                 Case ".:"
-                    If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
-                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
+                    If Trim$(a_strng) <> vbNullString Then
+                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                        Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
+                    Else
+                        Align = sFill & String$(a_lngth + 3, " ") & sFill
+                    End If
                 Case "."
-                    If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
-                    Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                    If Trim$(a_strng) <> vbNullString Then
+                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                        Align = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                    Else
+                        Align = sFill & String$(a_lngth + 2, " ") & sFill
+                    End If
             End Select
         Case "R"
             Align = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
+            
         Case "C"
             s = " " & Trim$(a_strng) & " "
             If Len(s) < a_lngth Then
                 sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
             End If
-            Align = sFill & s & sFill
+                Align = sFill & s & sFill
             If Len(Align) < a_lngth Then
                 Align = Align & VBA.String$(a_lngth - Len(Align), a_fill)
             End If
@@ -581,6 +590,8 @@ Public Sub Entry(ParamArray e() As Variant)
 '   new line to the log file
 ' - When multiple strings are provided or a string contains vertical bars (|)
 '   the indicated items are writen aligned in columns to the log-file
+' - When an item is not available (IsError) an item with spaces only is
+'   assumed
 ' ----------------------------------------------------------------------------
     Const PROC = "Entry"
     
@@ -596,38 +607,40 @@ Public Sub Entry(ParamArray e() As Variant)
     
     If LBound(e) = UBound(e) Then
         '~~ The log-entry is only one single string
-        s = e(LBound(e))
-        If InStr(s, "|") <> 0 Then
-            '~~ The | in the string indicates items for being column aligned
-            '~~ and additionally the implicit width
-            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
-            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
-            v = Split(s, "|")
-            AlignedByColumns = True
-            lColumns = UBound(v)
-            For i = LBound(v) To UBound(v)
-                iCol = i + 1
-                ColItem(iCol) = CStr(v(i))
-                If ColWidth(iCol) = 0 Then
-                    '~~ Only in case no column width has explicitly been
-                    '~~ spcified by means of the MaxItemLengths method
-                    ColWidth(iCol) = Len(v(i))
+        If Not IsError(e(LBound(e))) Then
+            s = e(LBound(e))
+            If InStr(s, "|") <> 0 Then
+                '~~ The | in the string indicates items for being column aligned
+                '~~ and additionally the implicit width
+                If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+                If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+                v = Split(s, "|")
+                AlignedByColumns = True
+                lColumns = UBound(v)
+                For i = LBound(v) To UBound(v)
+                    iCol = i + 1
+                    ColItem(iCol) = CStr(v(i))
+                    If ColWidth(iCol) = 0 Then
+                        '~~ Only in case no column width has explicitly been
+                        '~~ spcified by means of the MaxItemLengths method
+                        ColWidth(iCol) = Len(v(i))
+                    End If
+                    sAlign = ColAlignmentItem(iCol)
+                    Alignment v(i), sItem, sFill, sAlign
+                    
+                Next i
+                WriteItems
+            Else
+                AlignedByColumns = False
+                If bNewLog Then
+                    '~~ NewLog with an Entry (s) to be written indicates that
+                    '~~ writing a delimiter line, a title (if specified) and a header
+                    '~~ (when specified) are to be written beforehand.
+                    NewLog n_items:=False, n_line:=s
                 End If
-                sAlign = ColAlignmentItem(iCol)
-                Alignment v(i), sItem, sFill, sAlign
-                
-            Next i
-            WriteItems
-        Else
-            AlignedByColumns = False
-            If bNewLog Then
-                '~~ NewLog with an Entry (s) to be written indicates that
-                '~~ writing a delimiter line, a title (if specified) and a header
-                '~~ (when specified) are to be written beforehand.
-                NewLog n_items:=False, n_line:=s
+                WriteLine s
+                bNewLog = False
             End If
-            WriteLine s
-            bNewLog = False
         End If
     Else
         '~~ The Entry provides more than just one string, thereby
@@ -636,21 +649,26 @@ Public Sub Entry(ParamArray e() As Variant)
         lColumns = UBound(e) + 1
         For i = LBound(e) To UBound(e)
             iCol = i + 1
-            sAlign = ColAlignmentItem(iCol)
-            sFill = ColFill(iCol)
-            '~~ The Alignment will return the item (sItem) unstripped
-            '~~ from irrelevant leading and/or trailing spaces.
-            '~~ Only in case no alignment has already been specified,
-            '~~ it - and the fill if any will be returned else it will remain unchanged.
-            Alignment e(i), sItem, sFill, sAlign
-            ColAlignmentItem(iCol) = sAlign
-            ColFill(iCol) = sFill
-            ColItem(iCol) = sItem
-            
-            If ColWidth(iCol) = 0 Then
-                '~~ Only in case no column width has explicitly been
-                '~~ spcified by means of the MaxItemLengths method
-                ColWidth(iCol) = Len(sItem)
+            If Not IsError(e(i)) Then
+                sAlign = ColAlignmentItem(iCol)
+                sFill = ColFill(iCol)
+                '~~ The Alignment will return the item (sItem) unstripped
+                '~~ from irrelevant leading and/or trailing spaces.
+                '~~ Only in case no alignment has already been specified,
+                '~~ it - and the fill if any will be returned else it will remain unchanged.
+                Alignment e(i), sItem, sFill, sAlign
+                ColAlignmentItem(iCol) = sAlign
+                ColFill(iCol) = sFill
+                ColItem(iCol) = sItem
+                
+                If ColWidth(iCol) = 0 Then
+                    '~~ Only in case no column width has explicitly been
+                    '~~ spcified by means of the MaxItemLengths method
+                    ColWidth(iCol) = Len(sItem)
+                End If
+            Else
+                '~~ A not provided items becomes one with spaces only
+                ColItem(iCol) = String(ColWidth(iCol), " ")
             End If
         Next i
         WriteItems

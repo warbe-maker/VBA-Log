@@ -1,6 +1,7 @@
 Attribute VB_Name = "mLogTest"
 Option Explicit
 Option Base 1
+Option Compare Binary
 ' ----------------------------------------------------------------------
 ' Standard Module mLogTest: Individual tests plus a Regression-Test
 ' ========================= which combines them all.
@@ -528,4 +529,37 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-
+Private Sub Test_01_Align()
+    Dim Log As New clsLog
+    Dim sResult As String
+    Dim lWidth  As Long
+    
+    With Log
+        lWidth = 10
+        sResult = "|" & .Align(" ", lWidth, "R", " ", " ") & "|"
+        Debug.Assert sResult = "|          |"
+        Debug.Assert Len(sResult) = lWidth + 2
+        
+        lWidth = 10
+        sResult = "|" & .Align(" ", lWidth, "C", " ", " ") & "|"
+        Debug.Assert sResult = "|          |"
+        Debug.Assert Len(sResult) = lWidth + 2
+        
+        lWidth = 10
+        sResult = "|" & .Align(" ", lWidth, "L", " ", " ") & "|"
+        Debug.Assert sResult = "|          |"
+        Debug.Assert Len(sResult) = lWidth + 2
+        
+        lWidth = 10
+        sResult = .Align("  ", 10, "L", "", ".:")
+        Debug.Assert sResult = "             "
+        Debug.Assert Len(sResult) = lWidth + 3
+            
+        lWidth = 10
+        sResult = .Align("  ", 10, "L", "", ".")
+        Debug.Assert sResult = "            "
+        Debug.Assert Len(sResult) = lWidth + 2
+    
+    End With
+    
+End Sub
