@@ -428,15 +428,32 @@ Private Sub Test_00_Regression()
         .Entry "01-4 1. Single string, new log. Extra long text to force title with fill characters"
         .Entry "01-4 2. Single string without any width limit"
         
-        '~~ ------------------------------------------------------------------
-        '~~ Test 02: - The change from non-column to column-aligned implicitly
-        '~~            indicates the begin of a new series of log entries
-        '~~          - The first line implicitly specifies the columnns
-        '~~            alignment: R, C, R, L
-        '~~ ------------------------------------------------------------------
-        .Entry " 02", "xxxx", " yyyyyy", "Alignments: R, C, R, L; Rightmost column without width limit"
-        .Entry "02", "xxxx", " yyyy", "'NewLog' implicit due to the change from non- to column-aligned ..."
-        .Entry "02", "xxxx", " yyyyy", "... because entries are without a title"
+        '~~ --------------------------------------------------------------------
+        '~~ Test 02-1: - NewLog explicitly idicateas a new series of log entries
+        '~~            - The first line implicitly specifies the columnns
+        '~~              alignment: R, C, R, L
+        '~~            - The chage between column aligned and single string
+        '~~              is possible. Column aligned entries are only correct
+        '~~              implitly aligned when the first entry is an items entry
+        '~~ --------------------------------------------------------------------
+        .NewLog
+        .Entry " 02-1", "xxxx", " yyyyyy", "Alignments: R, C, R, L; Rightmost column without width limit"
+        .Entry "'NewLog' explicitly called to indicate a new series of log entries"
+        .Entry "02-1", "xxxx", " yyyyy", "... correct aligned in columns because the first entry indicated column alignment implicitly!"
+        
+        '~~ --------------------------------------------------------------------
+        '~~ Test 02-2: - NewLog explicitly idicateas a new series of log entries
+        '~~            - The first line implicitly specifies the columnns
+        '~~              alignment: R, C, R, L
+        '~~            - The chage between column aligned and single string
+        '~~              is possible. Column aligned entries are only correct
+        '~~              implitly aligned when the first entry is an items entry
+        '~~ --------------------------------------------------------------------
+        .NewLog
+        .AlignmentItems "|R|C|L|L|"
+        .Entry "'NewLog' explicitly called to indicate a new series of log entries"
+        .Entry " 02-2", "xxxx", " yyyyyy", "Alignments: R, C, R, L; Rightmost column without width limit"
+        .Entry "02-2", "xxxx", " yyyyy", "... correct aligned in columns because AlignmentItems explicitly specified them!"
         
         .Title "Regression test case 04: " _
              , "- The 'Headers' method:" _

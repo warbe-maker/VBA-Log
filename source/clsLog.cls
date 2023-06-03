@@ -33,12 +33,12 @@ Option Base 1 ' ensures the index conforms with the column number
 '                    when one is provided.
 ' - NewLog           Explicit indication that the next Entry is the first of a
 '                    new series of log entries. I.e. with the next Entry a
-'                    Delimiter line is written (provided its not a new log file).
-'                    In most cases this method is unnecessary because the begin
-'                    of a new series of log entries is implicitly considered
-'                    with the Title method, the Headers method and in case the
-'                    Entry changes from a single string to column aligned items
-'                    or vice versa.
+'                    Delimiter line is written (provided its not a new log file),
+'                    a title is written (provided one has been specified), and
+'                    a header is written (provided one has been specified).
+'                    An explicit call of this method is only required, in case
+'                    neither a Title nor Headers had been specified but a
+'                    delimiter line should indicate a new series of log entries.
 ' - Title            Specifies the - optionally multiline - title of a new series
 '                    of log entries. Triggers the writing of the column headers
 '                    provided specified.
@@ -60,6 +60,7 @@ Option Base 1 ' ensures the index conforms with the column number
 '                         yy-mm-dd-hh:mm:ss when True
 '
 ' W. Rauschenberger, Berlin Apr 2023
+' See: https://github.com/warbe-maker/VBA-Log-Service
 ' -----------------------------------------------------------------------------------
 Private aAlignmentsHeader   As Variant
 Private aAlignmentsItem     As Variant
@@ -67,7 +68,7 @@ Private aHeaders            As Variant
 Private aHeaderLines        As Variant
 Private aItems              As Variant
 Private aTitleLines         As Variant
-Private aMaxItemLengths     As Variant ' Public for test purpose only
+Private aMaxItemLengths     As Variant
 Private aFills()            As String
 Private bColsAligned        As Boolean
 Private bNewLog             As Boolean
@@ -137,17 +138,6 @@ Private Sub Class_Terminate()
     sColsDelimiter = vbNullString
 End Sub
 
-Private Property Let AlignedByColumns(ByVal b As Boolean)
-' ----------------------------------------------------------------------------
-' The change from one mode to another (from bColsAligned = True to False
-' and vice versa) indicates the begin of a new series of log entries.
-' ----------------------------------------------------------------------------
-    If Not bColsAligned = b Then
-        bColsAligned = b
-        If Not bNewLog Then Init
-    End If
-End Property
-
 Private Property Get ColAlignmentHeader(Optional ByVal c_col As Long) As String
     If IsAllocated(aAlignmentsHeader) Then
         If c_col <= UBound(aAlignmentsHeader) Then
@@ -170,6 +160,14 @@ Private Property Get ColAlignmentItem(Optional ByVal c_col As Long) As String
     End If
 End Property
 
+Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
+                                               ByVal c_align As String)
+    ArryRedim aAlignmentsItem, c_col
+    If aAlignmentsItem(c_col) = vbNullString _
+    Then aAlignmentsItem(c_col) = c_align
+
+End Property
+
 Private Property Get ColFill(Optional ByVal c_col As Long) As String
     If IsAllocated(aFills) Then
         If c_col <= UBound(aFills) _
@@ -182,14 +180,6 @@ Private Property Let ColFill(Optional ByVal c_col As Long, _
     ArryRedim aFills, c_col
     aFills(c_col) = c_fill
     
-End Property
-
-Private Property Let ColAlignmentItem(Optional ByVal c_col As Long, _
-                                               ByVal c_align As String)
-    ArryRedim aAlignmentsItem, c_col
-    If aAlignmentsItem(c_col) = vbNullString _
-    Then aAlignmentsItem(c_col) = c_align
-
 End Property
 
 Private Property Get ColHeader(Optional ByVal c_col As Long, _
@@ -219,16 +209,6 @@ Private Property Let ColHeader(Optional ByVal c_col As Long, _
     aHeaderLines(c_line) = aHeaders
     
 End Property
-
-Private Sub ArryRedim(ByRef a_arry As Variant, _
-                      ByVal a_items As Long)
-' -----------------------------------------------------------------------------------
-' Returns the array (a_arry) redimed with the number of required columns (a_items).
-' -----------------------------------------------------------------------------------
-    If Not IsAllocated(a_arry) _
-    Then ReDim a_arry(a_items) _
-    Else ReDim Preserve a_arry(Max(UBound(a_arry), a_items))
-End Sub
 
 Private Property Get ColItem(Optional ByVal c_col As Long) As String
 ' -----------------------------------------------------------------------------------
@@ -360,18 +340,6 @@ Friend Property Let Path(ByVal v As Variant)
     End Select
     
 End Property
-
-Private Function ColWidthFinal(ByVal c_col As Long) As Long
-' -----------------------------------------------------------------------------------
-' Returns the final width of a column by considering the either implicitly or
-' explicitly specified width and the fill string in case one is specified.
-' -----------------------------------------------------------------------------------
-    Select Case ColFill(c_col)
-        Case ".":   ColWidthFinal = ColWidth(c_col) + 2
-        Case ".:":  ColWidthFinal = ColWidth(c_col) + 3
-        Case Else:  ColWidthFinal = ColWidth(c_col)
-    End Select
-End Function
 
 Friend Property Let WithTimeStamp(ByVal b As Boolean)
     bWithTimeStamp = b
@@ -553,127 +521,67 @@ Public Sub Alignment(ByVal a_string As String, _
 
 End Sub
 
-Private Function AppErr(ByVal app_err_no As Long) As Long
-' ------------------------------------------------------------------------------
-' Ensures that a programmed (i.e. an application) error numbers never conflicts
-' with the number of a VB runtime error. Thr function returns a given positive
-' number (app_err_no) with the vbObjectError added - which turns it into a
-' negative value. When the provided number is negative it returns the original
-' positive "application" error number e.g. for being used with an error message.
-' ------------------------------------------------------------------------------
-    AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
-End Function
-
-Public Function AsArray(ByVal a_string As String, _
-                        ByVal a_split_by As String) As String()
+Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
 ' -----------------------------------------------------------------------------------
-' Returns a string (a_string) as an array of strings considering a split character
-' (a_split_by). Any leading or trailing split character is removed before the split.
+' Explicit headers column alignment specification, overwrites any already specified
+' alignment (possibly implicitly specified).
+' character is neither L, nor C, nor R, the alignment is considered "implicit",
+' indicated by the number of left and right spaces.
 ' -----------------------------------------------------------------------------------
-    If InStr(a_string, a_split_by) <> 0 Then
-        If Left(a_string, 1) = a_split_by Then a_string = Right(a_string, Len(a_string) - 1)
-        If Right(a_string, 1) = a_split_by Then a_string = Left(a_string, Len(a_string) - 1)
-    End If
-    AsArray = Split(a_string, a_split_by)
-End Function
-
-Public Sub Dsply()
-' -----------------------------------------------------------------------------------
-' Displays the Log-Files content.
-' -----------------------------------------------------------------------------------
-    ShellRun sFileFullName
-End Sub
-
-Public Sub Entry(ParamArray e() As Variant)
-' ----------------------------------------------------------------------------
-' - When a single string without any | is provided the string is appended as a
-'   new line to the log file
-' - When multiple strings are provided or a string contains vertical bars (|)
-'   the indicated items are writen aligned in columns to the log-file
-' - When an item is not available (IsError) an item with spaces only is
-'   assumed
-' ----------------------------------------------------------------------------
-    Const PROC = "Entry"
+    Const PROC = "AlignmentHeaders"
     
     On Error GoTo eh
     Dim i       As Long
     Dim iCol    As Long
+    Dim sAlign  As String
+    Dim sReturn As String
+    Dim sFill   As String
     Dim s       As String
     Dim v       As Variant
-    Dim lWidth  As Long
-    Dim sItem   As String
-    Dim sFill   As String
-    Dim sAlign  As String
-    
-    If LBound(e) = UBound(e) Then
-        '~~ The log-entry is only one single string
-        If Not IsError(e(LBound(e))) Then
-            s = e(LBound(e))
-            If InStr(s, "|") <> 0 Then
-                '~~ The | in the string indicates items for being column aligned
-                '~~ and additionally the implicit width
-                If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
-                If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
-                v = Split(s, "|")
-                AlignedByColumns = True
-                lColumns = UBound(v)
-                For i = LBound(v) To UBound(v)
-                    iCol = i + 1
-                    ColItem(iCol) = CStr(v(i))
-                    If ColWidth(iCol) = 0 Then
-                        '~~ Only in case no column width has explicitly been
-                        '~~ spcified by means of the MaxItemLengths method
-                        ColWidth(iCol) = Len(v(i))
-                    End If
-                    sAlign = ColAlignmentItem(iCol)
-                    Alignment v(i), sItem, sFill, sAlign
-                    
-                Next i
-                WriteItems
-            Else
-                AlignedByColumns = False
-                If bNewLog Then
-                    '~~ NewLog with an Entry (s) to be written indicates that
-                    '~~ writing a delimiter line, a title (if specified) and a header
-                    '~~ (when specified) are to be written beforehand.
-                    NewLog n_items:=False, n_line:=s
-                End If
-                WriteLine s
-                bNewLog = False
-            End If
+        
+    If Not IsError(c_align(LBound(c_align))) Then
+        If InStr(c_align(LBound(c_align)), "|") <> 0 Then
+            '~~ The | in the string indicates an alternative how column aligned
+            '~~ headers may be specified
+            s = c_align(LBound(c_align))
+            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+            v = Split(s, "|")
+        Else
+            '~~ The headers are all elements of the ParamArray
+            v = c_align
         End If
     Else
-        '~~ The Entry provides more than just one string, thereby
-        '~~ indicating that these items are to be aligned in columns
-        AlignedByColumns = True
-        lColumns = UBound(e) + 1
-        For i = LBound(e) To UBound(e)
-            iCol = i + 1
-            If Not IsError(e(i)) Then
-                sAlign = ColAlignmentItem(iCol)
-                sFill = ColFill(iCol)
-                '~~ The Alignment will return the item (sItem) unstripped
-                '~~ from irrelevant leading and/or trailing spaces.
-                '~~ Only in case no alignment has already been specified,
-                '~~ it - and the fill if any will be returned else it will remain unchanged.
-                Alignment e(i), sItem, sFill, sAlign
-                ColAlignmentItem(iCol) = sAlign
-                ColFill(iCol) = sFill
-                ColItem(iCol) = sItem
-                
-                If ColWidth(iCol) = 0 Then
-                    '~~ Only in case no column width has explicitly been
-                    '~~ spcified by means of the MaxItemLengths method
-                    ColWidth(iCol) = Len(sItem)
-                End If
-            Else
-                '~~ A not provided items becomes one with spaces only
-                ColItem(iCol) = String(ColWidth(iCol), " ")
-            End If
-        Next i
-        WriteItems
+        v = c_align
     End If
-        
+    
+    For i = LBound(v) To UBound(v)
+        If Not IsError(v(i)) Then
+            iCol = i + 1
+            sAlign = vbNullString
+            If Not IsError(v(i)) Then
+                '~~ Skippes not specified columns
+                Select Case UCase$(v(i))
+                    Case "L", "C", "R"
+                        ColAlignmentHeader(iCol) = UCase(v(i))
+                    Case Else
+                        Alignment v(i), sReturn, sFill, sAlign
+                        Select Case UCase(Left$(sAlign, 1))
+                            Case "L", "C", "R"
+                                ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                            Case Else
+                                Select Case UCase(Left$(sReturn, 1))
+                                    Case "L", "C", "R"
+                                        ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
+                                    Case Else
+                                        Err.Raise AppErr(1), ErrSrc(PROC), "The alignment for column " & iCol & " is neither L, nor R, nor C!"
+                                End Select
+                        End Select
+                End Select
+            End If
+        End If
+    Next i
+    
 xt: Exit Sub
 
 eh: Select Case ErrMsg(ErrSrc(PROC))
@@ -741,6 +649,154 @@ Public Sub AlignmentItems(ParamArray c_align() As Variant)
         End If
     Next i
     
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
+Private Function AppErr(ByVal app_err_no As Long) As Long
+' ------------------------------------------------------------------------------
+' Ensures that a programmed (i.e. an application) error numbers never conflicts
+' with the number of a VB runtime error. Thr function returns a given positive
+' number (app_err_no) with the vbObjectError added - which turns it into a
+' negative value. When the provided number is negative it returns the original
+' positive "application" error number e.g. for being used with an error message.
+' ------------------------------------------------------------------------------
+    AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
+End Function
+
+Private Sub ArryRedim(ByRef a_arry As Variant, _
+                      ByVal a_items As Long)
+' -----------------------------------------------------------------------------------
+' Returns the array (a_arry) redimed with the number of required columns (a_items).
+' -----------------------------------------------------------------------------------
+    If Not IsAllocated(a_arry) _
+    Then ReDim a_arry(a_items) _
+    Else ReDim Preserve a_arry(Max(UBound(a_arry), a_items))
+End Sub
+
+Public Function AsArray(ByVal a_string As String, _
+                        ByVal a_split_by As String) As String()
+' -----------------------------------------------------------------------------------
+' Returns a string (a_string) as an array of strings considering a split character
+' (a_split_by). Any leading or trailing split character is removed before the split.
+' -----------------------------------------------------------------------------------
+    If InStr(a_string, a_split_by) <> 0 Then
+        If Left(a_string, 1) = a_split_by Then a_string = Right(a_string, Len(a_string) - 1)
+        If Right(a_string, 1) = a_split_by Then a_string = Left(a_string, Len(a_string) - 1)
+    End If
+    AsArray = Split(a_string, a_split_by)
+End Function
+
+Private Function ColWidthFinal(ByVal c_col As Long) As Long
+' -----------------------------------------------------------------------------------
+' Returns the final width of a column by considering the either implicitly or
+' explicitly specified width and the fill string in case one is specified.
+' -----------------------------------------------------------------------------------
+    Select Case ColFill(c_col)
+        Case ".":   ColWidthFinal = ColWidth(c_col) + 2
+        Case ".:":  ColWidthFinal = ColWidth(c_col) + 3
+        Case Else:  ColWidthFinal = ColWidth(c_col)
+    End Select
+End Function
+
+Public Sub Dsply()
+' -----------------------------------------------------------------------------------
+' Displays the Log-Files content.
+' -----------------------------------------------------------------------------------
+    ShellRun sFileFullName
+End Sub
+
+Public Sub Entry(ParamArray e() As Variant)
+' ----------------------------------------------------------------------------
+' - When a single string without any | is provided the string is appended as a
+'   new line to the log file
+' - When multiple strings are provided or a string contains vertical bars (|)
+'   the indicated items are writen aligned in columns to the log-file
+' - When an item is not available (IsError) an item with spaces only is
+'   assumed
+' ----------------------------------------------------------------------------
+    Const PROC = "Entry"
+    
+    On Error GoTo eh
+    Dim i       As Long
+    Dim iCol    As Long
+    Dim s       As String
+    Dim v       As Variant
+    Dim lWidth  As Long
+    Dim sItem   As String
+    Dim sFill   As String
+    Dim sAlign  As String
+    
+    If LBound(e) = UBound(e) Then
+        '~~ The log-entry is only one single string
+        If Not IsError(e(LBound(e))) Then
+            s = e(LBound(e))
+            If InStr(s, "|") <> 0 Then
+                '~~ The | in the string indicates items for being column aligned
+                '~~ and additionally the implicit width
+                If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
+                If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
+                v = Split(s, "|")
+                lColumns = UBound(v)
+                For i = LBound(v) To UBound(v)
+                    iCol = i + 1
+                    ColItem(iCol) = CStr(v(i))
+                    If ColWidth(iCol) = 0 Then
+                        '~~ Only in case no column width has explicitly been
+                        '~~ spcified by means of the MaxItemLengths method
+                        ColWidth(iCol) = Len(v(i))
+                    End If
+                    sAlign = ColAlignmentItem(iCol)
+                    Alignment v(i), sItem, sFill, sAlign
+                    
+                Next i
+                WriteItems
+            Else
+                If bNewLog Then
+                    '~~ NewLog with an Entry (s) to be written indicates that
+                    '~~ writing a delimiter line, a title (if specified) and a header
+                    '~~ (when specified) are to be written beforehand.
+                    NewLog n_items:=False, n_line:=s
+                End If
+                WriteLine s
+                bNewLog = False
+            End If
+        End If
+    Else
+        '~~ The Entry provides more than just one string, thereby
+        '~~ indicating that these items are to be aligned in columns
+        lColumns = UBound(e) + 1
+        For i = LBound(e) To UBound(e)
+            iCol = i + 1
+            If Not IsError(e(i)) Then
+                sAlign = ColAlignmentItem(iCol)
+                sFill = ColFill(iCol)
+                '~~ The Alignment will return the item (sItem) unstripped
+                '~~ from irrelevant leading and/or trailing spaces.
+                '~~ Only in case no alignment has already been specified,
+                '~~ it - and the fill if any will be returned else it will remain unchanged.
+                Alignment e(i), sItem, sFill, sAlign
+                ColAlignmentItem(iCol) = sAlign
+                ColFill(iCol) = sFill
+                ColItem(iCol) = sItem
+                
+                If ColWidth(iCol) = 0 Then
+                    '~~ Only in case no column width has explicitly been
+                    '~~ spcified by means of the MaxItemLengths method
+                    ColWidth(iCol) = Len(sItem)
+                End If
+            Else
+                '~~ A not provided items becomes one with spaces only
+                ColItem(iCol) = String(ColWidth(iCol), " ")
+            End If
+        Next i
+        WriteItems
+    End If
+        
 xt: Exit Sub
 
 eh: Select Case ErrMsg(ErrSrc(PROC))
@@ -918,75 +974,6 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Public Sub AlignmentHeaders(ParamArray c_align() As Variant)
-' -----------------------------------------------------------------------------------
-' Explicit headers column alignment specification, overwrites any already specified
-' alignment (possibly implicitly specified).
-' character is neither L, nor C, nor R, the alignment is considered "implicit",
-' indicated by the number of left and right spaces.
-' -----------------------------------------------------------------------------------
-    Const PROC = "AlignmentHeaders"
-    
-    On Error GoTo eh
-    Dim i       As Long
-    Dim iCol    As Long
-    Dim sAlign  As String
-    Dim sReturn As String
-    Dim sFill   As String
-    Dim s       As String
-    Dim v       As Variant
-        
-    If Not IsError(c_align(LBound(c_align))) Then
-        If InStr(c_align(LBound(c_align)), "|") <> 0 Then
-            '~~ The | in the string indicates an alternative how column aligned
-            '~~ headers may be specified
-            s = c_align(LBound(c_align))
-            If Left(s, 1) = "|" Then s = Right(s, Len(s) - 1)
-            If Right(s, 1) = "|" Then s = Left(s, Len(s) - 1)
-            v = Split(s, "|")
-        Else
-            '~~ The headers are all elements of the ParamArray
-            v = c_align
-        End If
-    Else
-        v = c_align
-    End If
-    
-    For i = LBound(v) To UBound(v)
-        If Not IsError(v(i)) Then
-            iCol = i + 1
-            sAlign = vbNullString
-            If Not IsError(v(i)) Then
-                '~~ Skippes not specified columns
-                Select Case UCase$(v(i))
-                    Case "L", "C", "R"
-                        ColAlignmentHeader(iCol) = UCase(v(i))
-                    Case Else
-                        Alignment v(i), sReturn, sFill, sAlign
-                        Select Case UCase(Left$(sAlign, 1))
-                            Case "L", "C", "R"
-                                ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
-                            Case Else
-                                Select Case UCase(Left$(sReturn, 1))
-                                    Case "L", "C", "R"
-                                        ColAlignmentHeader(iCol) = UCase(Left$(sAlign, 1))
-                                    Case Else
-                                        Err.Raise AppErr(1), ErrSrc(PROC), "The alignment for column " & iCol & " is neither L, nor R, nor C!"
-                                End Select
-                        End Select
-                End Select
-            End If
-        End If
-    Next i
-    
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Sub
-
 Private Sub Init()
     aAlignmentsHeader = vbNullString
     aAlignmentsItem = vbNullString
@@ -1022,6 +1009,34 @@ Private Function Max(ParamArray va() As Variant) As Variant
     
 End Function
 
+Public Sub MaxItemLengths(ParamArray c_widths() As Variant)
+' -----------------------------------------------------------------------------------
+' Specifies the maximum length for the items aligned in columns which will become the
+' minimum column width. The corresponding final columns widths may be greater however.
+' -----------------------------------------------------------------------------------
+    Const PROC = "MaxItemLengths"
+    
+    On Error GoTo eh
+    Dim i       As Long
+    Dim iCol    As Long
+    
+    For i = LBound(c_widths) To UBound(c_widths)
+        If Not IsError(c_widths(i)) Then
+            If Not IsError(Abs(CInt(c_widths(i)))) Then
+                iCol = i + 1
+                ColWidth(iCol) = c_widths(i)
+            End If
+        End If
+    Next i
+
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Sub
+
 Private Function Min(ParamArray va() As Variant) As Variant
 ' --------------------------------------------------------
 ' Returns the minimum (smallest) of all provided values.
@@ -1040,17 +1055,11 @@ Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
 ' -----------------------------------------------------------------------------------
 ' When not provided with any arguments this is an explicit indication that the next
 ' Entry is the first of a new series of log entries. I.e. with the next Entry a
-' delimiter line (=====) is written - provided its not a new log file. In most cases
-' there is no need to call this method explicitly because is is called implicitly
-' with the next Entry method when a Title or Headers had been specified, or in case
-' the Entry changes from a single string to column aligned items or vice versa.
-' When called implicitly (n_line not a vbNullString) the method writes:
-' - A delimiting line (=====) when the log-file already has entries, in the width of
-'   the about to be written line (n_line)
-' - The specified Title(s) if any, , in the width of the about to be written line
-'   (n_line)
-' - A column header, provided the about to be writen line (n_line) is for items
-'   aligned in columns (n_items = True)
+' Delimiter line is written (provided its not a new log file), a title is written
+' (provided one has been specified), and a header is written (provided one has been
+' specified). An explicit call of this method is only required, in case neither a
+' Title nor Headers had been specified but a delimiter line should indicate a new
+' series of log entries.
 ' -----------------------------------------------------------------------------------
     Const PROC = "NewLog"
     
@@ -1257,34 +1266,6 @@ Public Sub Title(ParamArray t_lines() As Variant)
     Next i
     aItems = vbNullString ' a new title clears any previous items
 
-End Sub
-
-Public Sub MaxItemLengths(ParamArray c_widths() As Variant)
-' -----------------------------------------------------------------------------------
-' Specifies the maximum length for the items aligned in columns which will become the
-' minimum column width. The corresponding final columns widths may be greater however.
-' -----------------------------------------------------------------------------------
-    Const PROC = "MaxItemLengths"
-    
-    On Error GoTo eh
-    Dim i       As Long
-    Dim iCol    As Long
-    
-    For i = LBound(c_widths) To UBound(c_widths)
-        If Not IsError(c_widths(i)) Then
-            If Not IsError(Abs(CInt(c_widths(i)))) Then
-                iCol = i + 1
-                ColWidth(iCol) = c_widths(i)
-            End If
-        End If
-    Next i
-
-xt: Exit Sub
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
 End Sub
 
 Private Function WithMargins(ByVal w_string As String) As String

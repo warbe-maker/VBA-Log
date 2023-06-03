@@ -1,4 +1,4 @@
-## VBA-Service-Log
+## VBA-Log-Service
 ### The service at a glance (impression of methods and properties)
 ```vb
     Dim Log As New clsLog
@@ -39,7 +39,7 @@ Notes:
 |***Entry***              | Writes a log entry which is either a single string or a number of items, whereby the latter indicated that the items are to be aligned in columns in accordance with the specified ***AlignmentItems***.|
 |***Headers***             | ParamArray of string expressions, specifies a header line with column headers. The method may be repeated for multiple column headers. The specified headers may implicitly specify the column headers' [alignment](#implicit-headers-alignment-specification) |
 |***MaxItemLengths***        | ParamArray of integer expressions, specifies the [maximum length of items ](#the-maximum-items-length-specification) aligned in columns.|
-|***NewLog***              | Explicitly indicates that the next subsequent ***Entry*** is the first of a new series of log entries. The method is internally called before the first of a series of new entries is written, which is indicated by a previous ***Title*** specification and/or a ***Headers*** specification. The method writes a delimiter line (======) - provided its not a new log file, writes a title - provided one has been specified, and writes a header - provided one has been specified. An explicit call of the method is only required in case case neither a title nor a header has been specified and the first entry of a new series of log entries is of the same kind (a single string or column aligned items).|
+|***NewLog***              | Explicit indication that the next Entry is the first of a new series of log entries. I.e. with the next Entry a Delimiter line is written (provided its not a new log file), a title is written (provided one has been specified), and a header is written (provided one has been specified). An explicit call of this method is only required, in case neither a Title nor Headers had been specified but a delimiter line should indicate a new series of log entries.|
 |***Title***               | ParamArray of strings, each representing a title line (alternatively the method may be called for each line). The alignment of the title lines may implicitly be specified with the first string/method call (see).|
 
 ### Properties
