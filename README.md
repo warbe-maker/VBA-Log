@@ -72,7 +72,7 @@ When column ***Headers*** are specified the delimiter defaults to a  `|` (vertic
 
 
 #### Columns Width
-The column width is the space between two [column delimiters] which may be a `|` (vertical bar) or a single space. The final width of a column considers:
+The column width is the space between two [column delimiters](#columns-delimiter) which may be a `|` (vertical bar) or a single space. The final width of a column considers:
  - the ***MaxItemLengths*** (when specified for the column)
  - a leading and trailing single space when the ***ColsDelimiter*** is a vertical bar - which is the default when ***Headers*** were specified
  - the width of the columns ***Headers*** (when specified)
