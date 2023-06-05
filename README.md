@@ -67,7 +67,7 @@ When column ***Headers*** are specified the delimiter defaults to a  `|` (vertic
 
 | Columns Delimiter        | Columns Margin              | Comment |
 |--------------------------|-----------------------------|---------|
-|<nobr>`"|"` (vertical bar)|<nobr>" " (single space)     | Default when ***Headers*** are specified. The column content will have at least one a leading and one trailing space. |
+|<nobr>`"\|"` (vertical bar)|<nobr>" " (single space)     | Default when ***Headers*** are specified. The column content will have at least one a leading and one trailing space. |
 | " " (single space)       |<nobr> "" (`vbNullString`)   | Default when no ***Headers*** are specified. The column content will have no leading and trailing space other than the single space column delimiter. |
 
 
