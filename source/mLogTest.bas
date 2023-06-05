@@ -404,7 +404,7 @@ Private Sub Test_00_Regression()
     
     With Log
         If fso.FileExists(.LogFile) Then fso.DeleteFile .LogFile
-        .WithTimeStamp = bTimeStamp
+        .WithTimeStamp bTimeStamp
         '~~ --------------------
         '~~ Test 01: Title tests
         '~~ --------------------

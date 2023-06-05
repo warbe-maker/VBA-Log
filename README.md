@@ -34,13 +34,14 @@ Notes:
 | Method Name              | Function |
 |--------------------------|----------|
 |***AlignmentHeaders***    | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-headers-alignment-specification) for each column's header.|
-|***AlignmentItems*** | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-items-alignment-specification) for each column's item.|
-|***Dsply***              | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
-|***Entry***              | Writes a log entry which is either a single string or a number of items, whereby the latter indicated that the items are to be aligned in columns in accordance with the specified ***AlignmentItems***.|
+|***AlignmentItems***      | ParamArray of string expressions, explicitly specifies the [alignment](#explicit-items-alignment-specification) for each column's item.|
+|***Dsply***               | Displays the log-file by means of the application associated with the file's extension, which defaults to .log|
+|***Entry***               | Writes a log entry which is either a single string or a number of items, whereby the latter indicated that the items are to be aligned in columns in accordance with the specified ***AlignmentItems***.|
 |***Headers***             | ParamArray of string expressions, specifies a header line with column headers. The method may be repeated for multiple column headers. The specified headers may implicitly specify the column headers' [alignment](#implicit-headers-alignment-specification) |
-|***MaxItemLengths***        | ParamArray of integer expressions, specifies the [maximum length of items ](#the-maximum-items-length-specification) aligned in columns.|
+|***MaxItemLengths***      | ParamArray of integer expressions, specifies the [maximum length of items ](#the-maximum-items-length-specification) aligned in columns.|
 |***NewLog***              | Explicit indication that the next Entry is the first of a new series of log entries. I.e. with the next Entry a Delimiter line is written (provided its not a new log file), a title is written (provided one has been specified), and a header is written (provided one has been specified). An explicit call of this method is only required, in case neither a Title nor Headers had been specified but a delimiter line should indicate a new series of log entries.|
 |***Title***               | ParamArray of strings, each representing a title line (alternatively the method may be called for each line). The alignment of the title lines may implicitly be specified with the first string/method call (see).|
+|***WithTimeStamp***       | When not called log entry lines are written without a time-stamp, else with a leading timestamp in the format `yy-mm-dd-hh:mm:ss` |
 
 ### Properties
 | Name          | Description |
@@ -51,7 +52,6 @@ Notes:
 |***KeepDays***     | Integer expression, write only, Specifies the number of days a new log-file is kept before it is deleted and re-created.|
 |***LogFile***      | File object representing the current active log-file. |
 |***Path***         | String expression, write only, specifies the log-file's location, defaults to the `ActiveWorkbook's` [^1] parent folder. |
-|***WithTimeStamp***| Boolean expression, write only, defaults to `False`. When `True` each log line is prefixed with a time stamp in the format `yy-mm-dd-hh:mm:ss` |
 
 ### Installation
 1. Download (into a dedicated folder preferably) and open the 'development' Workbook [VBLogService.xlsb][1]

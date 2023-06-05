@@ -10,7 +10,7 @@ Private Sub Example_1()
     
     '~~ Log Class-Module preparation
     With Log
-        .WithTimeStamp = True               ' defaults to False when ommited
+        .WithTimeStamp                      ' leading timestamp with each log entry (defaults to False when omitted)
         .AlignmentItems "|C|L.:|L|"         ' explicit items alignment spec
         .MaxItemLengths 6, 15, 30           ' explicit spec of the required column width
         .Headers "| Nr | Item | Comment |"  ' implicitly aligned centered
@@ -33,7 +33,7 @@ Private Sub Example_2()
     
     With Log
         '~~ Preparation
-        .WithTimeStamp = True                   ' defaults to False when ommited
+        .WithTimeStamp                          ' leading timestamp with each log entry (defaults to False when omitted)
         .AlignmentItems "|R|C|L|"               ' explicit items alignment spec
         .MaxItemLengths 6, 15, 30               ' explicit spec of the required column width
         .Headers "| Column|  Column  |Column |" ' this line (only) implicitly specifies the alignment

@@ -42,6 +42,8 @@ Option Base 1 ' ensures the index conforms with the column number
 ' - Title            Specifies the - optionally multiline - title of a new series
 '                    of log entries. Triggers the writing of the column headers
 '                    provided specified.
+' - WithTimeStamp    Prefixes each log entry with a timestamp in the format
+'                    yy-mm-dd-hh:mm:ss when True
 '
 ' Properties:
 ' -----------
@@ -56,8 +58,6 @@ Option Base 1 ' ensures the index conforms with the column number
 ' - LogFile       r       The log-file as file object
 ' - Path          w       Sepcifies the log-file's location/folder, defaults to the
 '                         ActiveWorkbook's parent folder
-' - WithTimeStamp w       Prefixes each log entry with a timestamp in the format
-'                         yy-mm-dd-hh:mm:ss when True
 '
 ' W. Rauschenberger, Berlin Apr 2023
 ' See: https://github.com/warbe-maker/VBA-Log-Service
@@ -341,9 +341,9 @@ Friend Property Let Path(ByVal v As Variant)
     
 End Property
 
-Friend Property Let WithTimeStamp(ByVal b As Boolean)
+Public Sub WithTimeStamp(Optional ByVal b As Boolean = True)
     bWithTimeStamp = b
-End Property
+End Sub
 
 Public Function Align(ByVal a_strng As String, _
                       ByVal a_lngth As Long, _
