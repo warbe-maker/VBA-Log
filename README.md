@@ -58,7 +58,7 @@ Notes:
 2. In the VB-Editor copy (drag and drop) the `clsLog` Class-Module into your VB-Project. [^2]
 
 ### Columns alignment specifics
-The alignment of log items in columns is the main focus of the VBA-Log-Service. 
+The alignment (explicit or implicit) of log items in columns - and optional column headers - is the main focus of the VBA-Log-Service whereby an explicit (***AlignmentHeaders***/***Alignment items***) specification takes preprecedence over an implicit (***Headers***/***Entry***) specification disregarding which method has been called first. I e. for example: When the ***Headers*** method implicitly specifies the alignment this alignment would be overwritten by a subsequent ***AlignmentHeaders*** specification.
 
 #### Columns delimiter
 When column ***Headers*** are specified the delimiter defaults to a  `|` (vertical bar), else to a single space.
