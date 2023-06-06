@@ -27,10 +27,12 @@ Option Base 1 ' ensures the index conforms with the column number
 '                    provided strings or one string with vertical bars, both
 '                    indicating items to be writen alingned in columns.
 ' - Headers          Specifies the column headers
-' - MaxItemLengths     Explicitly specifies each columns minimum width. The width of, defaults to the
-'                    width of the corresponding column header string, is
-'                    adjusted to the width of the corresponding header string
-'                    when one is provided.
+' - MaxItemLengths   Explicitly specifies each columns minimum width. The width of,
+'                    defaults to the width of the corresponding column header
+'                    string, is adjusted to the width of the corresponding header
+'                    string when one is provided.
+' - NewFile          Removes an existing file and creates a new one when entries
+'                    are written
 ' - NewLog           Explicit indication that the next Entry is the first of a
 '                    new series of log entries. I.e. with the next Entry a
 '                    Delimiter line is written (provided its not a new log file),
@@ -301,7 +303,7 @@ Friend Property Let FileName(ByVal s As String)
     sFileFullName = Replace(sPath & "\" & sFileName, "\\", "\")
 End Property
 
-Friend Property Let KeepDays(ByVal l As Long): lKeepDays = l: End Property
+Friend Property Let KeepDays(ByVal l As Long):  lKeepDays = l:  End Property
 
 Friend Property Get LogFile() As File
 ' -----------------------------------------------------------------------------------
@@ -340,10 +342,6 @@ Friend Property Let Path(ByVal v As Variant)
     End Select
     
 End Property
-
-Public Sub WithTimeStamp(Optional ByVal b As Boolean = True)
-    bWithTimeStamp = b
-End Sub
 
 Public Function Align(ByVal a_strng As String, _
                       ByVal a_lngth As Long, _
@@ -1050,6 +1048,12 @@ Private Function Min(ParamArray va() As Variant) As Variant
     
 End Function
 
+Public Sub NewFile()
+    With New FileSystemObject
+        If .FileExists(sFileFullName) Then .DeleteFile sFileFullName
+    End With
+End Sub
+
 Public Sub NewLog(Optional ByVal n_items As Boolean = False, _
                   Optional ByVal n_line As String = vbNullString)
 ' -----------------------------------------------------------------------------------
@@ -1165,7 +1169,6 @@ Private Sub ProvideLogFile()
         If Not .FileExists(sFileFullName) Then
             Set ts = .CreateTextFile(sFileFullName)
             ts.Close
-            Debug.Print .GetFile(sFileFullName).DateLastAccessed
         Else
             lDaysAge = VBA.DateDiff("d", .GetFile(sFileFullName).DateLastAccessed, Now())
             If lDaysAge > lKeepDays Then
@@ -1287,6 +1290,10 @@ Private Function WithMargins(ByVal w_string As String) As String
     End If
     
 End Function
+
+Public Sub WithTimeStamp(Optional ByVal b As Boolean = True)
+    bWithTimeStamp = b
+End Sub
 
 Private Sub WriteItems()
 ' -----------------------------------------------------------------------------------
