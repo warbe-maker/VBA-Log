@@ -1,0 +1,11 @@
+23-06-09 23:06:34 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)
+23-06-09 23:06:34                 >> Begin execution trace 
+23-06-09 23:06:34 00,0000         |  >> mLogTest.RegressionTest
+23-06-09 23:06:34 00,0005         |  >> mLogTest.Test_00_Regression
+23-06-09 23:06:34 00,0337 00,0331 |  << mLogTest.Test_00_Regression
+23-06-09 23:06:34                 |  Test p a s s e d !
+23-06-09 23:06:34                 |  99 Result lines match with 99 expected result lines!
+23-06-09 23:06:34 00,0965 00,0965 << mLogTest.RegressionTest
+23-06-09 23:06:34 00,0965 00,0965 << End execution trace 
+23-06-09 23:06:34                 Impact on the overall performance (caused by the trace itself): 00,0002 seconds!
+23-06-09 23:06:34 Execution trace by 'Common VBA Execution Trace Service' (https://github.com/warbe-maker/Common-VBA-Execution-Trace-Service)
