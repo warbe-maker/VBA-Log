@@ -39,7 +39,8 @@ Notes:
 |***Entry***               | Writes a log entry which is either a single string or a number of items, whereby the latter indicated that the items are to be aligned in columns in accordance with the specified ***AlignmentItems***.|
 |***Headers***             | ParamArray of string expressions, specifies a header line with column headers. The method may be repeated for multiple column headers. The specified headers may implicitly specify the column headers' [alignment](#implicit-headers-alignment-specification) |
 |***MaxItemLengths***      | ParamArray of integer expressions, specifies the [maximum length of items ](#the-maximum-items-length-specification) aligned in columns.|
-|***NewLog***              | Explicit indication that the next Entry is the first of a new series of log entries. I.e. with the next Entry a Delimiter line is written (provided its not a new log file), a title is written (provided one has been specified), and a header is written (provided one has been specified). An explicit call of this method is only required, in case neither a Title nor Headers had been specified but a delimiter line should indicate a new series of log entries.|
+|***NewFile***             | Creates a new log-file. Mainly used with regression test. |
+|***NewLog***              | Explicit indication that the next Entry is the first of a new series of log entries. I.e. with the next Entry a Delimiter line is written (provided its not a new log file), a title is written (provided one has been specified), and a header is written (provided one has been specified). An explicit call of this method is only required, in case neither a Title nor Headers had been specified but a delimiter line should indicate a new series of log entries. `NewLog False` suppresses the delimiter line.|
 |***Title***               | ParamArray of strings, each representing a title line (alternatively the method may be called for each line). The alignment of the title lines may implicitly be specified with the first string/method call (see).|
 |***WithTimeStamp***       | When not called log entry lines are written without a time-stamp, else with a leading timestamp in the format `yy-mm-dd-hh:mm:ss` |
 
@@ -180,4 +181,4 @@ Writes - and displays:
  
 [^2]: The Workbook (its dedicated parent folder respectively) is dedicated to the Class-Module's development and test and provides a full regression test which compares the result of a series of test with a file containing the expected results.
 
-[1]: https://github.com/warbe-maker/VBA-Log-Service/blob/main/VBALogService.xlsb?raw=true
+[1]: https://github.com/warbe-maker/VBA-Log-Service/blob/main/Log.xlsb?raw=true
