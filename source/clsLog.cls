@@ -410,46 +410,40 @@ Public Function AlignString(ByVal a_strng As String, _
     On Error GoTo eh
     Dim sFill   As String
     Dim s       As String
-    
-    If a_fill = vbNullString Then a_fill = " "
-    Select Case Left(UCase(a_align), 1)
-        Case "L"
-            a_strng = WithMargins(a_strng)
-            Select Case a_fill
-                Case ".:"
-                    If Trim$(a_strng) <> vbNullString Then
+
+    If Trim$(a_strng) = vbNullString Then
+        AlignString = String$(a_lngth, " ")
+    Else
+        If a_fill = vbNullString Then a_fill = " "
+        Select Case Left(UCase(a_align), 1)
+            
+            Case "L"
+                a_strng = WithMargins(a_strng)
+                Select Case a_fill
+                    Case ".:"
                         If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
                         AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
-                    Else
-                        AlignString = String$(a_lngth, "_")
-                    End If
-                Case "."
-                    If Trim$(a_strng) <> vbNullString Then
+                    Case "."
                         If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
                         AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
-                    Else
-                        AlignString = String$(a_lngth, "_")
-                    End If
-                Case Else
-                    If Trim$(a_strng) <> vbNullString Then
+                    Case Else
                         AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
-                    Else
-                        AlignString = String$(a_lngth, "_")
-                    End If
-            End Select
-        Case "R"
-            AlignString = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
+                End Select
             
-        Case "C"
-            s = " " & Trim$(a_strng) & " "
-            If Len(s) < a_lngth Then
-                sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
-            End If
-                AlignString = sFill & s & sFill
-            If Len(AlignString) < a_lngth Then
-                AlignString = AlignString & VBA.String$(a_lngth - Len(AlignString), a_fill)
-            End If
-    End Select
+            Case "R"
+                AlignString = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
+                
+            Case "C"
+                s = " " & Trim$(a_strng) & " "
+                If Len(s) < a_lngth Then
+                    sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
+                End If
+                    AlignString = sFill & s & sFill
+                If Len(AlignString) < a_lngth Then
+                    AlignString = AlignString & VBA.String$(a_lngth - Len(AlignString), a_fill)
+                End If
+        End Select
+    End If
 
 xt: Exit Function
 

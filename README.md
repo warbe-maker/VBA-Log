@@ -1,12 +1,12 @@
 ## VBA-Log-Service
-### The service at a glance (impression of methods and properties)
+The below provides a first impression of the Class-Module's methods and properties
 ```vb
     Dim Log As New clsLog
     '~~ Preparation
     With Log
         .WithTimeStamp = True               ' defaults to False when ommited
         .AlignmentItems "|C|L.:|L|"         ' explicit items alignment spec
-        .MaxItemLengths 6, 15, 30           ' explicit spec of the required column width
+        .MaxItemLengths 6, 15, 30           ' explicit spec of the minimum required column width
         .Headers "| Nr | Item | Comment |"  ' implicitly aligned centered
         .ColsDelimiter = " "                ' would default to | otherwise since headers are specified
     End With
@@ -26,7 +26,7 @@ Displays the following log-file entries:
 23-05-31-20:37:02   xxx   yyyyyyyyyyyyyyy .: zzzzzzzzzzzzzzzzzzzzz
 ```
 Notes:
-1. The top split line is only written when there are already preceding log entries in the log file.
+1. The top line delimits a previous series of log entries, not written when the log-file is new
 2. The specification of the header would default to a columns delimiter | (vertical bar) - which would be inappropriate in the context of the special left alignment spec for the 2nd column
 3. The specific alignment for the 2nd column increased the column width from 15 to 18
 
@@ -59,7 +59,7 @@ Notes:
 2. In the VB-Editor copy (drag and drop) the `clsLog` Class-Module into your VB-Project. [^2]
 
 ### Columns alignment specifics
-The alignment (explicit or implicit) of log items in columns - and optional column headers - is the main focus of the VBA-Log-Service whereby an explicit (***AlignmentHeaders***/***Alignment items***) specification takes preprecedence over an implicit (***Headers***/***Entry***) specification disregarding which method has been called first. I e. for example: When the ***Headers*** method implicitly specifies the alignment this alignment would be overwritten by a subsequent ***AlignmentHeaders*** specification.
+The alignment (explicit or implicit) of log items in columns - and optional column headers - is the main focus of the VBA-Log-Service whereby an explicit (***AlignmentHeaders***/***Alignment items***) specification takes precedence over an implicit (***Headers***/***Entry***) specification disregarding which method has been called first. I e. for example: When the ***Headers*** method implicitly specifies the alignment this alignment would be overwritten by a subsequent ***AlignmentHeaders*** specification.
 
 #### Columns delimiter
 When column ***Headers*** are specified the delimiter defaults to a  `|` (vertical bar), else to a single space.
@@ -89,7 +89,7 @@ The column width is the space between two [column delimiters](#columns-delimiter
 |<nobr>` xxxxxxxxxx .: `| - The columns delimiter is a ` `(single space), either by default when no ***Headers*** are specified or when explicitly specified by the ***ColsDelimiter***<br>- The ***AlignmentIems*** specified `"L.:"` for the column indicating fill with `.`(dots) terminated by a `:`(colon) | ***MaxItemLengths*** + 3 |
 
 #### The maximum items' length specification
-The explicit specification of the maximum items' length ensures enough column space in case neither the header nor the first ***Entry***'s items implicitly specifies enough space - which most likely is not the case. The specified [***MaxItemLengths***](#methods) becomes the minimum width for the corresponding column. This width may still be expanded by the width of the corresponding column's ***Headers*** (when specified and greater).
+The explicit specification of the maximum items' length ensures enough column space in case the the first ***Entry***'s items not implicitly specifies them - rarely the case in pratice. The specified [***MaxItemLengths***](#methods) becomes the minimum width for the corresponding column. This width may still be expanded by the width of the corresponding column's ***Headers*** (when specified and greater).
 
 | Example                            | Result |
 |------------------------------------|--------|
@@ -115,29 +115,17 @@ The explicit specification of the maximum items' length ensures enough column sp
 For each header column the alignment is not explicitly specified by means of the corresponding method, the alignment follows the [Implicit column width and alignment specification](#implicit-column-alignment-specification). [^2]
 
 ##### Explicit items alignment specification
-```vb
-    ' 1: centered, 2: left adjusted, 3: right adjusted
-    .AlignmentItems "|C|L|R|"     
-    ' 1: centered, 2: left adjusted filled with . (dots), 3: right adjusted
-    .AlignmentItems "|C|L.|R|"
-    ' 1: centered, 2: left adjusted filled with . (dots) teminated by a : (colon), 3: right adjusted
-    .AlignmentItems "|C|L.:|R|"   
-    
-    ' same as above but with individual (ParamArray) strings
-    .AlignmentItems "C","L","R"
-    .AlignmentItems "C","L.","R"
-    .AlignmentItems "C","L.:","R"
-    
-    ' same as above, follows the implicit alignment specification rules
-    ' (the x is used for the indication only)
-    .AlignmentItems "|x|x | x|"   
-    .AlignmentItems "|x|x.| x|"     ' xxxxx .........  
-    .AlignmentItems "|x|x.:| x|"    ' xxxxx ........:    
-```
+The below illustrates the variants for how the alignment may explicitly be specified by means of the ***AlignmentItems*** method.
+
+| Alignment spec | Alternative 1 | Alternative 2 | Alternative 3 |
+|----------------|---------------|---------------|---------------|
+| <nobr>col 1: centered<br>col2: left adjusted<br>col 3: right adjusted | <nobr>`"|C|L|R|"` | <nobr>`"C","L","R"` | `"|x|x | x|"` |
+| <nobr>col 1: centered<br>col 2: left adjusted filled with . (dots)<br>col  3: right adjusted | <nobr>`"|C|L.|R|"`| <nobr>`"C","L.","R"`| <nobr>`"|x|x.| x|"`|
+|<nobr>col 1: centered<br>col 2: left adjusted filled with . (dots) terminated by a : (colon)<br>col 3: right adjusted |`"|C|L.:|R|"` |`"C","L.:","R"` |`"|x|x.:| x|"` |
+
 
 #### Implicit ***Headers*** alignment specification
-Less likely for ***Entry*** items - though possible - but for ***Headers*** the implicit alignment specification is the appropriate way (since the header is a fixed string).  
-Full example of a 3 line header:
+Appropriate for the ***Headers*** specifications, possible but less  likely for ***Entry*** items. The following example uses the implicit alignment spec for a 3 line header and an explicit alignment spec for the ***Entry*** items, by intention without a ***Title*** spec:
 ```vb
     Dim Log As New clsLog
    
@@ -145,8 +133,8 @@ Full example of a 3 line header:
         '~~ Preparation
         .WithTimeStamp = True                   ' defaults to False when ommited
         .AlignmentItems "|R|C|L|"               ' explicit items alignment spec
-        .MaxItemLengths 6, 15, 30               ' explicit spec of the required column width
-        .Headers "| Column|  Column  |Column |" ' this line (only) implicitly specifies the alignment
+        .MaxItemLengths 6, 15, 30               ' explicit spec of the minimum required column width
+        .Headers "| Column|  Column  |Column |" ' only this first header line implicitly specifies the alignment
         .Headers "|    1  |   2      |   3   |" ' any alignment implied is ignored
         .Headers "|(right)|(centered)|(left) |" ' any alignment implied is ignored
     End With
@@ -169,12 +157,13 @@ Writes - and displays:
 ```
 
 #### Implicit alignment specification rules
+Note that an implicit alignment spec is appropriate for the ***Headers*** specification rather than with the ***Entry*** items spec.
 
-| Alignment      | Rule |
-|----------------|------|
-| Left adjusted  | 1. The number of leading spaces is less than the number of trailing spaces.<br>2. Leading  spaces are preserved.<br>3. A trailing `.` (dot) indicates filled with trailing `.` (dots), a trailing `.:`(dot colon) indicates filled with `.` (dots) terminated with a `:`(colon).<br>Examples for a left adjustment: "xxxxx ", "xxxxx.", "xxxxx.:", " xxxxx&nbsp;&nbsp;"|
-| Centered       | 1. The number of leading and trailing spaces is equal (may be 0)<br>2. Leading and trailing spaces are dropped.<br>3. A leading and trailing `-` indicates filled with `-`.<br>Examples: "xxx", " xxxx ", "-xxxxx-", "- xxxxx -" |
-| Right adjusted | 1. The number of trailing spaces is less than the number of leading spaces.<br>2. Trailing spaces are preserved.<br>Examples: " xxxx", "&nbsp;&nbsp;xxxxx "
+| Alignment      | Rule | Examples |
+|----------------|------|----------|
+| Left adjusted  | 1. The number of leading spaces is less than the number of trailing spaces.<br>2. Fills: A trailing `.` (dot) indicates filled with trailing `.` (dots), a trailing `.:`(dot colon) indicates filled with `.` (dots) terminated with a `:`(colon).<br>Note: Leading spaces are preserved. | `"xxxxx "` left adjustes<br>`"xxxxx."` left adjusted, filled with .<br>`"xxxxx.:"`<br>`" xxxxx    "`|
+| Centered       | 1. The number of leading and trailing spaces is equal (may be 0)<br>2. Fills: A leading and trailing `-` indicates filled with `-`.<br>Examples: "xxx", " xxxx ", "-xxxxx-", "- xxxxx -"|
+| Right adjusted | The number of trailing spaces is less than the number of leading spaces.<br>Note: Trailing spaces are preserved.| `" xxxx"` |
 
 
 [^1]: When the `ActiveWorkbook` is used as the default for the log-file's location the log-file is located in the serviced Workbook's parent folder. When the service writing the log is for the Workbook itself `ThisWorkbook` and `ActiveWorkbook` are the same, when the service is provided by another Workbook for the  servicing Workbook will be `ThisWorkbook` and the serviced Workbook will be the `ActiveWorkbook`. In both cases the log-file written into the **serviced Workbook's** parent folder.

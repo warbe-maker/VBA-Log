@@ -532,6 +532,19 @@ Private Sub Test_00_Regression()
         .Entry " 07", "xxxx ", "Rightmost column without width limit! "
         .Entry "07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
         .Entry "07", "xxxxxxxxx", "zzzzzz"
+    
+         .Title "08 Test: Not provided items "
+         .Title "^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+         .Title "- The second entry does not provide an item for the secind column"
+         .Title "- Second column explicit specified width = 25"
+         .Title "- Second columnn explicit alignment specified Left adjusted, filled with . terminated with :"
+        .MaxItemLengths , 25
+        .AlignmentItems , "L.:"
+        .Headers "| Nr | Item | Comment |"
+        .ColsDelimiter = " "
+        .Entry " 08", "xxxx ", "Rightmost column without width limit! "
+        .Entry "08", , "zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
+        .Entry "08", "xxxxxxxxx", "zzzzzz"
     End With
 
 xt: EoP ErrSrc(PROC)
@@ -552,10 +565,16 @@ xt: EoP ErrSrc(PROC)
             mTrc.LogInfo = lLines & " Result lines match with " & lLines & " expected result lines!"
         End If
     End If
-    mTrc.Dsply
-    Log.Dsply
-    If mErH.Regression And Not bAsserted Then
-        Log.Dsply sResultExpected_FileFullName
+    If mErH.Regression Then
+        If Not bAsserted Then
+            mTrc.Dsply
+            Log.Dsply sResultExpected_FileFullName
+        Else
+            mTrc.Dsply
+        End If
+    Else
+        Log.Dsply
+        mTrc.Dsply
     End If
     Exit Sub
 
