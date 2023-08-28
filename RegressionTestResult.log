@@ -1,112 +1,113 @@
-23-06-12-16:39:55 01-1 Title test:                                                            
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^                                                            
-23-06-12-16:39:55 - 4 title lines as ParamAray (lines are comma delimited string)             
-23-06-12-16:39:55 - 2 Single line log entries                                                 
-23-06-12-16:39:55 - Title left adjusted by means of a trailing space with the first title line
-23-06-12-16:39:55 ----------------------------------------------------------------------------
-23-06-12-16:39:55 01-1 1. Single string, new log, Single string, new log.
-23-06-12-16:39:55 01-1 2. Single string, new log, no title. 
-23-06-12-16:39:55 =======================================================
-23-06-12-16:39:55                    01-2 Title test:                    
-23-06-12-16:39:55                    ^^^^^^^^^^^^^^^^                    
-23-06-12-16:39:55  (aligned centered (by no leading and no trailing space) 
-23-06-12-16:39:55 -------------------------------------------------------
-23-06-12-16:39:55 01-2 1. Single string, new log, Single string, new log.
-23-06-12-16:39:55 01-2 2. Single string without any width limit
-23-06-12-16:39:55 ========================================================================================================
-23-06-12-16:39:55                                  01-3 Title: Regression test case 01-3:                                 
-23-06-12-16:39:55                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                 
-23-06-12-16:39:55           (centered, filled with - by a leainding and a trailing - with the first title line)           
-23-06-12-16:39:55 --------------------------------------------------------------------------------------------------------
-23-06-12-16:39:55 01-3 1. Single string, new log. This is an extra long text to force all title lines with fill characters
-23-06-12-16:39:55 01-3 2. Single string without any width limit
-23-06-12-16:39:55 ========================================================================================================
-23-06-12-16:39:55 02 Test: Explicit items alignment 
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-23-06-12-16:39:55 - 'NewLog' explicitly called to indicate a new series of log entries without specifying a title, resulting in the delimiter line above
-23-06-12-16:39:55 - Explicit call of the 'AlignmentItems' method in order to have the below items adjusted as desired
-23-06-12-16:39:55   Note: An implicit alignment spec is possible but only with the first of a series of log entries
-23-06-12-16:39:55  02-1  xxxx   yyyyyy No Title! Alignments: R, C, R, L; Rightmost column without width limit
-23-06-12-16:39:55  02-1  xxxx   yyyyy  ... correct aligned in columns because the first entry indicated column alignment implicitly!
-23-06-12-16:39:55 ======================================================================================================================================
-23-06-12-16:39:55 No Title, 'NewLog' explicitly called to indicate a new series of log entries
-23-06-12-16:39:55 AlignmentItems explicitly called to align the following two items correct
-23-06-12-16:39:55  02-2  xxxx   yyyyyy Alignments: R, C, R, L; Rightmost column without width limit
-23-06-12-16:39:55  02-2  xxxx    yyyyy ... correct aligned in columns because AlignmentItems explicitly specified them!
-23-06-12-16:39:55 =======================================================================================================================================================
-23-06-12-16:39:55  03 Test: Headers with implicit alignment                                                                                                              
-23-06-12-16:39:55  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                                                              
-23-06-12-16:39:55  - 'Headers' method used to specify 2 column headers with implicitely specified alignment by means of leading and trailing spaces (R, C, C, L)         
-23-06-12-16:39:55  - The maximum column width is the maximimum of the width implicitly specified by:                                                                     
-23-06-12-16:39:55   - the 'Headers' first line's specificateion                                                                                                          
-23-06-12-16:39:55   - the width of the first line's items width                                                                                                          
-23-06-12-16:39:55   - though less likely, the Entry-Items alignment is implicitly specified by the first line's items using leading and trailing spaces: R, L, L, L      
-23-06-12-16:39:55 -------------------------------------------------------------------------------------------------------------------------------------------------------
-23-06-12-16:39:55 | Nr | Item | Item  | Item 3                                                                                                                          
-23-06-12-16:39:55 |    |  1   |   2   | (no width limit)                                                                                                                
-23-06-12-16:39:55 +----+------+-------+----------------------------------------------------------------------------------------------------------------------------------
-23-06-12-16:39:55 | 03 | xxxx | yyyyyy| Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header)
-23-06-12-16:39:55 | 03 | xxxx | yyyy  | zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-06-12-16:39:55 | 03 | xxxx | yyyyy | zzzzzz
-23-06-12-16:39:55 ======================================================================================================================
-23-06-12-16:39:55 04 Test: Explicit items length specification                                                                          
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                          
-23-06-12-16:39:55 - because no 'Headers' are specified the ColsDelimiter fefaults is a single space and the ColsMargin is a vbNullString
-23-06-12-16:39:55 - the implicit items alignment is: R, L, C, R                                                                         
-23-06-12-16:39:55 ----------------------------------------------------------------------------------------------------------------------
-23-06-12-16:39:55  04 xxx                 yyyyyy           zzzzzz
-23-06-12-16:39:55  04 xxx                 yyyyyy           zzzzzz 
-23-06-12-16:39:55  04 xxx                 yyyyyy           zzzzzz 
-23-06-12-16:39:55 ====================================================================================
-23-06-12-16:39:55 05 Test: Explicit ColsDelimiter                                                     
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                    
-23-06-12-16:39:55 - The 'ColsDelimiter' property explicitly specifies as a single space               
-23-06-12-16:39:55   (the specified headers would result in a | (vertical bar) as the columns delimiter
-23-06-12-16:39:55 - The Header alignments are implicitly: R, C, L, L                                  
-23-06-12-16:39:55 - The item alignments are implicitly: R, L, C (filled with -), L                    
-23-06-12-16:39:55   (leading spaces with left aligned items are preserved by default)                 
-23-06-12-16:39:55 ------------------------------------------------------------------------------------
-23-06-12-16:39:55  Nr   Item-1            Item-2           Item-3 (no width limit)              
-23-06-12-16:39:55  -- ---------- ------------------------- -------------------------------------------
-23-06-12-16:39:55  05 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
-23-06-12-16:39:55  05 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-06-12-16:39:55  05 xxxx       --------- yyyyy --------- zzzzzz
-23-06-12-16:39:55 ===============================================================================
-23-06-12-16:39:55 06 Test: Explicit AlignmentHeaders, AlignmentItems, and MaxItemLengths         
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         
-23-06-12-16:39:55 - The ColsDelimiter explicitly specifies as a single space                     
-23-06-12-16:39:55 - AlignmentHeaders explicitly specify: R, C, L, L                              
-23-06-12-16:39:55 - AlignmentItems explicitly specifies: R, L, C (filled with -), L              
-23-06-12-16:39:55 - Leading spaces with left aligned items are preserved by default              
-23-06-12-16:39:55 - MaxItemsLengths explicitly specifies 3,10,25,30                              
-23-06-12-16:39:55 -------------------------------------------------------------------------------
-23-06-12-16:39:55   Nr   Item-1   Item-2                    Item-3 (no width limit)              
-23-06-12-16:39:55  --- ---------- ------------------------- -------------------------------------
-23-06-12-16:39:55   06 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
-23-06-12-16:39:55   06 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-06-12-16:39:55   06 xxxx       --------- yyyyy --------- zzzzzz
-23-06-12-16:39:55 ================================================================================================================
-23-06-12-16:39:55 07 Test: AlignmentItems explicitly only specifies column 2                                                      
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                      
-23-06-12-16:39:55 - Column 1: Alignment implicitly Right adjusted (because not explicitely specified                              
-23-06-12-16:39:55 - Column 2: - Length explicily specified = 25                                                                   
-23-06-12-16:39:55             - Alignment explicitly specified: : left adjusted, filled with . (dots), terminated with a : (colon)
-23-06-12-16:39:55 - Column 3: Alignment implicitly Left adjusted (because not explicitely specified                               
-23-06-12-16:39:55 ----------------------------------------------------------------------------------------------------------------
-23-06-12-16:39:55   Nr              Item                            Comment               
-23-06-12-16:39:55  ---- ---------------------------- -----------------------------------------------------------------------------
-23-06-12-16:39:55    07 xxxx ......................: Rightmost column without width limit!
-23-06-12-16:39:55    07 xxxxxxxxxxxxxxxxxxxx ......:          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-06-12-16:39:55    07 xxxxxxxxx .................: zzzzzz
-23-06-12-16:39:55 ============================================================================================
-23-06-12-16:39:55 08 Test: Not provided items                                                                 
-23-06-12-16:39:55 ^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                 
-23-06-12-16:39:55 - The second entry does not provide an item for the secind column                           
-23-06-12-16:39:55 - Second column explicit specified width = 25                                               
-23-06-12-16:39:55 - Second columnn explicit alignment specified Left adjusted, filled with . terminated with :
-23-06-12-16:39:55 --------------------------------------------------------------------------------------------
-23-06-12-16:39:55   Nr              Item                            Comment               
-23-06-12-16:39:55  ---- ---------------------------- ---------------------------------------------------------
-23-06-12-16:39:55    08 xxxx ......................: Rightmost column without width limit!
-23-06-12-16:39:55    08                              zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
-23-06-12-16:39:55    08 xxxxxxxxx .................: zzzzzz
+23-08-28-18:07:01 ============================================================================
+23-08-28-18:07:01 01-1 Title test:                                                            
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^                                                            
+23-08-28-18:07:01 - 4 title lines as ParamAray (lines are comma delimited string)             
+23-08-28-18:07:01 - 2 Single line log entries                                                 
+23-08-28-18:07:01 - Title left adjusted by means of a trailing space with the first title line
+23-08-28-18:07:01 ----------------------------------------------------------------------------
+23-08-28-18:07:01 01-1 1. Single string, new log, Single string, new log.
+23-08-28-18:07:01 01-1 2. Single string, new log, no title. 
+23-08-28-18:07:01 =======================================================
+23-08-28-18:07:01                    01-2 Title test:                    
+23-08-28-18:07:01                    ^^^^^^^^^^^^^^^^                    
+23-08-28-18:07:01  (aligned centered (by no leading and no trailing space) 
+23-08-28-18:07:01 -------------------------------------------------------
+23-08-28-18:07:01 01-2 1. Single string, new log, Single string, new log.
+23-08-28-18:07:01 01-2 2. Single string without any width limit
+23-08-28-18:07:01 ========================================================================================================
+23-08-28-18:07:01                                  01-3 Title: Regression test case 01-3:                                 
+23-08-28-18:07:01                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                 
+23-08-28-18:07:01           (centered, filled with - by a leainding and a trailing - with the first title line)           
+23-08-28-18:07:01 --------------------------------------------------------------------------------------------------------
+23-08-28-18:07:01 01-3 1. Single string, new log. This is an extra long text to force all title lines with fill characters
+23-08-28-18:07:01 01-3 2. Single string without any width limit
+23-08-28-18:07:01 ========================================================================================================
+23-08-28-18:07:01 02 Test: Explicit items alignment 
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23-08-28-18:07:01 - 'NewLog' explicitly called to indicate a new series of log entries without specifying a title, resulting in the delimiter line above
+23-08-28-18:07:01 - Explicit call of the 'AlignmentItems' method in order to have the below items adjusted as desired
+23-08-28-18:07:01   Note: An implicit alignment spec is possible but only with the first of a series of log entries
+23-08-28-18:07:01  02-1  xxxx   yyyyyy No Title! Alignments: R, C, R, L; Rightmost column without width limit
+23-08-28-18:07:01  02-1  xxxx   yyyyy  ... correct aligned in columns because the first entry indicated column alignment implicitly!
+23-08-28-18:07:01 ======================================================================================================================================
+23-08-28-18:07:01 No Title, 'NewLog' explicitly called to indicate a new series of log entries
+23-08-28-18:07:01 AlignmentItems explicitly called to align the following two items correct
+23-08-28-18:07:01  02-2  xxxx   yyyyyy Alignments: R, C, R, L; Rightmost column without width limit
+23-08-28-18:07:01  02-2  xxxx    yyyyy ... correct aligned in columns because AlignmentItems explicitly specified them!
+23-08-28-18:07:01 =======================================================================================================================================================
+23-08-28-18:07:01  03 Test: Headers with implicit alignment                                                                                                              
+23-08-28-18:07:01  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                                                              
+23-08-28-18:07:01  - 'Headers' method used to specify 2 column headers with implicitely specified alignment by means of leading and trailing spaces (R, C, C, L)         
+23-08-28-18:07:01  - The maximum column width is the maximimum of the width implicitly specified by:                                                                     
+23-08-28-18:07:01   - the 'Headers' first line's specificateion                                                                                                          
+23-08-28-18:07:01   - the width of the first line's items width                                                                                                          
+23-08-28-18:07:01   - though less likely, the Entry-Items alignment is implicitly specified by the first line's items using leading and trailing spaces: R, L, L, L      
+23-08-28-18:07:01 -------------------------------------------------------------------------------------------------------------------------------------------------------
+23-08-28-18:07:01 | Nr | Item | Item  | Item 3                                                                                                                          
+23-08-28-18:07:01 |    |  1   |   2   | (no width limit)                                                                                                                
+23-08-28-18:07:01 +----+------+-------+----------------------------------------------------------------------------------------------------------------------------------
+23-08-28-18:07:01 | 03 | xxxx | yyyyyy| Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header)
+23-08-28-18:07:01 | 03 | xxxx | yyyy  | zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-08-28-18:07:01 | 03 | xxxx | yyyyy | zzzzzz
+23-08-28-18:07:01 ======================================================================================================================
+23-08-28-18:07:01 04 Test: Explicit items length specification                                                                          
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                          
+23-08-28-18:07:01 - because no 'Headers' are specified the ColsDelimiter fefaults is a single space and the ColsMargin is a vbNullString
+23-08-28-18:07:01 - the implicit items alignment is: R, L, C, R                                                                         
+23-08-28-18:07:01 ----------------------------------------------------------------------------------------------------------------------
+23-08-28-18:07:01  04 xxx                 yyyyyy           zzzzzz
+23-08-28-18:07:01  04 xxx                 yyyyyy           zzzzzz 
+23-08-28-18:07:01  04 xxx                 yyyyyy           zzzzzz 
+23-08-28-18:07:01 ====================================================================================
+23-08-28-18:07:01 05 Test: Explicit ColsDelimiter                                                     
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                    
+23-08-28-18:07:01 - The 'ColsDelimiter' property explicitly specifies as a single space               
+23-08-28-18:07:01   (the specified headers would result in a | (vertical bar) as the columns delimiter
+23-08-28-18:07:01 - The Header alignments are implicitly: R, C, L, L                                  
+23-08-28-18:07:01 - The item alignments are implicitly: R, L, C (filled with -), L                    
+23-08-28-18:07:01   (leading spaces with left aligned items are preserved by default)                 
+23-08-28-18:07:01 ------------------------------------------------------------------------------------
+23-08-28-18:07:01  Nr   Item-1            Item-2           Item-3 (no width limit)              
+23-08-28-18:07:01  -- ---------- ------------------------- -------------------------------------------
+23-08-28-18:07:01  05 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
+23-08-28-18:07:01  05 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-08-28-18:07:01  05 xxxx       --------- yyyyy --------- zzzzzz
+23-08-28-18:07:01 ===============================================================================
+23-08-28-18:07:01 06 Test: Explicit AlignmentHeaders, AlignmentItems, and MaxItemLengths         
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         
+23-08-28-18:07:01 - The ColsDelimiter explicitly specifies as a single space                     
+23-08-28-18:07:01 - AlignmentHeaders explicitly specify: R, C, L, L                              
+23-08-28-18:07:01 - AlignmentItems explicitly specifies: R, L, C (filled with -), L              
+23-08-28-18:07:01 - Leading spaces with left aligned items are preserved by default              
+23-08-28-18:07:01 - MaxItemsLengths explicitly specifies 3,10,25,30                              
+23-08-28-18:07:01 -------------------------------------------------------------------------------
+23-08-28-18:07:01   Nr   Item-1   Item-2                    Item-3 (no width limit)              
+23-08-28-18:07:01  --- ---------- ------------------------- -------------------------------------
+23-08-28-18:07:01   06 xxxx       -------- yyyyyy --------- Rightmost column without width limit!
+23-08-28-18:07:01   06 xxxx       --------- yyyy ----------          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-08-28-18:07:01   06 xxxx       --------- yyyyy --------- zzzzzz
+23-08-28-18:07:01 ================================================================================================================
+23-08-28-18:07:01 07 Test: AlignmentItems explicitly only specifies column 2                                                      
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                      
+23-08-28-18:07:01 - Column 1: Alignment implicitly Right adjusted (because not explicitely specified                              
+23-08-28-18:07:01 - Column 2: - Length explicily specified = 25                                                                   
+23-08-28-18:07:01             - Alignment explicitly specified: : left adjusted, filled with . (dots), terminated with a : (colon)
+23-08-28-18:07:01 - Column 3: Alignment implicitly Left adjusted (because not explicitely specified                               
+23-08-28-18:07:01 ----------------------------------------------------------------------------------------------------------------
+23-08-28-18:07:01   Nr              Item                            Comment               
+23-08-28-18:07:01  ---- ---------------------------- -----------------------------------------------------------------------------
+23-08-28-18:07:01    07 xxxx ......................: Rightmost column without width limit!
+23-08-28-18:07:01    07 xxxxxxxxxxxxxxxxxxxx ......:          zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-08-28-18:07:01    07 xxxxxxxxx .................: zzzzzz
+23-08-28-18:07:01 ============================================================================================
+23-08-28-18:07:01 08 Test: Not provided items                                                                 
+23-08-28-18:07:01 ^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                                 
+23-08-28-18:07:01 - The second entry does not provide an item for the secind column                           
+23-08-28-18:07:01 - Second column explicit specified width = 25                                               
+23-08-28-18:07:01 - Second columnn explicit alignment specified Left adjusted, filled with . terminated with :
+23-08-28-18:07:01 --------------------------------------------------------------------------------------------
+23-08-28-18:07:01   Nr              Item                            Comment               
+23-08-28-18:07:01  ---- ---------------------------- ---------------------------------------------------------
+23-08-28-18:07:01    08 xxxx ......................: Rightmost column without width limit!
+23-08-28-18:07:01    08                              zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)
+23-08-28-18:07:01    08 xxxxxxxxx .................: zzzzzz

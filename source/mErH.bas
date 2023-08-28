@@ -1,46 +1,72 @@
 Attribute VB_Name = "mErH"
 Option Explicit
-Option Private Module
 ' ------------------------------------------------------------------------------
-' Standard  Module mErH: Global error handling for any VBA Project.
+' Standard  Module mErH: Common VBA Error Services with focus on the display of
+' ====================== an error message plus some specific debugging support.
 '
 ' Public services:
-' AppErr     Converts a positive number into a negative error number ensuring it
-'            not conflicts with a VB Runtime Error. A negative error number is
-'            turned back into the original positive Application  Error Number.
+' ----------------
+' Asserted   Only used with regression testing (Regression = True) to avoid the
+'            display errors specifically tested. When Regression = False the
+'            Asserted service is ignored and any error is displayed.
+' BoP        Indicates the Begin of a Procedure and maintains the call stack.
+' EoP        Indicates the End of a Procedure and maintains the call stack.
+'            Triggers the display of the Execution Trace when the end of the
+'            'Entry-Procedure' is reached.
 ' ErrMsg     Displays an error message either
 '            - with the procedure the error had been raised when no BoP
 '              statement had ever been executed
-'            - passed on to the 'Entry Procedure' (which is the first procedure
-'              a BoP statement has been executed) thereby assembling the 'path
-'              to the error' displayed then
-' Regression When TRUE the ErrMsg service considers a testing mode which means
-'            that the error is only displayed when not regarded an asserted
-'            error provided as argument with the BoTP (Begin of Test Procedure
-'            statement.
-' BoP        Indicates the Begin of a Procedure and maintains the call stack.
-' Asserted   Only used for a test procedure which tests certain error
-'            condition. The display of an error message is skipped when
-'            Regression = True and the about to be displayed error number is
-'            an asserted one.
-' EoP        Indicates the End of a Procedure and maintains the call stack.
-'            Triggers the display of the Execution Trace when it indicates the
-'            end of the 'Entry-Procedure' and the Conditional Compile Argument
-'            'ExecTrace = 1'.
+'            - passed on the error to the 'Entry Procedure' (which is the first
+'              procedure with a BoP statement thereby assembling the 'path
+'              to the error' displayed when the 'Entry Procedure' is reached.
+' Regression When TRUE the ErrMsg only displays errors which are not regarded
+'            'Asserted'.
 '
-' Uses: fMsg, mMsg (the Dsply service)
-'       mTrc (optionally, when the Conditional Compile Argument ExecTrace = 1)
+' Uses components:
+' ----------------
+' fMsg/mMsg   Used only when installed and activated by the Cond. Comp. Arg. `MsgComp = 1`
+' mTrc        Used only by the test environment and only when activated by the Cond. Comp.
+'             Arg. `XcTrc_mTrc = 1`
 '
-' Requires: Reference to "Microsoft Scripting Runtime"
+' Requires:
+' ---------
+' Reference to "Microsoft Scripting Runtime"
 '
-' For further details see the Github blog post: "Comprehensive Common VBA Error Handler"
-' https://warbe-maker.github.io/vba/common/2020/10/02/Comprehensive-Common-VBA-Error-Handler.html
+' W. Rauschenberger, Berlin, June 2023
 '
-' W. Rauschenberger, Berlin, Dec 2021
+' See https://github.com/warbe-maker/VBA-Error
+' See https://warbe-maker.github.io/vba/common/2020/10/02/Comprehensive-Common-VBA-Error-Handler.html
 ' ------------------------------------------------------------------------------
+Public Const CONCAT As String = "||"
 
-Public Const CONCAT                 As String = "||"
+' Begin of ShellRun declarations ---------------------------------------------
+Private Declare PtrSafe Function apiShellExecute Lib "shell32.dll" _
+    Alias "ShellExecuteA" _
+    (ByVal hWnd As Long, _
+    ByVal lpOperation As String, _
+    ByVal lpFile As String, _
+    ByVal lpParameters As String, _
+    ByVal lpDirectory As String, _
+    ByVal nShowCmd As Long) _
+    As Long
+' Window Constants
+Private Const WIN_NORMAL = 1         'Open Normal
+Private Const WIN_MAX = 3            'Open Maximized
+Private Const WIN_MIN = 2            'Open Minimized
+' ShellRun Error Codes
+Private Const ERROR_SUCCESS = 32&
+Private Const ERROR_NO_ASSOC = 31&
+Private Const ERROR_OUT_OF_MEM = 0&
+Private Const ERROR_FILE_NOT_FOUND = 2&
+Private Const ERROR_PATH_NOT_FOUND = 3&
+Private Const ERROR_BAD_FORMAT = 11&
+Private Const WS_THICKFRAME As Long = &H40000
+Private Const GWL_STYLE As Long = -16
+' End of ShellRun declarations ---------------------------------------------
+
+
 Private Const ErrMsgDefaultButton   As Long = vbOKOnly
+Private Const GITHUB_REPO_URL       As String = "https://github.com/warbe-maker/VBA-Error"
 
 Private cllErrPath          As Collection   ' managed by ErrPath... procedures exclusively
 Private ProcStack           As Collection   ' stack maintained by BoP (push) and EoP (pop)
@@ -90,6 +116,58 @@ Private Function AppErr(ByVal app_err_no As Long) As Long
     If app_err_no >= 0 Then AppErr = app_err_no + vbObjectError Else AppErr = Abs(app_err_no - vbObjectError)
 End Function
 
+Public Sub README(Optional ByVal r_bookmark As String = vbNullString)
+    
+    If r_bookmark = vbNullString Then
+        ShellRun GITHUB_REPO_URL
+    Else
+        r_bookmark = Replace("#" & r_bookmark, "##", "#") ' add # if missing
+        ShellRun GITHUB_REPO_URL & r_bookmark
+    End If
+
+End Sub
+
+Public Function ShellRun(ByVal sr_string As String, _
+                Optional ByVal sr_show_how As Long = WIN_NORMAL) As String
+' ----------------------------------------------------------------------------
+' Opens a folder, email-app, url, or even an Access instance.
+'
+' Usage Examples: - Open a folder:  ShellRun("C:\TEMP\")
+'                 - Call Email app: ShellRun("mailto:user@tutanota.com")
+'                 - Open URL:       ShellRun("http://.......")
+'                 - Unknown:        ShellRun("C:\TEMP\Test") (will call
+'                                   "Open With" dialog)
+'                 - Open Access DB: ShellRun("I:\mdbs\xxxxxx.mdb")
+' Copyright:      This code was originally written by Dev Ashish. It is not to
+'                 be altered or distributed, except as part of an application.
+'                 You are free to use it in any application, provided the
+'                 copyright notice is left unchanged.
+' Courtesy of:    Dev Ashish
+' ----------------------------------------------------------------------------
+
+    Dim lRet            As Long
+    Dim varTaskID       As Variant
+    Dim stRet           As String
+    Dim hWndAccessApp   As Long
+    
+    '~~ First try ShellExecute
+    lRet = apiShellExecute(hWndAccessApp, vbNullString, sr_string, vbNullString, vbNullString, sr_show_how)
+    
+    Select Case True
+        Case lRet = ERROR_OUT_OF_MEM:       stRet = "Execution failed: Out of Memory/Resources!"
+        Case lRet = ERROR_FILE_NOT_FOUND:   stRet = "Execution failed: File not found!"
+        Case lRet = ERROR_PATH_NOT_FOUND:   stRet = "Execution failed: Path not found!"
+        Case lRet = ERROR_BAD_FORMAT:       stRet = "Execution failed: Bad File Format!"
+        Case lRet = ERROR_NO_ASSOC          ' Try the OpenWith dialog
+            varTaskID = Shell("rundll32.exe shell32.dll,OpenAs_RunDLL " & sr_string, WIN_NORMAL)
+            lRet = (varTaskID <> 0)
+        Case lRet > ERROR_SUCCESS:          lRet = -1
+    End Select
+    
+    ShellRun = lRet & IIf(stRet = vbNullString, vbNullString, ", " & stRet)
+
+End Function
+
 Private Function ArrayIsAllocated(arr As Variant) As Boolean
     
     On Error Resume Next
@@ -103,81 +181,33 @@ Public Sub Asserted(ParamArray botp_errs_asserted() As Variant)
     vErrsAsserted = botp_errs_asserted
 End Sub
 
-Public Sub BoP(ByVal bop_id As String, _
-      Optional ByVal bop_arguments As Variant = vbNullString)
-' -------------------------------------------------
-' Trace and stack Begin of Procedure.
-' The traced_arguments argument is passed on to the
-' mTrc.BoP and displayed with the error message in
-' case.
-' -------------------------------------------------
-    Const PROC = "BoP"
-    
-    On Error GoTo eh
-    
+Public Sub BoP(ByVal b_id As String, _
+      Optional ByVal b_args As String = vbNullString)
+' ------------------------------------------------------------------------------
+' Trace and push on proc-stack the 'Begin of a Procedure'.
+' ------------------------------------------------------------------------------
     If StackIsEmpty(ProcStack) Then
-'        Set vErrsAsserted = Nothing
         Set cllRecentErrors = Nothing: Set cllRecentErrors = New Collection
     End If
-    
-    StackPush ProcStack, bop_id
-    If IsArray(bop_arguments) Then
-        BoPArguments = Join(bop_arguments, ";")
-    Else
-        BoPArguments = bop_arguments
-    End If
-#If ExecTrace = 1 Then
-    mTrc.BoP_ErH bop_id, BoPArguments    ' start of the procedure's execution trace
+    StackPush ProcStack, b_id
+#If XcTrc_clsTrc = 1 Then   ' when clsTrc is installed and active
+    Trc.BoP_ErH b_id, b_args
+#ElseIf XcTrc_mTrc = 1 Then ' when mTrc is installed and active
+    mTrc.BoP_ErH b_id, b_args
 #End If
-
-xt: Exit Sub
-
-eh: MsgBox Err.Description, vbOKOnly, "Error in " & ErrSrc(PROC)
-    Stop: Resume
 End Sub
 
-'Public Sub BoTP(ByVal botp_id As String, _
-'           ParamArray botp_errs_asserted() As Variant)
-'' ------------------------------------------------------------------------------
-'' Indicates the Begin of a Test Procedure named (bot5p_id) with the provided
-'' error numbers (botp_errs_asserted) regarded asserted - which suppresses the
-'' display of the error message. This special variant ofr the BoP (Begin of
-'' Procedure) statement is specifically for test procedures dedeicated to the
-'' test of specific error conditions. The described effect of the statement is
-'' only active when the property Regression had been set to TRUE.
-'' ------------------------------------------------------------------------------
-'    Const PROC = "BoTP"
-'
-'    On Error GoTo eh
-'    mErH.BoP botp_id
-'    vErrsAsserted = botp_errs_asserted
-'
-'xt: Exit Sub
-'
-'eh: MsgBox Err.Description, vbOKOnly, "Error in " & ErrSrc(PROC)
-'    Stop: Resume
-'End Sub
-
-Public Sub EoP(ByVal eop_id As String)
-' ------------------------------------
-' Trace and stack End of Procedure
-' ------------------------------------
-    Const PROC = "EoP"
-    
-    On Error GoTo eh
-#If ExecTrace = 1 Then
-    mTrc.EoP eop_id
+Public Sub EoP(ByVal e_id As String, _
+      Optional ByVal e_args As String = vbNullString)
+' ------------------------------------------------------------------------------
+' Trace and pop from proc-stack the 'Eegin of a Procedure'.
+' ------------------------------------------------------------------------------
+#If XcTrc_clsTrc = 1 Then   ' when clsTrc is installed and active
+    Trc.EoP e_id, e_args
+#ElseIf XcTrc_mTrc = 1 Then ' when mTrc is installed and active
+    mTrc.EoP e_id, e_args
 #End If
-    If StackTop(ProcStack) = eop_id Then
-        StackPop ProcStack
-'    Else
-'        Err.Raise AppErr(1), ErrSrc(PROC), "The procedure '" & eop_id & "' has an EoP (End of Procedure) statement " & _
-'                                           "without a corresponfding BoP (Begin of Procedure) statement!"
-    End If
-    
-xt: Exit Sub
-
-eh: ErrMsg ErrSrc(PROC)
+    If StackTop(ProcStack) = e_id Then StackPop ProcStack
 End Sub
 
 Private Function ErrArgName(ByVal s As String) As Boolean
@@ -223,7 +253,7 @@ xt: Exit Property
 eh: If ErrMsg(ErrSrc(PROC)) = vbYes Then: Stop: Resume
 End Property
 
-Private Function ErrBttns(ByVal bttns As Variant) As Long
+Private Function ErrBttns(ByVal Bttns As Variant) As Long
 ' ------------------------------------------------------------------------------
 ' Returns the number of specified buttons in (bttns).
 ' ------------------------------------------------------------------------------
@@ -232,9 +262,9 @@ Private Function ErrBttns(ByVal bttns As Variant) As Long
     Dim i   As Long
     Dim cll As Collection
     
-    Select Case TypeName(bttns)
+    Select Case TypeName(Bttns)
         Case "Collection"
-            Set cll = bttns
+            Set cll = Bttns
             s = cll(1)
             For i = 2 To cll.Count
                 s = s & "," & cll(i)
@@ -242,7 +272,7 @@ Private Function ErrBttns(ByVal bttns As Variant) As Long
             ErrBttns = ErrBttns(s)
         Case "String"
             i = 0
-            For Each v In Split(bttns, ",")
+            For Each v In Split(Bttns, ",")
                 If IsNumeric(v) Then
                     Select Case v
                         Case vbOKOnly:                                          i = i + 1
@@ -315,13 +345,12 @@ xt: Exit Function
 
 End Function
 
-Public Function ErrMsg( _
-                  ByVal err_source As String, _
-         Optional ByVal err_number As Long = 0, _
-         Optional ByVal err_dscrptn As String = vbNullString, _
-         Optional ByVal err_line As Long = 0, _
-         Optional ByVal err_buttons As Variant = vbNullString, _
-         Optional ByRef err_reply As Variant) As Variant
+Public Function ErrMsg(ByVal err_source As String, _
+              Optional ByVal err_number As Long = 0, _
+              Optional ByVal err_dscrptn As String = vbNullString, _
+              Optional ByVal err_line As Long = 0, _
+              Optional ByVal err_buttons As Variant = vbNullString, _
+              Optional ByRef err_reply As Variant) As Variant
 ' ------------------------------------------------------------------------------
 ' When the buttons (err_buttons) argument specifies more than one button the
 ' error message is immediately displayed and the users choice is returned to the
@@ -389,14 +418,16 @@ Public Function ErrMsg( _
         '~~ When the Entry Procedure is known but yet not reached and there is just one reply
         '~~ button displayed with the error message, the current procedure is added to the
         '~~ 'path to the error' and the error is passed on to the caller.
-        ' !! With the Conditional Compile Argument 'Debugging = 1' there will be an extra !!
+        ' !! With the Cond. Comp. Arg. 'Debugging = 1' there will be an extra !!
         ' !! button for the error line is to be resumed. In this case the has to be       !!
         ' !! displayed immediately with the error raising procidure. A path to the error  !!
         ' !! will thus only be available to the extent the stack had been maintained by   !!
         ' !! BoP/EoP statements on the way down to the error raising procedure.           !!
         ErrPathAdd err_source
-#If ExecTrace = 1 Then
-        mTrc.EoP err_source, sType & lNo & " " & sLine
+#If XcTrc_mTrc = 1 Then
+        mTrc.EoP err_source, "!! " & sType & lNo & " " & sLine & " !!"
+#ElseIf XcTrc_clsTrc = 1 Then
+        Trc.EoP err_source, "!! " & sType & lNo & " " & sLine & " !!"
 #End If
         sInitErrInfo = vbNullString
         Err.Raise err_number, err_source, err_dscrptn ' pass on erro to caller
@@ -457,7 +488,7 @@ Private Function ErrMsgDsply(ByVal err_source As String, _
 ' the second case the extent of detail depends on which (how many) procedures do
 ' call the BoP/EoP service.
 '
-' W. Rauschenberger, Berlin, Nov 2020
+' W. Rauschenberger, Berlin, Jun 2023
 ' ------------------------------------------------------------------------------
     
     Dim sErrPath    As String
@@ -465,15 +496,22 @@ Private Function ErrMsgDsply(ByVal err_source As String, _
     Dim sLine       As String
     Dim sDetails    As String
     Dim sDscrptn    As String
-    Dim sInfo       As String
+    Dim sAbout      As String
     Dim sSource     As String
     Dim sType       As String
     Dim lNo         As Long
     Dim ErrMsgText  As TypeMsg
     Dim SctnText    As TypeMsgText
+    Dim sMsg        As String ' The MsgBox Prompt string
+    Dim lBttns      As Long
     
-#If ExecTrace = 1 Then
-        mTrc.Pause ' prevent useless timing values by exempting the display and wait time for the reply
+#If XcTrc_clsTrc = 1 Then
+    '~~ When this component is used with clsTrc installed and activated (Cond. Comp.Arg. `XcTrc_clsTrc = 1`
+    '~~ the using VB-Project must have `Public Trc As clsTrc` and `Set Trc = New clsTrc` codelines in
+    '~~ one of its components! If not the below code line will cause an error.
+    Trc.Pause
+#ElseIf XcTrc_mTrc = 1 Then
+    mTrc.Pause ' prevent useless timing values by exempting the display and wait time for the reply
 #End If
     ErrMsgMatter err_source:=err_source _
                , err_no:=err_number _
@@ -484,17 +522,17 @@ Private Function ErrMsgDsply(ByVal err_source As String, _
                , msg_details:=sDetails _
                , msg_source:=sSource _
                , msg_dscrptn:=sDscrptn _
-               , msg_info:=sInfo _
+               , msg_info:=sAbout _
                , msg_type:=sType _
                , msg_no:=lNo
     sErrPath = ErrPathErrMsg(sType & lNo & " " & sLine)
 #If Debugging = 0 Then
     If sLine = vbNullString Then sLine = "at line ?  *)"
     '~~ In case no error line is provided with the error message (commonly the case)
-    '~~ a hint regarding the Conditional Compile Argument which may be used to get
+    '~~ a hint regarding the Cond. Comp. Arg. which may be used to get
     '~~ an option which supports 'resuming' it will be displayed.
-    If sInfo <> vbNullString Then sInfo = sInfo & vbLf & vbLf
-    sInfo = sInfo & "*) When the code line which raised the error is missing set the Conditional Compile Argument 'Debugging = 1'." & _
+    If sAbout <> vbNullString Then sAbout = sAbout & vbLf & vbLf
+    sAbout = sAbout & "*) When the code line which raised the error is missing set the Cond. Comp. Arg. 'Debugging = 1'." & _
                     "The addtionally displayed button <Resume error Line> replies with vbResume and the the error handling: " & _
                     "    If mErH.ErrMsg(ErrSrc(PROC) = vbResume Then Stop: Resume   makes debugging extremely quick and easy."
 #End If
@@ -505,61 +543,94 @@ Private Function ErrMsgDsply(ByVal err_source As String, _
     '~~ Display the error message via the Common Component procedure mMsg.Dsply
     With ErrMsgText.Section(1)
         With .Label
-            .Text = "Error description:"
+            .Text = "Error:"
             .FontColor = rgbBlue
         End With
         .Text.Text = sDscrptn
+        sMsg = "Error description:" & vbLf & sDscrptn
     End With
-    With ErrMsgText.Section(2)
-        With .Label
-            .Text = "Error source:"
-            .FontColor = rgbBlue
+    If BoPArguments <> vbNullString Then
+        With ErrMsgText.Section(2)
+            With .Label
+                .Text = "Source:"
+                .FontColor = rgbBlue
+            End With
+            sSource = sSource & " " & sLine & vbLf & BoPArguments
+            .Text.Text = sSource
+            .Text.MonoSpaced = True
+            sMsg = sMsg & vbLf & vbLf & "Error source:" & vbLf & sSource
         End With
-        If BoPArguments = vbNullString _
-        Then .Text.Text = sSource & " " & sLine: SctnText.MonoSpaced = True _
-        Else .Text.Text = sSource & " " & sLine & vbLf & BoPArguments
-        .Text.MonoSpaced = True
-    End With
+    End If
     With ErrMsgText.Section(3)
         With .Label
-            .Text = "Error path:"
+            .Text = "Path:"
             .FontColor = rgbBlue
+            .OpenWhenClicked = GITHUB_REPO_URL & "#the-path-to-the-error"
+            sMsg = sMsg & vbLf & vbLf & "Error path:" & vbLf
         End With
         If sErrPath <> vbNullString Then
             .Text.Text = sErrPath
             .Text.MonoSpaced = True
+            sMsg = sMsg & sErrPath
         Else
-            .Text.Text = "Please note: The 'path to the error is either taken from the 'call stack' which is maintained by BoP/EoP statements or " & _
-                         "assembled when the error is passed on to the known! 'Entry Procedure'. Neither of the two was possible though." & vbLf & _
-                         "Either the/an 'Entry Procedure' is un-known because not at least one BoP statement had been executed (a BoP statement in the 'Entry Procedure' would solve that)" & vbLf & vbLf & _
-                         "Or the error message had been displayed directly with the procedure in which the error had been raised " & _
-                         "because there are more than one reply button choices which is the case for example when the Debugging option is active."
+            .Text.Text = "A path to the error is not avialable. Click the label above for more information"
             .Text.MonoSpaced = False
+            sMsg = sMsg & "A path to the error is not avialable."
         End If
     End With
     With ErrMsgText.Section(4)
-        If sInfo = vbNullString Then
+        If sAbout = vbNullString Then
             .Label.Text = vbNullString
             .Text.Text = vbNullString
         Else
-            .Label.Text = "About the error:"
-            .Text.Text = sInfo
+            .Label.Text = "About:"
+            .Text.Text = sAbout
             .Text.FontSize = 8.5
+            sMsg = sMsg & vbLf & vbLf & "About the error:" & vbLf & sAbout
         End If
         .Label.FontColor = rgbBlue
     End With
     
-    mMsg.Dsply dsply_title:=sTitle _
-             , dsply_msg:=ErrMsgText _
-             , dsply_buttons:=mMsg.Buttons(err_buttons)
+#If Debugging = 1 Then
+    With ErrMsgText.Section(5)
+        With .Label
+            .Text = "Resume Error Line"
+            .FontColor = rgbBlue
+        End With
+        .Text.Text = "Pressing this button and twice F8 leads straight to the code line which raised the error. " & _
+                     "(button is displayed because the Cond. Comp. Argument 'Debugging = 1')."
+    End With
+#End If
     
-    ErrMsgDsply = mMsg.RepliedWith
+#If MsgComp = 1 Then
+    ErrMsgDsply = mMsg.Dsply(dsply_title:=sTitle _
+                           , dsply_msg:=ErrMsgText _
+                           , dsply_label_spec:="30R" _
+                           , dsply_buttons:=mMsg.Buttons(err_buttons))
+#Else
+#If Debugging = 1 Then
+    lBttns = vbYesNo
+    sMsg = sMsg & vbLf & vbLf & "Debugging:" & vbLf & "Yes    = Resume Error Line" & vbLf & "No     = Terminate"
+#Else
+    lBttns = vbCritical
+#End If
+    ErrMsgDsply = VBA.MsgBox(Title:=sTitle _
+                            , Prompt:=sMsg _
+                            , Buttons:=lBttns)
+#End If
 
 xt:
-#If ExecTrace = 1 Then
+#If XcTrc_mTrc = 1 Then
     mTrc.EoP err_source, sType & lNo & " " & sLine
     mTrc.Continue ' when the user has replied by pressinbg a button the execution timer continues
+#ElseIf XcTrc_clsTrc = 1 Then
+    Trc.EoP err_source, sType & lNo & " " & sLine
+    Trc.Continue ' when the user has replied by pressinbg a button the execution timer continues
 #End If
+
+End Function
+
+Private Function ErrMsgDsplyMyMsgBox(b) As Variant
 
 End Function
 
@@ -617,20 +688,19 @@ Private Sub ErrPathErase()
 End Sub
 
 Private Function ErrPathErrMsg(ByVal msg_details As String) As String
-' ------------------------------------------------------------------
-' Returns the error path for being displayed in the error message.
-' The path to the error has two possible sourced:
+' ----------------------------------------------------------------------------
+' Returns the error path for being displayed in the error message. The path to
+' the error has two possible sources:
 ' - cllErrPath Path collected when the error is passed on to the
 '              entry procedure (bottom up approach).
-' - ProcStack maintained by BoP/EoP statements (top down approach)
-' Either of the two or both may provide information about the path
-' to the error. While the stack requires a BoP/EoP statement with
-' each procedure executed, the path collected on the way up will
-' contain only those procedures which are passed on the way up to
-' the entry procedure - provided at least this one is known. Finally
-' both have its pros and cons. The cllErrPath is given the first
-' chance.
-' ------------------------------------------------------------------
+' - ProcStack  maintained by BoP/EoP statements (top down approach).
+' Either of the two or both may provide information about the path to the
+' error. While the stack requires a BoP/EoP statement with each procedure
+' executed, the path collected on the way up will contain only those
+' procedures which are passed on the way up to the entry procedure - provided
+' at least this one is known. Finally both have its pros and cons. The
+' cllErrPath is given the first chance.
+' ----------------------------------------------------------------------------
     Dim i   As Long
     Dim j   As Long
     Dim s   As String

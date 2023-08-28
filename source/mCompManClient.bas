@@ -1,17 +1,15 @@
 Attribute VB_Name = "mCompManClient"
 Option Explicit
-' ----------------------------------------------------------------------
-' Standard Module mCompManClient
-' ==============================
-' CompMan client interface. To be imported into any Workbook for being
-' serviced by CompMan's: - "Export Changed Components"
-'                        - "Update Outdated Common Components"
-'                        - "Synchronize VB-Projects"
+' ----------------------------------------------------------------------------
+' Standard Module mCompManClient: CompMan client interface. To be imported
+' =============================== into any Workbook for being serviced by
+' CompMan's "Export Changed Components", "Update Outdated Common Components",
+' or "Synchronize VB-Projects" service.
 '
-' W. Rauschenberger, Berlin Apr 2023
+' W. Rauschenberger, Berlin Jun 2023
 '
-' See https://github.com/warbe-maker/Excel-VB-Components-Management-Services
-' ----------------------------------------------------------------------
+' See https://github.com/warbe-maker/VB-Components-Management
+' ----------------------------------------------------------------------------
 ' --- The below constants must not be changed to Private since they are used byCompMan
 Public Const COMPMAN_DEVLP              As String = "CompMan.xlsb"
 Public Const SRVC_EXPORT_ALL            As String = "ExportAll"
@@ -27,6 +25,36 @@ Public Const SRVC_UPDATE_OUTDATED_DSPLY As String = "Update Outdated Common Comp
 Private Const COMPMAN_ADDIN             As String = "CompMan.xlam"
 Private Const vbResume                  As Long = 6 ' return value (equates to vbYes)
 Private Busy                            As Boolean ' prevent parallel execution of a service
+Private sEventsLvl                      As String
+Private bWbkExecChange                  As Boolean
+
+Public Sub Events(ByVal e_src As String, _
+                  ByVal e_b As Boolean, _
+         Optional ByVal e_reset As Boolean = False)
+' ------------------------------------------------------------------------------
+' Follow-Up (trace) of Application.EnableEvents False/True - proves consistency.
+' Recognizes the execution chang from the initiating Workbook to the service
+' executing Workbook.
+' ------------------------------------------------------------------------------
+    If e_reset Then
+        sEventsLvl = vbNullString
+        bWbkExecChange = False
+    End If
+    If Not e_b Then
+        Application.EnableEvents = False
+        If ThisWorkbook.Name = "CompMan.xlam" And Not bWbkExecChange Then
+            bWbkExecChange = True
+            sEventsLvl = sEventsLvl & "   "
+        End If
+        Debug.Print sEventsLvl & ">> " & ThisWorkbook.Name & "." & e_src & " Application.EnableEvents = False"
+        sEventsLvl = sEventsLvl & "   "
+    Else
+        sEventsLvl = Left(sEventsLvl, Len(sEventsLvl) - 3)
+        Application.EnableEvents = True
+        Debug.Print sEventsLvl & "<< " & ThisWorkbook.Name & "." & e_src & " Application.EnableEvents = True"
+    End If
+
+End Sub
 
 Private Property Let DisplayedServiceStatus(ByVal s As String)
     With Application
@@ -67,7 +95,9 @@ Public Sub CompManService(ByVal cms_name As String, _
     
     On Error GoTo eh
     Dim sWbkServicingName   As String
-    
+        
+    sEventsLvl = vbNullString
+    mCompManClient.Events ErrSrc(PROC), False
     If IsAddinInstance Then
         Application.StatusBar = "None of CompMan's services is applicable for CompMan's Add-in instance!"
         GoTo xt
@@ -89,14 +119,17 @@ Public Sub CompManService(ByVal cms_name As String, _
         Else Application.Run sWbkServicingName & "!mCompMan." & cms_name, ThisWorkbook, cms_hosted_common_components
     End If
     If Not ThisWorkbook.Saved Then
-        Application.DisplayAlerts = False
-        Application.EnableEvents = False
-        ThisWorkbook.Save
-        Application.DisplayAlerts = True
+        With Application
+            .DisplayAlerts = False
+            .EnableEvents = False
+            ThisWorkbook.Save
+            .DisplayAlerts = True
+            .EnableEvents = True
+        End With
     End If
     
 xt: Busy = False
-    Application.EnableEvents = True
+    mCompManClient.Events ErrSrc(PROC), True
     Exit Sub
 
 eh: Select Case ErrMsg(ErrSrc(PROC))
@@ -156,27 +189,18 @@ Private Function ErrMsg(ByVal err_source As String, _
 ' W. Rauschenberger Berlin, Nov 2021
 ' ------------------------------------------------------------------------------
 #If ErHComp = 1 Then
-    '~~ ------------------------------------------------------------------------
-    '~~ When the Common VBA Error Handling Component (mErH) is installed in the
-    '~~ VB-Project (which includes the mMsg component) the mErh.ErrMsg service
-    '~~ is preferred since it provides some enhanced features like a path to the
-    '~~ error.
-    '~~ ------------------------------------------------------------------------
+    '~~ When Common VBA Error Services (mErH) is availabel in the VB-Project
+    '~~ (which includes the mMsg component) the mErh.ErrMsg service is invoked.
     ErrMsg = mErH.ErrMsg(err_source, err_no, err_dscrptn, err_line)
     GoTo xt
 #ElseIf MsgComp = 1 Then
-    '~~ ------------------------------------------------------------------------
-    '~~ When only the Common Message Services Component (mMsg) is installed but
-    '~~ not the mErH component the mMsg.ErrMsg service is preferred since it
-    '~~ provides an enhanced layout and other features.
-    '~~ ------------------------------------------------------------------------
+    '~~ When (only) the Common Message Service (mMsg, fMsg) is available in the
+    '~~ VB-Project, mMsg.ErrMsg is invoked for the display of the error message.
     ErrMsg = mMsg.ErrMsg(err_source, err_no, err_dscrptn, err_line)
     GoTo xt
 #End If
-    '~~ -------------------------------------------------------------------
     '~~ When neither the mMsg nor the mErH component is installed the error
     '~~ message is displayed by means of the VBA.MsgBox
-    '~~ -------------------------------------------------------------------
     Dim ErrBttns    As Variant
     Dim ErrAtLine   As String
     Dim ErrDesc     As String

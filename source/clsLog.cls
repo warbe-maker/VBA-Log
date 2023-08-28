@@ -76,6 +76,7 @@ Private bColsAligned        As Boolean
 Private bInitialized        As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
+Private bReorganized        As Boolean
 Private fso                 As New FileSystemObject
 Private lColumns            As Long
 Private lKeepDays           As Long
@@ -122,8 +123,9 @@ Private Sub Class_Initialize()
 ' Initializing defaults
 ' -----------------------------------------------------------------------------------
     NewLogInit
+    lKeepDays = 1
     bWithTimeStamp = False
-    sFileName = DefaultLogFileName
+    sFileName = fso.GetBaseName(ActiveWorkbook.Name) & ".log"
     sPath = ActiveWorkbook.Path
     FileFullName = sPath & "\" & sFileName
     NewLog
@@ -285,10 +287,6 @@ Private Property Let ColWidth(Optional ByVal c_col As Long, _
     aMaxItemLengths(c_col) = c_width
 End Property
 
-Private Property Get DefaultLogFileName() As String
-    DefaultLogFileName = fso.GetBaseName(ActiveWorkbook.Name) & ".log"
-End Property
-
 Private Property Get DelimiterLineDue() As Boolean
     DelimiterLineDue = bNewLog _
                     Or TitleSpecified _
@@ -299,8 +297,8 @@ Friend Property Get FileFullName() As String:   FileFullName = sFileFullName:   
 
 Friend Property Let FileFullName(ByVal s As String)
 ' ----------------------------------------------------------------------------
-' Explicitly specifies the log file's name and location - as an alternative to
-' the provision of FileName and/or Path
+' Specifies the log file's name and location, by the way maintaining the Path
+' and the FileName property.
 ' ----------------------------------------------------------------------------
     Dim lDaysAge    As Long
     
@@ -324,6 +322,8 @@ Friend Property Let FileFullName(ByVal s As String)
     End With
 
 End Property
+
+Friend Property Get FileName() As String:       FileName = sFileName:           End Property
 
 Friend Property Let FileName(ByVal s As String)
     If fso.GetExtensionName(s) = vbNullString Then
@@ -384,6 +384,16 @@ Friend Property Let Path(ByVal v As Variant)
     
 End Property
 
+Private Property Get SplitStr(ByRef s As String)
+' ------------------------------------------------------------------------------
+' Returns the split string in string (s) used by VBA.Split() to turn the string
+' into an array.
+' ------------------------------------------------------------------------------
+    If InStr(s, vbCrLf) <> 0 Then SplitStr = vbCrLf _
+    Else If InStr(s, vbLf) <> 0 Then SplitStr = vbLf _
+    Else If InStr(s, vbCr) <> 0 Then SplitStr = vbCr
+End Property
+
 Private Property Get TitleSpecified() As Boolean
     TitleSpecified = IsAllocated(aTitleLines)
 End Property
@@ -391,67 +401,6 @@ End Property
 Private Property Let TitleSpecified(ByVal b As Boolean)
     If Not b Then Set aTitleLines = Nothing
 End Property
-
-Public Function AlignString(ByVal a_strng As String, _
-                            ByVal a_lngth As Long, _
-                   Optional ByVal a_align As String = "L", _
-                   Optional ByVal a_margn As String = vbNullString, _
-                   Optional ByVal a_fill As String = " ") As String
-' ----------------------------------------------------------------------------
-' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_align) and
-' filled with (a_fill).
-' Preconditions:
-' - The length (a_lngth) is the final lenght including any specific fillss
-' - The string (a_strn) may contain already leading or trailing preserved
-'   spaces.
-' ----------------------------------------------------------------------------
-    Const PROC = "AlignString"
-    
-    On Error GoTo eh
-    Dim sFill   As String
-    Dim s       As String
-
-    If Trim$(a_strng) = vbNullString Then
-        AlignString = String$(a_lngth, " ")
-    Else
-        If a_fill = vbNullString Then a_fill = " "
-        Select Case Left(UCase(a_align), 1)
-            
-            Case "L"
-                a_strng = WithMargins(a_strng)
-                Select Case a_fill
-                    Case ".:"
-                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
-                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
-                    Case "."
-                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
-                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
-                    Case Else
-                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
-                End Select
-            
-            Case "R"
-                AlignString = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
-                
-            Case "C"
-                s = " " & Trim$(a_strng) & " "
-                If Len(s) < a_lngth Then
-                    sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
-                End If
-                    AlignString = sFill & s & sFill
-                If Len(AlignString) < a_lngth Then
-                    AlignString = AlignString & VBA.String$(a_lngth - Len(AlignString), a_fill)
-                End If
-        End Select
-    End If
-
-xt: Exit Function
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Function
 
 Public Sub Alignment(ByVal a_string As String, _
             Optional ByRef a_return As String, _
@@ -717,6 +666,67 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
+Public Function AlignString(ByVal a_strng As String, _
+                            ByVal a_lngth As Long, _
+                   Optional ByVal a_align As String = "L", _
+                   Optional ByVal a_margn As String = vbNullString, _
+                   Optional ByVal a_fill As String = " ") As String
+' ----------------------------------------------------------------------------
+' Returns a string (a_strng) with a lenght (a_lngth) aligned (a_align) and
+' filled with (a_fill).
+' Preconditions:
+' - The length (a_lngth) is the final lenght including any specific fillss
+' - The string (a_strn) may contain already leading or trailing preserved
+'   spaces.
+' ----------------------------------------------------------------------------
+    Const PROC = "AlignString"
+    
+    On Error GoTo eh
+    Dim sFill   As String
+    Dim s       As String
+
+    If Trim$(a_strng) = vbNullString Then
+        AlignString = String$(a_lngth, " ")
+    Else
+        If a_fill = vbNullString Then a_fill = " "
+        Select Case Left(UCase(a_align), 1)
+            
+            Case "L"
+                a_strng = WithMargins(a_strng)
+                Select Case a_fill
+                    Case ".:"
+                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth - 1) & ":"
+                    Case "."
+                        If Right$(a_strng, 1) <> " " Then a_strng = a_strng & " "
+                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                    Case Else
+                        AlignString = Left$(a_strng & String(a_lngth, a_fill), a_lngth)
+                End Select
+            
+            Case "R"
+                AlignString = Right$(String(a_lngth, a_fill) & a_strng & a_margn, a_lngth)
+                
+            Case "C"
+                s = " " & Trim$(a_strng) & " "
+                If Len(s) < a_lngth Then
+                    sFill = String$(Int((a_lngth - Len(s)) / 2), a_fill)
+                End If
+                    AlignString = sFill & s & sFill
+                If Len(AlignString) < a_lngth Then
+                    AlignString = AlignString & VBA.String$(a_lngth - Len(AlignString), a_fill)
+                End If
+        End Select
+    End If
+
+xt: Exit Function
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Function
+
 Private Function AppErr(ByVal app_err_no As Long) As Long
 ' ------------------------------------------------------------------------------
 ' Ensures that a programmed (i.e. an application) error numbers never conflicts
@@ -964,6 +974,179 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
+Private Property Let FileTxt(Optional ByVal f_file As Variant, _
+                             Optional ByVal f_append As Boolean = True, _
+                             Optional ByRef f_split As String, _
+                                      ByVal f_string As String)
+' ----------------------------------------------------------------------------
+' Writes the string (f_string) into the file (f_file) which might be a file
+' object or a file's full name.
+' Note: f_split is not used but specified to comply with Property Get.
+' ----------------------------------------------------------------------------
+    Const PROC = "FileTxt-Let"
+    
+    On Error GoTo eh
+    Dim ts  As TextStream
+    Dim sFl As String
+   
+    f_split = f_split ' not used! just for coincidence with Get
+    With fso
+        If TypeName(f_file) = "File" Then
+            sFl = f_file.Path
+            If f_append _
+            Then Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForAppending) _
+            Else Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForWriting)
+        Else
+            '~~ f_file is regarded a file's full name, created if not existing
+            sFl = f_file
+            If Not .FileExists(sFl) Then
+                .CreateTextFile sFl
+                Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForWriting)
+            Else
+                If f_append _
+                Then Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForAppending) _
+                Else Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForWriting)
+            End If
+        End If
+        
+    End With
+    
+    ts.WriteLine f_string
+
+xt: ts.Close
+    Set fso = Nothing
+    Set ts = Nothing
+    Exit Property
+    
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Property
+
+Private Property Let FileArry(Optional ByVal f_file As String, _
+                              Optional ByVal f_excl_empty_lines As Boolean = False, _
+                              Optional ByRef f_split As String = vbCrLf, _
+                              Optional ByVal f_append As Boolean = False, _
+                                       ByVal f_ar As Variant)
+' ----------------------------------------------------------------------------
+' Writes array (f_ar) to file (f_file) whereby the array is joined to a text
+' string using the line break string (f_split) which defaults to vbCrLf and
+' is optionally returned by Arry-Get.
+' ----------------------------------------------------------------------------
+                    
+    FileTxt(f_file:=f_file _
+          , f_append:=f_append _
+          , f_split:=f_split _
+           ) = Join(f_ar, f_split)
+             
+End Property
+
+Private Property Get FileArry(Optional ByVal f_file As String, _
+                              Optional ByVal f_excl_empty_lines As Boolean = False, _
+                              Optional ByRef f_split As String, _
+                              Optional ByVal f_append As Boolean = False) As Variant
+' ----------------------------------------------------------------------------
+' Returns the content of the file (f_file) - a files full name - as array,
+' with the used line break string returned in (f_split).
+' ----------------------------------------------------------------------------
+    Const PROC  As String = "FileArry"
+    
+    On Error GoTo eh
+    Dim cll     As New Collection
+    Dim a       As Variant
+    Dim a1()    As String
+    Dim fso     As New FileSystemObject
+    Dim sSplit  As String
+    Dim sFile   As String
+    Dim i       As Long
+    Dim j       As Long
+    Dim v       As Variant
+    
+    If Not fso.FileExists(f_file) _
+    Then Err.Raise AppErr(1), ErrSrc(PROC), "A file named '" & f_file & "' does not exist!"
+    
+    '~~ Unload file to a string
+    sFile = FileTxt(f_file:=f_file _
+                    , f_split:=sSplit _
+                     )
+    If sFile = vbNullString Then GoTo xt
+    a = Split(sFile, sSplit)
+    
+    If Not f_excl_empty_lines Then
+        a1 = a
+    Else
+        '~~ Extract non-empty items
+        For i = LBound(a) To UBound(a)
+            If Len(Trim$(a(i))) <> 0 Then cll.Add a(i)
+        Next i
+        ReDim a1(cll.Count - 1)
+        j = 0
+        For Each v In cll
+            a1(j) = v:  j = j + 1
+        Next v
+    End If
+    
+xt: FileArry = a1
+    f_split = sSplit
+    Set cll = Nothing
+    Set fso = Nothing
+    Exit Property
+    
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Property
+
+Private Property Get FileTxt(Optional ByVal f_file As Variant, _
+                             Optional ByVal f_append As Boolean = True, _
+                             Optional ByRef f_split As String) As String
+' ----------------------------------------------------------------------------
+' Returns the text file's (f_file) content as string with VBA.Split() string
+' in (f_split). When the file doesn't exist a vbNullString is returned.
+' Note: f_append is not used but specified to comply with Property Let.
+' ----------------------------------------------------------------------------
+    Const PROC = "FileTxt-Get"
+    
+    On Error GoTo eh
+    Dim ts      As TextStream
+    Dim s       As String
+    Dim sFl As String
+   
+    f_split = f_split  ' not used! for declaration compliance and dead code check only
+    f_append = f_append ' not used! for declaration compliance and dead code check only
+    
+    With fso
+        If TypeName(f_file) = "File" Then
+            sFl = f_file.Path
+        Else
+            '~~ f_file is regarded a file's full name, created if not existing
+            sFl = f_file
+            If Not .FileExists(sFl) Then GoTo xt
+        End If
+        Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForReading)
+    End With
+    
+    If Not ts.AtEndOfStream Then
+        s = ts.ReadAll
+        f_split = SplitStr(s)
+        If VBA.Right$(s, 2) = vbCrLf Then
+            s = VBA.Left$(s, Len(s) - 2)
+        End If
+    Else
+        FileTxt = vbNullString
+    End If
+    If FileTxt = vbCrLf Then FileTxt = vbNullString Else FileTxt = s
+
+xt: Exit Property
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
+End Property
+
 Public Sub Headers(ParamArray h_col_headers() As Variant)
 ' -----------------------------------------------------------------------------------
 ' Spacifies the column headers for Entry items aligne in columns.
@@ -1107,6 +1290,22 @@ Private Function IsAllocated(arr As Variant) As Boolean
               And LBound(arr, 1) <= UBound(arr, 1)
 End Function
 
+Private Function IsDelimiterLine(ByVal i_line As String, _
+                                 ByRef i_date As Date) As Boolean
+                                 
+    Dim dDate As Date
+    Dim s As String
+    
+                                 
+    If i_line Like "##-##-##-*" _
+    Or i_line Like "##-##-## *" Then
+        s = Left(i_line, 8)
+        i_date = DateSerial(2000 + Left(s, 2), Mid(s, 4, 2), Right(s, 2))
+        IsDelimiterLine = IsDate(i_date) And InStr(i_line, " ====") <> 0
+    End If
+    
+End Function
+
 Private Function Max(ParamArray va() As Variant) As Variant
 ' -----------------------------------------------------------------------------------
 ' Returns the maximum value of all values provided (va).
@@ -1183,6 +1382,7 @@ Public Sub NewLog(Optional ByVal b As Boolean = True)
 ' -----------------------------------------------------------------------------------
     bNewLog = b
     If Not bInitialized Then NewLogInit
+    If Not bReorganized Then Reorg
 End Sub
 
 Private Sub NewLogInit()
@@ -1244,21 +1444,78 @@ Private Sub NewLogLines(ByVal n_line As String)
     
 End Sub
 
-Private Sub ProvideLogFile()
-    Dim lDaysAge As Long
-    Dim ts       As TextStream
-    With fso
-        If Not .FileExists(sFileFullName) Then
-            Set ts = .CreateTextFile(sFileFullName)
-            ts.Close
+Public Sub Reorg()
+' ----------------------------------------------------------------------------
+' Keep the number of specified days (KeepDays) and remove any excessive.
+' ----------------------------------------------------------------------------
+    Const PROC = "Reorg"
+    
+    On Error GoTo eh
+    Dim aLog        As Variant
+    Dim aDay()      As String
+    Dim d           As Date
+    Dim dct         As New Dictionary
+    Dim dCurrent    As Date
+    Dim sLogContent As String
+    Dim sSplit      As String
+    Dim v           As Variant
+    Dim vDay        As Variant
+    Dim i           As Long
+    
+    '~~ 1. Unload log to array
+    aLog = FileArry(sFileFullName, , sSplit)
+    If Not IsAllocated(aLog) Then GoTo xt
+    
+    '~~ 2. Transfer days to Dictionary, the day' s log entries in a Collection
+    i = 0
+    For Each v In aLog
+        i = i + 1
+        If Not IsDelimiterLine(v, d) Then
+            ReDim Preserve aDay(i)
+            aDay(i) = v
         Else
-            lDaysAge = VBA.DateDiff("d", .GetFile(sFileFullName).DateLastAccessed, Now())
-            If lDaysAge > lKeepDays Then
-                .DeleteFile sFileFullName
-                .CreateTextFile sFileFullName
+            If d <> dCurrent Then
+                '~~ Delimiter-line of a new day
+                If IsAllocated(aDay) Then
+                    If UBound(aDay) >= 1 Then
+                        dct.Add dCurrent, aDay
+                    End If
+                End If
+                dCurrent = d
+                ReDim aDay(i)
+                aDay(i) = v ' first of new day
+            Else
+                '~~ Delimiter line of the same day
+                ReDim Preserve aDay(i)
+                aDay(i) = v
             End If
         End If
-    End With
+    Next v
+    
+    If IsAllocated(aDay) Then
+        dct.Add dCurrent, aDay
+    End If
+    
+    '~~ 3. When no of days > KeepDays rewrite ony the number of KeepDays
+    If dct.Count > lKeepDays Then
+        '~~ 3.1 Remove excessive log days
+        While dct.Count > lKeepDays
+            dct.Remove (dct.Keys()(0))
+        Wend
+        '~~ 3.2 (Re-)write log-file
+        fso.DeleteFile sFileFullName
+        For Each vDay In dct
+            FileArry(sFileFullName, , sSplit, True) = dct(vDay)
+        Next vDay
+    End If
+    
+xt: bReorganized = True
+    Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Private Sub ShellRun(ByVal sr_string As String, _
@@ -1385,16 +1642,22 @@ Private Function WithMargins(ByVal w_string As String) As String
     
 End Function
 
-Public Sub WithTimeStamp(Optional ByVal b As Boolean = True)
-    bWithTimeStamp = b
-End Sub
+Public Sub WithTimeStamp(Optional ByVal b As Boolean = True):   bWithTimeStamp = b: End Sub
 
 Private Sub WriteDelimiterLine(ByVal w_width_entry As Long)
 ' -----------------------------------------------------------------------------------
-' Write a delimiter line (=====) when it is due and the logfile is not empty
+' Write a delimiter line (yy-mm-dd         =====) when it is due or when the logfile
+' is new.
 ' -----------------------------------------------------------------------------------
-    If DelimiterLineDue And fso.GetFile(sFileFullName).Size <> 0 Then
-        WriteLine String(w_width_entry, "=")
+    Dim s As String
+    
+    If DelimiterLineDue Or fso.GetFile(sFileFullName).Size = 0 Then
+        If Not bWithTimeStamp Then
+            s = Format(Now(), "yy-mm-dd-hh ")
+            WriteLine s & String(w_width_entry - Len(s), "=")
+        Else
+            WriteLine String(w_width_entry, "=")
+        End If
     End If
 End Sub
 
