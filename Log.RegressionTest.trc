@@ -1,0 +1,11 @@
+24-01-24 18:36:58 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-01-24 18:36:58 seconds seconds >> Begin execution trace 
+24-01-24 18:36:58 00,0000         >> mLogTest.RegressionTest
+24-01-24 18:36:58 00,0008         |  >> mLogTest.Test_00_Regression
+24-01-24 18:36:58 00,0332 00,0324 |  << mLogTest.Test_00_Regression
+24-01-24 18:36:58                 |  Test p a s s e d !
+24-01-24 18:36:58                 |  113 Result lines match with 113 expected result lines!
+24-01-24 18:36:58 00,0719 00,0719 << mLogTest.RegressionTest
+24-01-24 18:36:58 00,0719 00,0719 << End execution trace 
+24-01-24 18:36:58                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-01-24 18:36:58                 Impact on the overall performance (caused by the trace itself): 0,3 milliseconds!

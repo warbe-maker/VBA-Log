@@ -1,6 +1,5 @@
 Attribute VB_Name = "mLogTest"
 Option Explicit
-Option Base 1
 Option Compare Binary
 ' ----------------------------------------------------------------------
 ' Standard Module mLogTest: Individual tests plus a Regression-Test
@@ -19,7 +18,7 @@ Private sResult                         As String
 Private sLineExpected                   As String
 Private sLineResult                     As String
 
-#If Not MsgComp = 1 Then
+#If Not mMsg = 1 Then
     ' -------------------------------------------------------------------------------
     ' The 'minimum error handling' aproach implemented with this module and
     ' provided by the ErrMsg function uses the VBA.MsgBox to display an error
@@ -34,111 +33,13 @@ Private sLineResult                     As String
     Private Const vbResume   As Long = 6 ' return value (equates to vbYes)
 #End If
 
-Private Property Get FileArry(Optional ByVal fa_file As String, _
-                              Optional ByVal fa_excl_empty_lines As Boolean = False, _
-                              Optional ByRef fa_split As String, _
-                              Optional ByVal fa_append As Boolean = False) As Variant
-' ----------------------------------------------------------------------------
-' Returns the content of the file (fa_file) - a files full name - as array,
-' with the used line break string returned in (fa_split).
-' ----------------------------------------------------------------------------
-    Const PROC  As String = "FileArry"
-    
-    On Error GoTo eh
-    Dim cll     As New Collection
-    Dim a       As Variant
-    Dim a1()    As String
-    Dim sSplit  As String
-    Dim fso     As New FileSystemObject
-    Dim sFile   As String
-    Dim i       As Long
-    Dim j       As Long
-    Dim v       As Variant
-    
-    If Not fso.FileExists(fa_file) _
-    Then Err.Raise AppErr(1), ErrSrc(PROC), "A file named '" & fa_file & "' does not exist!"
-    
-    '~~ Unload file to a string
-    sFile = FileTxt(ft_file:=fa_file _
-                    , ft_split:=sSplit _
-                     )
-    If sFile = vbNullString Then GoTo xt
-    a = Split(sFile, sSplit)
-    
-    If Not fa_excl_empty_lines Then
-        a1 = a
-    Else
-        '~~ Extract non-empty items
-        For i = LBound(a) To UBound(a)
-            If Len(Trim$(a(i))) <> 0 Then cll.Add a(i)
-        Next i
-        ReDim a1(cll.Count - 1)
-        j = 0
-        For Each v In cll
-            a1(j) = v:  j = j + 1
-        Next v
-    End If
-    
-xt: FileArry = a1
-    fa_split = sSplit
-    Set cll = Nothing
-    Set fso = Nothing
-    Exit Property
-    
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Property
+Private Property Get FileString(Optional ByVal f_file_path As String) As String
 
-Private Property Get FileTxt(Optional ByVal ft_file As Variant, _
-                             Optional ByVal ft_append As Boolean = True, _
-                             Optional ByRef ft_split As String) As String
-' ----------------------------------------------------------------------------
-' Returns the text file's (ft_file) content as string with VBA.Split() string
-' in (ft_split). When the file doesn't exist a vbNullString is returned.
-' Note: ft_append is not used but specified to comply with Property Let.
-' ----------------------------------------------------------------------------
-    Const PROC = "FileTxt-Get"
-    
-    On Error GoTo eh
-    Dim fso     As New FileSystemObject
-    Dim ts      As TextStream
-    Dim s       As String
-    Dim sFl As String
-   
-    ft_split = ft_split  ' not used! for declaration compliance and dead code check only
-    ft_append = ft_append ' not used! for declaration compliance and dead code check only
-    
-    With fso
-        If TypeName(ft_file) = "File" Then
-            sFl = ft_file.Path
-        Else
-            '~~ ft_file is regarded a file's full name, created if not existing
-            sFl = ft_file
-            If Not .FileExists(sFl) Then GoTo xt
-        End If
-        Set ts = .OpenTextFile(FileName:=sFl, IOMode:=ForReading)
-    End With
-    
-    If Not ts.AtEndOfStream Then
-        s = ts.ReadAll
-        ft_split = SplitStr(s)
-        If VBA.Right$(s, 2) = vbCrLf Then
-            s = VBA.Left$(s, Len(s) - 2)
-        End If
-    Else
-        FileTxt = vbNullString
-    End If
-    If FileTxt = vbCrLf Then FileTxt = vbNullString Else FileTxt = s
+    Open f_file_path For Input As #1
+    FileString = Input$(LOF(1), 1)
+    Close #1
 
-xt: Exit Property
-
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
-    End Select
-End Property
+End Function
 
 Private Property Get SplitStr(ByRef s As String)
 ' ------------------------------------------------------------------------------
@@ -161,73 +62,47 @@ Private Function AppErr(ByVal app_err_no As Long) As Long
     AppErr = IIf(app_err_no < 0, app_err_no - vbObjectError, vbObjectError - app_err_no)
 End Function
 
-Private Function Min(ParamArray va() As Variant) As Variant
-' --------------------------------------------------------
-' Returns the minimum (smallest) of all provided values.
-' --------------------------------------------------------
-    Dim v As Variant
-    
-    Min = va(LBound(va)): If LBound(va) = UBound(va) Then Exit Function
-    For Each v In va
-        If v < Min Then Min = v
-    Next v
-    
+Private Function ArrayIsAllocated(a_v As Variant) As Boolean
+    On Error Resume Next
+    ArrayIsAllocated = Not IsError(UBound(a_v))
 End Function
 
-Private Function ResultAsserted(ByVal a_file As String, _
-                                ByVal a_time_stamp As String, _
-                                ByRef a_expected As Variant, _
-                                ByRef a_result As Variant, _
-                                ByRef a_line_expected As Long, _
-                                ByRef a_line_result As Long, _
-                                ByRef a_lines As Long) As Boolean
-' ------------------------------------------------------------------------------
-' Returns TRUE when the result in the log-file (a_result) is identical with the
-' expected result (a_expected). Any line preceeding TimeStamp is ignored.
-' ------------------------------------------------------------------------------
-    Dim vResult     As Variant
-    Dim vExpected   As Variant
-    Dim i           As Long
-    Dim sResult     As String
-    Dim sExpected   As String
+Private Function ArrayTrimmed(ByVal t_v As Variant) As Variant
+' ----------------------------------------------------------------------------
+'
+' ----------------------------------------------------------------------------
+    Dim i   As Long
+    Dim k   As Long
+    Dim arr As Variant
     
-    ResultAsserted = True
-    vExpected = FileArry(sResultExpected_FileFullName)
-    vResult = FileArry(a_file)
-    For i = LBound(vResult) To Min(UBound(vResult), UBound(vExpected))
-        sResult = vResult(i)
-        If sResult Like "*-*-*-*:*:*" _
-        Then sResult = Right(sResult, Len(sResult) - Len("yy-mm-dd-hh:mm:ss"))
-        
-        sExpected = vExpected(i)
-        If sExpected Like "*-*-*-*:*:*" _
-        Then sExpected = Right(sExpected, Len(sExpected) - Len("yy-mm-dd-hh:mm:ss"))
-        
-        If Not sResult = sExpected Then
-            ResultAsserted = False
-            a_result = sResult
-            a_expected = sExpected
-            a_line_expected = i
-            a_line_result = i
-        End If
-        a_lines = i
+    If Not ArrayIsAllocated(t_v) Then
+        Exit Function
+    End If
+    
+    '~~ Get first code line not empty
+    For i = LBound(t_v) To UBound(t_v)
+        If Len(Trim(t_v(i))) > 0 Then Exit For
     Next i
     
-    Select Case True
-        Case UBound(vResult) > UBound(vExpected)
-            ResultAsserted = False
-            a_result = vResult(UBound(vResult))
-            a_expected = vbNullString
-            a_line_result = UBound(vResult)
-            a_line_expected = 0
-            
-        Case UBound(vResult) > UBound(vExpected)
-            ResultAsserted = False
-            a_result = vbNullString
-            a_expected = vExpected(UBound(vExpected))
-            a_line_result = 0
-            a_line_expected = UBound(vExpected)
-    End Select
+    If i < 0 Then
+    Else
+        '~~ Mode all items up
+        For i = i To UBound(t_v)
+            t_v(k) = t_v(i)
+            k = k + 1
+        Next i
+        arr = t_v
+        '~~ Eliminate trailing empty items
+        Do While Trim(arr(UBound(arr))) = vbNullString And UBound(arr) > 0
+            If UBound(arr) > 0 _
+            Then ReDim Preserve arr(UBound(arr) - 1) _
+            Else Exit Do
+        Loop
+        If Not Trim(arr(UBound(arr))) = vbNullString Then
+            ArrayTrimmed = arr
+        Else
+        End If
+    End If
     
 End Function
 
@@ -249,14 +124,14 @@ Private Sub BoP(ByVal b_proc As String, ParamArray b_arguments() As Variant)
     Dim s As String
     If UBound(b_arguments) >= 0 Then s = Join(b_arguments, ",")
 
-#If ErHComp = 1 Then
+#If mErH = 1 Then
     '~~ The error handling also hands over to the mTrc/clsTrc component when
     '~~ either of the two is installed.
     mErH.BoP b_proc, s
-#ElseIf ExecTraceByclsTrc = 1 Then
+#ElseIf clsTrc = 1 Then
     '~~ mErH is not installed but the mTrc is
     Trc.BoP b_proc, s
-#ElseIf ExecTraceBymTrc = 1 Then
+#ElseIf mTrc = 1 Then
     '~~ mErH neither mTrc is installed but clsTrc is
     mTrc.BoP b_proc, s
 #End If
@@ -279,13 +154,13 @@ Private Sub EoP(ByVal e_proc As String, Optional ByVal e_inf As String = vbNullS
 '         the 'Common VBA Error Services' and/or the 'Common VBA Execution
 '         Trace Service'.
 ' ------------------------------------------------------------------------------
-#If ErHComp = 1 Then
+#If mErH = 1 Then
     '~~ The error handling also hands over to the mTrc component when 'ExecTrace = 1'
     '~~ so the Else is only for the case the mTrc is installed but the merH is not.
     mErH.EoP e_proc
-#ElseIf ExecTraceByclsTrc = 1 Then
+#ElseIf clsTrc = 1 Then
     Trc.EoP e_proc, e_inf
-#ElseIf ExecTraceBymTrc = 1 Then
+#ElseIf mTrc = 1 Then
     mTrc.EoP e_proc, e_inf
 #End If
 
@@ -296,30 +171,27 @@ Private Function ErrMsg(ByVal err_source As String, _
                Optional ByVal err_dscrptn As String = vbNullString, _
                Optional ByVal err_line As Long = 0) As Variant
 ' ------------------------------------------------------------------------------
-' Universal error message display service which displays a debugging option
-' button when the Conditional Compile Argument 'Debugging = 1', displays an
-' optional additional "About:" section when the err_dscrptn has an additional
-' string concatenated by two vertical bars (||), and displays the error message
-' by means of VBA.MsgBox when neither the Common Component mErH (indicated by
-' the Conditional Compile Argument "ErHComp = 1", nor the Common Component mMsg
-' (idicated by the Conditional Compile Argument "MsgComp = 1") is installed.
+' Universal error message display service which displays:
+' - a debugging option button
+' - an "About:" section when the err_dscrptn has an additional string
+'   concatenated by two vertical bars (||)
+' - the error message either by means of the Common VBA Message Service
+'   (fMsg/mMsg) when installed (indicated by Cond. Comp. Arg. `mMsg = 1` or by
+'   means of the VBA.MsgBox in case not.
 '
 ' Uses: AppErr  For programmed application errors (Err.Raise AppErr(n), ....)
 '               to turn them into a negative and in the error message back into
 '               its origin positive number.
-'       ErrSrc  To provide an unambiguous procedure name by prefixing is with
-'               the module name.
 '
-' W. Rauschenberger Berlin, Apr 2023
-'
-' See: https://github.com/warbe-maker/Common-VBA-Error-Services
-' ------------------------------------------------------------------------------' ------------------------------------------------------------------------------
-#If ErHComp = 1 Then
+' W. Rauschenberger Berlin, Jan 2024
+' See: https://github.com/warbe-maker/VBA-Error
+' ------------------------------------------------------------------------------
+#If mErH = 1 Then
     '~~ When Common VBA Error Services (mErH) is availabel in the VB-Project
     '~~ (which includes the mMsg component) the mErh.ErrMsg service is invoked.
     ErrMsg = mErH.ErrMsg(err_source, err_no, err_dscrptn, err_line): GoTo xt
     GoTo xt
-#ElseIf MsgComp = 1 Then
+#ElseIf mMsg = 1 Then
     '~~ When (only) the Common Message Service (mMsg, fMsg) is available in the
     '~~ VB-Project, mMsg.ErrMsg is invoked for the display of the error message.
     ErrMsg = mMsg.ErrMsg(err_source, err_no, err_dscrptn, err_line): GoTo xt
@@ -341,7 +213,7 @@ Private Function ErrMsg(ByVal err_source As String, _
     '~~ Obtain error information from the Err object for any argument not provided
     If err_no = 0 Then err_no = Err.Number
     If err_line = 0 Then ErrLine = Erl
-    If err_source = vbNullString Then err_source = Err.source
+    If err_source = vbNullString Then err_source = Err.Source
     If err_dscrptn = vbNullString Then err_dscrptn = Err.Description
     If err_dscrptn = vbNullString Then err_dscrptn = "--- No error description available ---"
     
@@ -373,19 +245,27 @@ Private Function ErrMsg(ByVal err_source As String, _
        
     ErrText = "Error: " & vbLf & ErrDesc & vbLf & vbLf & "Source: " & vbLf & err_source & ErrAtLine
     If ErrAbout <> vbNullString Then ErrText = ErrText & vbLf & vbLf & "About: " & vbLf & ErrAbout
-    
-#If Debugging Then
     ErrBttns = vbYesNo
     ErrText = ErrText & vbLf & vbLf & "Debugging:" & vbLf & "Yes    = Resume Error Line" & vbLf & "No     = Terminate"
-#Else
-    ErrBttns = vbCritical
-#End If
     ErrMsg = MsgBox(Title:=ErrTitle, Prompt:=ErrText, Buttons:=ErrBttns)
 xt:
 End Function
 
 Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "mLogTest" & "." & sProc
+End Function
+
+Private Function Min(ParamArray va() As Variant) As Variant
+' --------------------------------------------------------
+' Returns the minimum (smallest) of all provided values.
+' --------------------------------------------------------
+    Dim v As Variant
+    
+    Min = va(LBound(va)): If LBound(va) = UBound(va) Then Exit Function
+    For Each v In va
+        If v < Min Then Min = v
+    Next v
+    
 End Function
 
 Private Sub ProvideNewTraceLogFile(ByVal p_name As String)
@@ -398,6 +278,11 @@ Private Sub ProvideNewTraceLogFile(ByVal p_name As String)
 End Sub
 
 Private Sub RegressionTest()
+' ------------------------------------------------------------------------------
+' Please note: This test includes the result assertion which is the result from
+'              Test_00_Regression - when ok - saved to the file
+'              RegressionTestResultExpected.log in this projects parent folder.
+' ------------------------------------------------------------------------------
     Const PROC = "RegressionTest"
     
     On Error GoTo eh
@@ -419,6 +304,107 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
         Case Else:      GoTo xt
     End Select
 End Sub
+
+Private Function ResultAsserted(ByVal a_file As String, _
+                                ByVal a_time_stamp As String, _
+                                ByRef a_expected As Variant, _
+                                ByRef a_result As Variant, _
+                                ByRef a_line_expected As Long, _
+                                ByRef a_line_result As Long, _
+                                ByRef a_lines As Long) As Boolean
+' ------------------------------------------------------------------------------
+' Returns TRUE when the result in the log-file (a_result) is identical with the
+' expected result (a_expected) whereby any line preceeding TimeStamp is ignored.
+' ------------------------------------------------------------------------------
+    Dim vResult         As Variant
+    Dim vExpected       As Variant
+    Dim i               As Long
+    Dim sResult         As String
+    Dim sExpected       As String
+    Dim sResultFile     As String
+    Dim sExpectedFile   As String
+    
+    ResultAsserted = True
+    sExpectedFile = StringTrimmed(FileString(sResultExpected_FileFullName))
+    sResultFile = StringTrimmed(FileString(a_file))
+    
+    vExpected = ArrayTrimmed(Split(sExpectedFile, vbCrLf))
+    vResult = ArrayTrimmed(Split(sResultFile, vbCrLf))
+    
+    For i = LBound(vResult) To Min(UBound(vResult), UBound(vExpected))
+        
+        sResult = vResult(i)
+        If sResult Like "*-*-*-*:*:*" _
+        Then sResult = Right(sResult, Len(sResult) - Len("yy-mm-dd-hh:mm:ss"))
+        
+        sExpected = vExpected(i)
+        If sExpected Like "*-*-*-*:*:*" _
+        Then sExpected = Right(sExpected, Len(sExpected) - Len("yy-mm-dd-hh:mm:ss"))
+        
+        If Not sResult = sExpected Then
+            ResultAsserted = False
+            a_result = sResult
+            a_expected = sExpected
+            a_line_expected = i + 1
+            a_line_result = i + 1
+        End If
+        a_lines = i + 1
+    Next i
+    
+    Select Case True
+        Case UBound(vResult) > UBound(vExpected)
+            ResultAsserted = False
+            a_result = vResult(UBound(vResult))
+            a_expected = vbNullString
+            a_line_result = UBound(vResult)
+            a_line_expected = 0
+            
+        Case UBound(vResult) > UBound(vExpected)
+            ResultAsserted = False
+            a_result = vbNullString
+            a_expected = vExpected(UBound(vExpected))
+            a_line_result = 0
+            a_line_expected = UBound(vExpected)
+    End Select
+    
+End Function
+
+Private Function StringTrimmed(ByVal s_s As String, _
+                      Optional ByRef s_as_dict As Dictionary = Nothing) As String
+' ----------------------------------------------------------------------------
+' Returns the code (s_s) provided as a single string without leading and
+' trailing empty lines. When a Dictionary is provided the string is returned
+' as items with the line number as key.
+' ----------------------------------------------------------------------------
+    Dim s As String
+    Dim i As Long
+    Dim v As Variant
+    
+    s = s_s
+    '~~ Eliminate leading empty code lines
+    Do While Left(s, 2) = vbCrLf
+        s = Right(s, Len(s) - 2)
+    Loop
+    '~~ Eliminate trailing eof
+    If Right(s, 1) = VBA.Chr(26) _
+    Then s = Left(s, Len(s) - 1)
+    
+    '~~ Eliminate trailing empty code lines
+    Do While Right(s, 2) = vbCrLf
+        s = Left(s, Len(s) - 2)
+    Loop
+    
+    StringTrimmed = s
+    If Not s_as_dict Is Nothing Then
+        With s_as_dict
+            For Each v In Split(s, vbCrLf)
+                i = i + 1
+                .Add i, v
+            Next v
+        End With
+    End If
+    
+End Function
 
 Private Sub Test_00_Regression()
 ' ------------------------------------------------------------------------------
@@ -507,7 +493,7 @@ Private Sub Test_00_Regression()
         .Headers " Nr", "Item", "Item", "Item 3 "
         .Headers "   ", " 1  ", " 2  ", "(no width limit) "
         .Entry " 03", "xxxx ", "yyyyyy ", " Rightmost column without width limit! (this first line implicitly indicated the columns width for being considered by the header) "
-        .Entry "03", "xxxx", "yyyy", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)"
+        .Entry "03", "xxxx", "yyyy", "         zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)"
         .Entry "03", "xxxx", "yyyyy", "zzzzzz "
         
         .NewLog ' has no effect since indicated by the below title
@@ -530,7 +516,7 @@ Private Sub Test_00_Regression()
         .ColsDelimiter = " "
         .Headers "| Nr| Item-1 |  Item-2  |Item-3 (no width limit) "
         .Entry " 05", "xxxx ", "- yyyyyy -", "Rightmost column without width limit! "
-        .Entry " 05", "xxxx ", "yyyy       ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)"
+        .Entry " 05", "xxxx ", "yyyy       ", "         zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)"
         .Entry "05", "xxxx ", "yyyyy       ", "zzzzzz "
          
         .Title "06 Test: Explicit AlignmentHeaders, AlignmentItems, and MaxItemLengths "
@@ -546,7 +532,7 @@ Private Sub Test_00_Regression()
         .AlignmentItems "R", "L", "- C -"
         .MaxItemLengths 3, 10, 25, 30
         .Entry "06", "xxxx", "yyyyyy", "Rightmost column without width limit! "
-        .Entry "06", "xxxx", "yyyy  ", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)   "
+        .Entry "06", "xxxx", "yyyy  ", "         zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)   "
         .Entry "06", "xxxx", "yyyyy ", "zzzzzz "
          
          .Title "07 Test: AlignmentItems explicitly only specifies column 2 " _
@@ -560,7 +546,7 @@ Private Sub Test_00_Regression()
         .Headers "| Nr | Item | Comment |"
         .ColsDelimiter = " "
         .Entry " 07", "xxxx ", "Rightmost column without width limit! "
-        .Entry "07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
+        .Entry "07", "xxxxxxxxxxxxxxxxxxxx", "         zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)  "
         .Entry "07", "xxxxxxxxx", "zzzzzz"
     
          .Title "08 Test: Not provided items "
@@ -573,7 +559,7 @@ Private Sub Test_00_Regression()
         .Headers "| Nr | Item | Comment |"
         .ColsDelimiter = " "
         .Entry " 08", "xxxx ", "Rightmost column without width limit! "
-        .Entry "08", , "zzzzzz (note that leading spaces preserved because the first line implicitly indicated left adjusted)  "
+        .Entry "08", , "zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)  "
         .Entry "08", "xxxxxxxxx", "zzzzzz"
     
         .Reorg
@@ -650,3 +636,4 @@ Private Sub Test_01_Align()
     End With
     
 End Sub
+

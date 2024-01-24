@@ -49,19 +49,18 @@ Option Base 1 ' ensures the index conforms with the column number
 '
 ' Properties:
 ' -----------
-' - FileFullName  r/w     Specifies the full name of the log-file. The location
-'                         defaults to the ActiveWorkbook's parent folder, the name
-'                         defaults to the ActiveWorkbook's BaseName with a .log
-'                         file extention.
-' - FileName      w       Specifies the log-file's name, defaults to the
-'                         ActiveWorkbook's BaseName with a .log file extention.
-' - KeepDays      w       Specifies the number of days a new created log-file is
-'                         kept before it is deleted and re-created, defaults to 1.
-' - LogFile       r       The log-file as file object
-' - Path          w       Sepcifies the log-file's location/folder, defaults to the
-'                         ActiveWorkbook's parent folder
+' - FileFullName r/w Specifies the full name of the log-file. The location defaults
+'                    to the ActiveWorkbook's parent folder, the name defaults to the
+'                    ActiveWorkbook's BaseName with a .log file extention.
+' - FileName       w Specifies the log-file's name, defaults to the ActiveWorkbook's
+'                    BaseName with a .log file extention.
+' - KeepDays       w Specifies the number of days a new created log-file is kept
+'                    before it is deleted and re-created, defaults to 1.
+' - LogFile      r   The log-file as file object
+' - Path           w Sepcifies the log-file's location/folder, defaults to the
+'                    ActiveWorkbook's parent folder
 '
-' W. Rauschenberger, Berlin Apr 2023
+' W. Rauschenberger, Berlin Jan 2024
 ' See: https://github.com/warbe-maker/VBA-Log-Service
 ' -----------------------------------------------------------------------------------
 Private aAlignmentsHeader   As Variant
@@ -72,7 +71,6 @@ Private aItems              As Variant
 Private aTitleLines         As Variant
 Private aMaxItemLengths     As Variant
 Private aFills()            As String
-Private bColsAligned        As Boolean
 Private bInitialized        As Boolean
 Private bNewLog             As Boolean
 Private bWithTimeStamp      As Boolean
@@ -84,16 +82,12 @@ Private lLenTitle           As Long
 Private sTitleAlignment     As String
 Private sColsDelimiter      As String
 Private sColsMargin         As String
-Private sEntry              As String
 Private sFileFullName       As String
 Private sFileName           As String
 Private sPath               As String
-Private sServicedItem       As String
-Private sServicedItemName   As String
-Private sServicedItemType   As String
 Private sTitleFill          As String
 
-#If Not MsgComp = 1 Then
+#If Not mMsg = 1 Then
     ' -------------------------------------------------------------------------------
     ' The 'minimum error handling' aproach implemented with this module and
     ' provided by the ErrMsg function uses the VBA.MsgBox to display an error
@@ -101,7 +95,7 @@ Private sTitleFill          As String
     ' provided the Conditional Compile Argument 'Debugging = 1'.
     ' This declaration allows the mTrc module to work completely autonomous.
     ' It becomes obsolete when the mMsg/fMsg module is installed which must
-    ' be indicated by the Conditional Compile Argument MsgComp = 1.
+    ' be indicated by the Conditional Compile Argument mMsg = 1.
     ' See https://github.com/warbe-maker/Common-VBA-Message-Service
     ' -------------------------------------------------------------------------------
     Private Const vbResumeOk As Long = 7 ' Buttons value in mMsg.ErrMsg (pass on not supported)
@@ -195,7 +189,6 @@ Private Property Get ColHeader(Optional ByVal c_col As Long, _
                                Optional ByVal c_line As Long = 1) As String
     Dim s       As String
     Dim lWidth  As Long
-    Dim v       As Variant
     
     If IsAllocated(aHeaderLines) Then
         aHeaders = aHeaderLines(c_line)
@@ -233,7 +226,6 @@ Private Property Get ColItem(Optional ByVal c_col As Long) As String
     
     On Error GoTo eh
     Dim lWidth  As Long
-    Dim sFill   As String
     
     If IsAllocated(aItems) Then
         If bNewLog Then
@@ -797,7 +789,6 @@ Public Sub Entry(ParamArray e() As Variant)
     Dim iCol    As Long
     Dim s       As String
     Dim v       As Variant
-    Dim lWidth  As Long
     Dim sItem   As String
     Dim sFill   As String
     Dim sAlign  As String
@@ -882,30 +873,27 @@ Private Function ErrMsg(ByVal err_source As String, _
                Optional ByVal err_dscrptn As String = vbNullString, _
                Optional ByVal err_line As Long = 0) As Variant
 ' ------------------------------------------------------------------------------
-' Universal error message display service which displays a debugging option
-' button when the Conditional Compile Argument 'Debugging = 1', displays an
-' optional additional "About:" section when the err_dscrptn has an additional
-' string concatenated by two vertical bars (||), and displays the error message
-' by means of VBA.MsgBox when neither the Common Component mErH (indicated by
-' the Conditional Compile Argument "ErHComp = 1", nor the Common Component mMsg
-' (idicated by the Conditional Compile Argument "MsgComp = 1") is installed.
+' Universal error message display service which displays:
+' - a debugging option button
+' - an "About:" section when the err_dscrptn has an additional string
+'   concatenated by two vertical bars (||)
+' - the error message either by means of the Common VBA Message Service
+'   (fMsg/mMsg) when installed (indicated by Cond. Comp. Arg. `mMsg = 1` or by
+'   means of the VBA.MsgBox in case not.
 '
 ' Uses: AppErr  For programmed application errors (Err.Raise AppErr(n), ....)
 '               to turn them into a negative and in the error message back into
 '               its origin positive number.
-'       ErrSrc  To provide an unambiguous procedure name by prefixing is with
-'               the module name.
 '
-' W. Rauschenberger Berlin, Apr 2023
-'
-' See: https://github.com/warbe-maker/Common-VBA-Error-Services
-' ------------------------------------------------------------------------------' ------------------------------------------------------------------------------
-#If ErHComp = 1 Then
+' W. Rauschenberger Berlin, Jan 2024
+' See: https://github.com/warbe-maker/VBA-Error
+' ------------------------------------------------------------------------------
+#If mErH = 1 Then
     '~~ When Common VBA Error Services (mErH) is availabel in the VB-Project
     '~~ (which includes the mMsg component) the mErh.ErrMsg service is invoked.
     ErrMsg = mErH.ErrMsg(err_source, err_no, err_dscrptn, err_line): GoTo xt
     GoTo xt
-#ElseIf MsgComp = 1 Then
+#ElseIf mMsg = 1 Then
     '~~ When (only) the Common Message Service (mMsg, fMsg) is available in the
     '~~ VB-Project, mMsg.ErrMsg is invoked for the display of the error message.
     ErrMsg = mMsg.ErrMsg(err_source, err_no, err_dscrptn, err_line): GoTo xt
@@ -927,7 +915,7 @@ Private Function ErrMsg(ByVal err_source As String, _
     '~~ Obtain error information from the Err object for any argument not provided
     If err_no = 0 Then err_no = Err.Number
     If err_line = 0 Then ErrLine = Erl
-    If err_source = vbNullString Then err_source = Err.source
+    If err_source = vbNullString Then err_source = Err.Source
     If err_dscrptn = vbNullString Then err_dscrptn = Err.Description
     If err_dscrptn = vbNullString Then err_dscrptn = "--- No error description available ---"
     
@@ -960,12 +948,8 @@ Private Function ErrMsg(ByVal err_source As String, _
     ErrText = "Error: " & vbLf & ErrDesc & vbLf & vbLf & "Source: " & vbLf & err_source & ErrAtLine
     If ErrAbout <> vbNullString Then ErrText = ErrText & vbLf & vbLf & "About: " & vbLf & ErrAbout
     
-#If Debugging Then
     ErrBttns = vbYesNo
     ErrText = ErrText & vbLf & vbLf & "Debugging:" & vbLf & "Yes    = Resume Error Line" & vbLf & "No     = Terminate"
-#Else
-    ErrBttns = vbCritical
-#End If
     ErrMsg = MsgBox(Title:=ErrTitle, Prompt:=ErrText, Buttons:=ErrBttns)
 xt:
 End Function
@@ -974,7 +958,7 @@ Private Function ErrSrc(ByVal sProc As String) As String
     ErrSrc = "clsLog" & "." & sProc
 End Function
 
-Private Property Let FileTxt(Optional ByVal f_file As Variant, _
+Private Property Let FileAsString(Optional ByVal f_file As Variant, _
                              Optional ByVal f_append As Boolean = True, _
                              Optional ByRef f_split As String, _
                                       ByVal f_string As String)
@@ -983,7 +967,7 @@ Private Property Let FileTxt(Optional ByVal f_file As Variant, _
 ' object or a file's full name.
 ' Note: f_split is not used but specified to comply with Property Get.
 ' ----------------------------------------------------------------------------
-    Const PROC = "FileTxt-Let"
+    Const PROC = "FileAsString-Let"
     
     On Error GoTo eh
     Dim ts  As TextStream
@@ -1034,8 +1018,8 @@ Private Property Let FileArry(Optional ByVal f_file As String, _
 ' string using the line break string (f_split) which defaults to vbCrLf and
 ' is optionally returned by Arry-Get.
 ' ----------------------------------------------------------------------------
-                    
-    FileTxt(f_file:=f_file _
+    f_excl_empty_lines = f_excl_empty_lines
+    FileAsString(f_file:=f_file _
           , f_append:=f_append _
           , f_split:=f_split _
            ) = Join(f_ar, f_split)
@@ -1063,11 +1047,12 @@ Private Property Get FileArry(Optional ByVal f_file As String, _
     Dim j       As Long
     Dim v       As Variant
     
+    f_append = f_append
     If Not fso.FileExists(f_file) _
     Then Err.Raise AppErr(1), ErrSrc(PROC), "A file named '" & f_file & "' does not exist!"
     
     '~~ Unload file to a string
-    sFile = FileTxt(f_file:=f_file _
+    sFile = FileAsString(f_file:=f_file _
                     , f_split:=sSplit _
                      )
     If sFile = vbNullString Then GoTo xt
@@ -1099,7 +1084,7 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Property
 
-Private Property Get FileTxt(Optional ByVal f_file As Variant, _
+Private Property Get FileAsString(Optional ByVal f_file As Variant, _
                              Optional ByVal f_append As Boolean = True, _
                              Optional ByRef f_split As String) As String
 ' ----------------------------------------------------------------------------
@@ -1107,7 +1092,7 @@ Private Property Get FileTxt(Optional ByVal f_file As Variant, _
 ' in (f_split). When the file doesn't exist a vbNullString is returned.
 ' Note: f_append is not used but specified to comply with Property Let.
 ' ----------------------------------------------------------------------------
-    Const PROC = "FileTxt-Get"
+    Const PROC = "FileAsString-Get"
     
     On Error GoTo eh
     Dim ts      As TextStream
@@ -1135,9 +1120,9 @@ Private Property Get FileTxt(Optional ByVal f_file As Variant, _
             s = VBA.Left$(s, Len(s) - 2)
         End If
     Else
-        FileTxt = vbNullString
+        FileAsString = vbNullString
     End If
-    If FileTxt = vbCrLf Then FileTxt = vbNullString Else FileTxt = s
+    If FileAsString = vbCrLf Then FileAsString = vbNullString Else FileAsString = s
 
 xt: Exit Property
 
@@ -1156,7 +1141,6 @@ Public Sub Headers(ParamArray h_col_headers() As Variant)
     On Error GoTo eh
     Static lLine As Long
     Dim i       As Long
-    Dim j       As Long
     Dim iCol    As Long
     Dim s       As String
     Dim v       As Variant
@@ -1293,10 +1277,8 @@ End Function
 Private Function IsDelimiterLine(ByVal i_line As String, _
                                  ByRef i_date As Date) As Boolean
                                  
-    Dim dDate As Date
     Dim s As String
     
-                                 
     If i_line Like "##-##-##-*" _
     Or i_line Like "##-##-## *" Then
         s = Left(i_line, 8)
@@ -1405,7 +1387,6 @@ End Sub
 
 Private Sub NewLogLines(ByVal n_line As String)
 
-    Dim sElement        As String
     Dim lWidthEntry     As Long
     Dim sHeaderLines    As String
     Dim sTitleLines     As String
@@ -1456,7 +1437,6 @@ Public Sub Reorg()
     Dim d           As Date
     Dim dct         As New Dictionary
     Dim dCurrent    As Date
-    Dim sLogContent As String
     Dim sSplit      As String
     Dim v           As Variant
     Dim vDay        As Variant
@@ -1546,7 +1526,6 @@ Private Sub ShellRun(ByVal sr_string As String, _
     On Error GoTo eh
     Dim lRet            As Long
     Dim varTaskID       As Variant
-    Dim stRet           As String
     Dim hWndAccessApp   As Long
     
     '~~ First try ShellExecute
