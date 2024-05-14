@@ -1,23 +1,40 @@
-[_MostRecentExport]
-UsedExportFolder=source
-[clsLog]
-KindOfComponent=hosted
-RawExpFileFullName=D:\Ablage\Excel VBA\DevAndTest\VBA-Service-Log\source\clsLog.cls
-LastModifiedAtDatTime=2024-01-24-16-30-54 (UTC)
-[fMsg]
-KindOfComponent=used
-LastModifiedAtDatTime=2024-01-24-14-36-53 (UTC)
-[mCompManClient]
+[@NamesHousekeeping]
+
+_MostRecentExport=_MostRecentExport
+clsLog=clsLog
+DoneNamesHskpng=LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;DueModificationWarning>
+fMsg=fMsg
 KindOfComponent=used
 LastModifiedAtDatTime=2024-01-24-16-30-53 (UTC)
+mCompManClient=mCompManClient
+mErH=mErH
+mMsg=mMsg
+mTrc]=mTrc]
+
+[_MostRecentExport]
+UsedExportFolder=source
+
+[clsLog]
+KindOfComponent=hosted
+LastModifiedAtDatTime=2024-05-14 16:01:40 (UTC)
+RawExpFileFullName=D:\Ablage\Excel VBA\DevAndTest\VBA-Service-Log\source\clsLog.cls
+
+[fMsg]
+KindOfComponent=used
+LastModifiedAtDatTime=2024-02-08-14-35-34 (UTC)
+
+[mCompManClient]
+KindOfComponent=used
+LastModifiedAtDatTime=2024-02-08-14-21-51 (UTC)
+
 [mErH]
 KindOfComponent=used
 LastModifiedAtDatTime=2024-01-24-16-47-51 (UTC)
+
 [mMsg]
 KindOfComponent=used
-LastModifiedAtDatTime=2024-01-24-16-47-51 (UTC)
+LastModifiedAtDatTime=2024-05-09 09:18:30 (UTC)
+
 [mTrc]
 KindOfComponent=used
-LastModifiedAtDatTime=2024-01-24-16-30-53 (UTC)
-[@NamesHousekeeping]
-DoneNamesHskpng=LastModifiedAtDatTime:LastModAtDateTime:RevisionNumber:RawRevisionNumber;KindOfComponent;UsedExportFolder;:DueModificationWarning
+LastModifiedAtDatTime=2024-05-14 15:53:31 (UTC)
