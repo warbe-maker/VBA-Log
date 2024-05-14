@@ -229,3 +229,19 @@
 24-05-14 18:01:48 00,0769 00,0769 << Update Outdated Common Components (by Add-in) for Log.xlsb
 24-05-14 18:01:48                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
 24-05-14 18:01:48                 Impact on the overall performance (caused by the trace itself): 0,3 milliseconds!
+===========================================================================================================================================
+24-05-14 18:04:52 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-14 18:04:52 seconds seconds >> Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-14 18:04:52 00,0000         |  >> mAddin.IsOpen
+24-05-14 18:04:52 00,0041 00,0041 |  << mAddin.IsOpen
+24-05-14 18:04:52 00,0041 00,0041 << Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-14 18:04:52                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-14 18:04:52                 Impact on the overall performance (caused by the trace itself): 2,7 milliseconds!
+===========================================================================================================================================
+24-05-14 18:04:52 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-14 18:04:52 seconds seconds >> Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-14 18:04:52 00,0000         |  >> mAddin.IsOpen
+24-05-14 18:04:52 00,0009 00,0009 |  << mAddin.IsOpen
+24-05-14 18:04:52 00,0009 00,0009 << Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-14 18:04:52                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-14 18:04:52                 Impact on the overall performance (caused by the trace itself): 0,8 milliseconds!
