@@ -104,7 +104,7 @@ Private sTitleFill          As String
 
 Private Declare PtrSafe Function apiShellExecute Lib "shell32.dll" _
     Alias "ShellExecuteA" _
-    (ByVal hwnd As Long, _
+    (ByVal hWnd As Long, _
     ByVal lpOperation As String, _
     ByVal lpFile As String, _
     ByVal lpParameters As String, _
@@ -123,6 +123,7 @@ Private Sub Class_Initialize()
     sPath = ActiveWorkbook.Path
     FileFullName = sPath & "\" & sFileName
     NewLog
+    
 End Sub
 
 Private Sub Class_Terminate()
@@ -301,16 +302,14 @@ Friend Property Let FileFullName(ByVal s As String)
         End If
         sFileFullName = s
         sPath = .GetParentFolderName(s)
-        If Not .FileExists(sFileFullName) Then .CreateTextFile sFileFullName
         sFileName = .GetFileName(s)
         
         '~~ In case the file already existed it may have passed the KeepDays limit
-        lDaysAge = VBA.DateDiff("d", .GetFile(sFileFullName).DateLastAccessed, Now())
-        If lDaysAge > lKeepDays Then
-            .DeleteFile sFileFullName
-            .CreateTextFile sFileFullName
+        If FSo.FileExists(sFileFullName) Then
+            lDaysAge = VBA.DateDiff("d", .GetFile(sFileFullName).DateLastAccessed, Now())
+            If lDaysAge > lKeepDays _
+            Then .DeleteFile sFileFullName
         End If
-        
     End With
 
 End Property
@@ -882,6 +881,10 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
+Private Sub WriteLine(ByVal w_line As String)
+    StringAsFile TimeStamp & w_line, sFileFullName, True
+End Sub
+
 Private Function ErrMsg(ByVal err_source As String, _
                Optional ByVal err_no As Long = 0, _
                Optional ByVal err_dscrptn As String = vbNullString, _
@@ -1373,7 +1376,9 @@ Public Sub NewLog(Optional ByVal b As Boolean = True)
 ' -----------------------------------------------------------------------------------
     bNewLog = b
     If Not bInitialized Then NewLogInit
-    If Not bReorganized Then Reorg
+    If Not bReorganized And FSo.FileExists(sFileFullName) _
+    Then Reorg
+    
 End Sub
 
 Private Sub NewLogInit()
@@ -1395,7 +1400,9 @@ Private Sub NewLogInit()
 End Sub
 
 Private Sub NewLogLines(ByVal n_line As String)
-
+    Const PROC = "NewLogLines"
+    
+    On Error GoTo eh
     Dim lWidthEntry     As Long
     Dim sHeaderLines    As String
     Dim sTitleLines     As String
@@ -1422,7 +1429,7 @@ Private Sub NewLogLines(ByVal n_line As String)
         For Each vLine In Split(sTitleLines, vbLf)
             WriteLine vLine
         Next vLine
-        WriteLine String(lWidthEntry, "-") ' title underline
+        WriteLine String(lWidthEntry, "-")
         TitleSpecified = False
     End If
       
@@ -1432,6 +1439,12 @@ Private Sub NewLogLines(ByVal n_line As String)
     End If
     bNewLog = False ' may be set to True again when a new Title is provided or explicit
     
+xt: Exit Sub
+
+eh: Select Case ErrMsg(ErrSrc(PROC))
+        Case vbResume:  Stop: Resume
+        Case Else:      GoTo xt
+    End Select
 End Sub
 
 Public Sub Reorg()
@@ -1639,14 +1652,12 @@ Private Sub WriteDelimiterLine(ByVal w_width_entry As Long)
 ' -----------------------------------------------------------------------------------
     Dim s As String
     
-    If DelimiterLineDue Or FSo.GetFile(sFileFullName).Size = 0 Then
-        If Not bWithTimeStamp Then
-            s = Format(Now(), "yy-mm-dd-hh ")
-            WriteLine s & String(w_width_entry - Len(s), "=")
-        Else
-            WriteLine String(w_width_entry, "=")
+    If FSo.FileExists(sFileFullName) Then
+        If DelimiterLineDue Then
+           WriteLine String(w_width_entry, "=")
         End If
     End If
+    
 End Sub
 
 Private Sub WriteItems()
@@ -1685,25 +1696,64 @@ eh: Select Case ErrMsg(ErrSrc(PROC))
     End Select
 End Sub
 
-Private Sub WriteLine(ByVal w_string As String)
+Private Function StringAsFile(ByVal s_strng As String, _
+                     Optional ByRef s_file As Variant = vbNullString, _
+                     Optional ByVal s_file_append As Boolean = False) As File
 ' ----------------------------------------------------------------------------
-' Writes a string (w_string) into the file (sFileFullName).
+' Writes a string (s_strng) to a file (s_file) which might be a file object or
+' a file's full name. When no file (s_file) is provided, a temporary file is
+' returned.
+' Note 1: Only when the string has sub-strings delimited by vbCrLf the string
+'         is written a records/lines.
+' Note 2: When the string has the alternate split indicator "|&|" this one is
+'         replaced by vbCrLf.
+' Note when copied: Originates in mVarTrans
+'                   See https://github.com/warbe-maker/Excel_VBA_VarTrans
 ' ----------------------------------------------------------------------------
-    Const PROC = "WriteLine"
     
-    On Error GoTo eh
-    Dim ts  As TextStream
-   
-    Set ts = FSo.OpenTextFile(FileName:=sFileFullName, IOMode:=ForAppending)
-    ts.WriteLine TimeStamp & w_string
+    If s_file_append _
+    Then Open s_file For Append As #1 _
+    Else Open s_file For Output As #1
+    Print #1, s_strng
+    Close #1
+    Set StringAsFile = FSo.GetFile(s_file)
+    
+End Function
 
-xt: ts.Close
-    Set ts = Nothing
-    Exit Sub
+Private Function TempFile(Optional ByVal f_path As String = vbNullString, _
+                          Optional ByVal f_extension As String = ".txt", _
+                          Optional ByVal f_create_as_textstream As Boolean = True) As String
+' ------------------------------------------------------------------------------
+' Returns the full file name of a temporary randomly named file. When a path
+' (f_path) is omitted in the CurDir path, else in at the provided folder.
+' ------------------------------------------------------------------------------
+    Dim sTemp As String
     
-eh: Select Case ErrMsg(ErrSrc(PROC))
-        Case vbResume:  Stop: Resume
-        Case Else:      GoTo xt
+    If VBA.Left$(f_extension, 1) <> "." Then f_extension = "." & f_extension
+    sTemp = Replace(FSo.GetTempName, ".tmp", f_extension)
+    If f_path = vbNullString Then f_path = FSo.GetSpecialFolder(2)
+    sTemp = VBA.Replace(f_path & "\" & sTemp, "\\", "\")
+    TempFile = sTemp
+    FSo.CreateTextFile sTemp
+
+End Function
+
+Private Function SplitIndctr(ByVal s As String) As String
+' ----------------------------------------------------------------------------
+' Returns the split indicator in a string (s), which is either vbCrLf or the
+' alternate "|&|". When none is found the split indicator defaults to vbCrLf.
+' Note when copied: Originates in mVarTrans
+'                   See https://github.com/warbe-maker/Excel_VBA_VarTrans
+' ----------------------------------------------------------------------------
+    Const PROC = "SplitIndctr"
+    
+    SplitIndctr = vbCrLf ' The dafault
+    
+    Select Case True
+        Case InStr(s, vbCrLf) <> 0: SplitIndctr = vbCrLf
+        Case InStr(s, "|&|") <> 0:  SplitIndctr = "|&|"
+        Case InStr(s, ",") <> 0:  SplitIndctr = ","
     End Select
-End Sub
+
+End Function
 

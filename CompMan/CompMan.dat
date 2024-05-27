@@ -2,7 +2,8 @@
 
 _MostRecentExport=_MostRecentExport
 clsLog=clsLog
-DoneNamesHskpng=LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber;DueModificationWarning>
+DoneNamesHskpng_10=LastModifiedAtDatTime<LastModAtDateTime<RevisionNumber<RawRevisionNumber
+DoneNamesHskpng_11=DueModificationWarning>
 fMsg=fMsg
 KindOfComponent=used
 LastModifiedAtDatTime=2024-01-24-16-30-53 (UTC)
@@ -16,7 +17,7 @@ UsedExportFolder=source
 
 [clsLog]
 KindOfComponent=hosted
-LastModifiedAtDatTime=2024-05-14 16:01:40 (UTC)
+LastModifiedAtDatTime=2024-05-27 17:00:03 (UTC)
 RawExpFileFullName=D:\Ablage\Excel VBA\DevAndTest\VBA-Service-Log\source\clsLog.cls
 
 [fMsg]
@@ -25,7 +26,7 @@ LastModifiedAtDatTime=2024-02-08-14-35-34 (UTC)
 
 [mCompManClient]
 KindOfComponent=used
-LastModifiedAtDatTime=2024-02-08-14-21-51 (UTC)
+LastModifiedAtDatTime=2024-05-23 18:16:48 (UTC)
 
 [mErH]
 KindOfComponent=used

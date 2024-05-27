@@ -1,0 +1,17 @@
+24-05-27-18:50:12     Update Outdated Common Components (by Add-in) for Log.xlsb     
+24-05-27-18:50:12 -------------------------------------------------------------------
+24-05-27-18:50:12   Class-Module       clsLog     Used Common Component is up-to-date
+24-05-27-18:50:12     UserForm          fMsg      Component is up-to-date! Revision-Number has been set to to 2024-02-08-14-35-34 (UTC) (the raw's in the Common Components Folder)
+24-05-27-18:50:12                                 Used Common Component is up-to-date
+24-05-27-18:50:12   Standard-Module       mErH      Component is up-to-date! Revision-Number has been set to to 2024-01-24-16-47-51 (UTC) (the raw's in the Common Components Folder)
+24-05-27-18:50:12                                 Used Common Component is up-to-date
+24-05-27-18:50:12   Standard-Module       mMsg      Component is up-to-date! Revision-Number has been set to to 2024-05-09 09:18:30 (UTC) (the raw's in the Common Components Folder)
+24-05-27-18:50:12                                 Used Common Component is up-to-date
+24-05-27-18:50:12   Standard-Module       mTrc      Component is up-to-date! Revision-Number has been set to to 2024-05-14 15:53:31 (UTC) (the raw's in the Common Components Folder)
+24-05-27-18:50:12                                 Used Common Component is up-to-date
+24-05-27-18:50:18   Standard-Module   mCompManClient  Outdated used Common Component - last modified in   C o m p M a n . x l s b   - updated by re-import of the Export-File in the Common-Components folder
+24-05-27-19:00:03 ====================================================================
+24-05-27-19:00:03          Export Changed Components (by Add-in) for Log.xlsb         
+24-05-27-19:00:03 --------------------------------------------------------------------
+24-05-27-19:00:03  Class-Module clsLog .: Modified Common Component: e x p o r t e d !
+24-05-27-19:00:03                         Modified Common Component: Last modification info changed from 2024-05-14 16:01:40 (UTC) to 2024-05-27 17:00:03 (UTC)

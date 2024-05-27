@@ -1,0 +1,149 @@
+24-05-27 18:50:02 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 18:50:02 seconds seconds >> Export Changed Components (by Add-in) for Log.xlsb
+24-05-27 18:50:02 00,0000         |  >> mCompMan.UpdateOutdatedCommonComponents
+24-05-27 18:50:02 00,0071         |  |  >> clsServices.Initiate
+24-05-27 18:50:02 00,0151         |  |  |  >> clsCompManDat.Class_Initialize
+24-05-27 18:50:02 00,0222         |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,0247         |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 18:50:02 00,0318 00,0072 |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 18:50:02 00,0457 00,0236 |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,1071 00,0919 |  |  |  << clsCompManDat.Class_Initialize
+24-05-27 18:50:02 00,1097         |  |  |  >> clsCommonPublic.Class_Initialize
+24-05-27 18:50:02 00,1120         |  |  |  |  >> clsCompManDat.Class_Initialize
+24-05-27 18:50:02 00,1144         |  |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,1170         |  |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 18:50:02 00,1233 00,0063 |  |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 18:50:02 00,1373 00,0229 |  |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,1462 00,0342 |  |  |  |  << clsCompManDat.Class_Initialize
+24-05-27 18:50:02 00,1470         |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,1549         |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Common-Components\CommComps.dat)
+24-05-27 18:50:02 00,1762 00,0214 |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Common-Components\CommComps.dat)
+24-05-27 18:50:02 00,2228 00,0758 |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 18:50:02 00,2523 00,1426 |  |  |  << clsCommonPublic.Class_Initialize
+24-05-27 18:50:02 00,2561         |  |  |  >> clsCommonPublic.Hskpng
+24-05-27 18:50:02 00,3034         |  |  |  |  >> clsCommonPublic.HskpngCompsObsolete
+24-05-27 18:50:02 00,3415 00,0381 |  |  |  |  << clsCommonPublic.HskpngCompsObsolete
+24-05-27 18:50:02 00,3433         |  |  |  |  >> clsCommonPublic.HskpngCompsMissing
+24-05-27 18:50:04 01,6940 01,3507 |  |  |  |  << clsCommonPublic.HskpngCompsMissing
+24-05-27 18:50:04 01,6962         |  |  |  |  >> clsCommonPublic.HskpngCompsUsedOrPrivate
+24-05-27 18:50:04 01,8035         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mErH)
+24-05-27 18:50:04 01,8189 00,0154 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 01,9416         |  |  |  |  |  >> clsPendingRelease.ManageComponent (fMsg)
+24-05-27 18:50:04 01,9567 00,0151 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 02,0032         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mCompManClient)
+24-05-27 18:50:04 02,0711 00,0679 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 02,1787         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mMsg)
+24-05-27 18:50:04 02,1883 00,0096 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 02,2250         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mTrc)
+24-05-27 18:50:04 02,2338 00,0088 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 02,2363 00,5402 |  |  |  |  << clsCommonPublic.HskpngCompsUsedOrPrivate
+24-05-27 18:50:04 02,2375         |  |  |  |  >> clsCommonPublic.HskpngCompsHosted
+24-05-27 18:50:04 02,2687         |  |  |  |  |  >> clsPendingRelease.ManageComponent (clsLog)
+24-05-27 18:50:04 02,2959 00,0272 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 18:50:04 02,3004 00,0630 |  |  |  |  << clsCommonPublic.HskpngCompsHosted
+24-05-27 18:50:04 02,3010 02,0450 |  |  |  << clsCommonPublic.Hskpng
+24-05-27 18:50:04 02,3019         |  |  |  >> clsCompManDat.Hskpng
+24-05-27 18:50:04 02,3027         |  |  |  |  >> clsCompManDat.HskpngObsolete
+24-05-27 18:50:04 02,3071 00,0044 |  |  |  |  << clsCompManDat.HskpngObsolete
+24-05-27 18:50:04 02,3080         |  |  |  |  >> clsCompManDat.HskpngCompsHosted
+24-05-27 18:50:04 02,3114 00,0034 |  |  |  |  << clsCompManDat.HskpngCompsHosted
+24-05-27 18:50:04 02,3119 00,0101 |  |  |  << clsCompManDat.Hskpng
+24-05-27 18:50:04 02,3146         |  |  |  >> clsComps.CollectAllCommComps
+24-05-27 18:50:05 02,7329 00,4184 |  |  |  << clsComps.CollectAllCommComps
+24-05-27 18:50:05 02,7445 02,7374 |  |  << clsServices.Initiate
+24-05-27 18:50:05 02,7479         |  |  >> mCommComps.OutdatedUpdate1Collect
+24-05-27 18:50:05 02,7540         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 02,8166 00,0626 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 02,8594         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 02,9993 00,1399 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 03,0078         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 03,0302 00,0225 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 03,0362         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 03,0733 00,0370 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 03,0815         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 03,1204 00,0388 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 03,1273         |  |  |  >> clsComp.Outdated
+24-05-27 18:50:12 03,1513 00,0240 |  |  |  << clsComp.Outdated
+24-05-27 18:50:12 03,1673 00,4194 |  |  << mCommComps.OutdatedUpdate1Collect
+24-05-27 18:50:13 03,4132 03,4132 |  << mCompMan.UpdateOutdatedCommonComponents
+24-05-27 18:50:13 03,4132 03,4132 << Export Changed Components (by Add-in) for Log.xlsb
+24-05-27 18:50:13                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 18:50:13                 Impact on the overall performance (caused by the trace itself): 0,6 milliseconds!
+===========================================================================================================================================
+24-05-27 18:50:18 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 18:50:18 seconds seconds >> Export Changed Components (by Add-in) for Log.xlsb
+24-05-27 18:50:18 00,0000         |  >> mCommComps.OutdatedUpdate2Choice1Update
+24-05-27 18:50:18 00,0228         |  |  >> mMe.ByReImport
+24-05-27 18:50:18 00,6433         |  |  |  >> mMe.OutCommentCode
+24-05-27 18:50:18 00,6642 00,0208 |  |  |  << mMe.OutCommentCode
+24-05-27 18:50:18 00,7541 00,7313 |  |  << mMe.ByReImport
+24-05-27 18:50:18 00,8884 00,8884 |  << mCommComps.OutdatedUpdate2Choice1Update
+24-05-27 18:50:18 00,8884 00,8884 << Export Changed Components (by Add-in) for Log.xlsb
+24-05-27 18:50:18                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 18:50:18                 Impact on the overall performance (caused by the trace itself): 0,5 milliseconds!
+===========================================================================================================================================
+24-05-27 19:00:02 Elapsed Length  Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 19:00:02 seconds seconds >> Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-27 19:00:02 00,0000         |  >> mCompMan.ExportChangedComponents
+24-05-27 19:00:02 00,0022         |  |  >> clsServices.Initiate
+24-05-27 19:00:02 00,0054         |  |  |  >> clsCompManDat.Class_Initialize
+24-05-27 19:00:02 00,0074         |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,0090         |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 19:00:02 00,0180 00,0090 |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 19:00:02 00,0266 00,0192 |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,0361 00,0307 |  |  |  << clsCompManDat.Class_Initialize
+24-05-27 19:00:02 00,0366         |  |  |  >> clsCommonPublic.Class_Initialize
+24-05-27 19:00:02 00,0375         |  |  |  |  >> clsCompManDat.Class_Initialize
+24-05-27 19:00:02 00,0387         |  |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,0397         |  |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 19:00:02 00,0422 00,0025 |  |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Log\CompMan\CompMan.dat)
+24-05-27 19:00:02 00,0528 00,0142 |  |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,0568 00,0193 |  |  |  |  << clsCompManDat.Class_Initialize
+24-05-27 19:00:02 00,0572         |  |  |  |  >> clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,0603         |  |  |  |  |  >> clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Common-Components\CommComps.dat)
+24-05-27 19:00:02 00,0731 00,0127 |  |  |  |  |  << clsPrivProf.PPfileAsPPtwin (E:\Sync\Excel VBA\DevAndTest\Common-Components\CommComps.dat)
+24-05-27 19:00:02 00,0960 00,0388 |  |  |  |  << clsPrivProf.FileName-Let
+24-05-27 19:00:02 00,1036 00,0670 |  |  |  << clsCommonPublic.Class_Initialize
+24-05-27 19:00:02 00,1045         |  |  |  >> clsCommonPublic.Hskpng
+24-05-27 19:00:02 00,1130         |  |  |  |  >> clsCommonPublic.HskpngCompsObsolete
+24-05-27 19:00:02 00,1215 00,0085 |  |  |  |  << clsCommonPublic.HskpngCompsObsolete
+24-05-27 19:00:02 00,1218         |  |  |  |  >> clsCommonPublic.HskpngCompsMissing
+24-05-27 19:00:03 00,5553 00,4335 |  |  |  |  << clsCommonPublic.HskpngCompsMissing
+24-05-27 19:00:03 00,5557         |  |  |  |  >> clsCommonPublic.HskpngCompsUsedOrPrivate
+24-05-27 19:00:03 00,5949         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mErH)
+24-05-27 19:00:03 00,6020 00,0072 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,6521         |  |  |  |  |  >> clsPendingRelease.ManageComponent (fMsg)
+24-05-27 19:00:03 00,6569 00,0047 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,6792         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mMsg)
+24-05-27 19:00:03 00,6833 00,0041 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,7001         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mTrc)
+24-05-27 19:00:03 00,7040 00,0039 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,7179         |  |  |  |  |  >> clsPendingRelease.ManageComponent (mCompManClient)
+24-05-27 19:00:03 00,7280 00,0100 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,7503 00,1946 |  |  |  |  << clsCommonPublic.HskpngCompsUsedOrPrivate
+24-05-27 19:00:03 00,7506         |  |  |  |  >> clsCommonPublic.HskpngCompsHosted
+24-05-27 19:00:03 00,7692         |  |  |  |  |  >> clsPendingRelease.ManageComponent (clsLog)
+24-05-27 19:00:03 00,7812 00,0119 |  |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 00,7834 00,0329 |  |  |  |  << clsCommonPublic.HskpngCompsHosted
+24-05-27 19:00:03 00,7837 00,6793 |  |  |  << clsCommonPublic.Hskpng
+24-05-27 19:00:03 00,7839         |  |  |  >> clsCompManDat.Hskpng
+24-05-27 19:00:03 00,7840         |  |  |  |  >> clsCompManDat.HskpngObsolete
+24-05-27 19:00:03 00,7859 00,0018 |  |  |  |  << clsCompManDat.HskpngObsolete
+24-05-27 19:00:03 00,7861         |  |  |  |  >> clsCompManDat.HskpngCompsHosted
+24-05-27 19:00:03 00,7878 00,0017 |  |  |  |  << clsCompManDat.HskpngCompsHosted
+24-05-27 19:00:03 00,7880 00,0041 |  |  |  << clsCompManDat.Hskpng
+24-05-27 19:00:03 00,7920 00,7899 |  |  << clsServices.Initiate
+24-05-27 19:00:03 00,8763         |  |  >> clsServices.ExportChangedComponents
+24-05-27 19:00:03 00,8770         |  |  |  >> mExport.ChangedComponents
+24-05-27 19:00:03 01,0840         |  |  |  |  >> clsPendingRelease.ManageComponent (clsLog)
+24-05-27 19:00:03 01,0985 00,0144 |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 01,1011         |  |  |  |  >> clsPendingRelease.ManageComponent (clsLog)
+24-05-27 19:00:03 01,1178 00,0167 |  |  |  |  << clsPendingRelease.ManageComponent
+24-05-27 19:00:03 01,1332         |  |  |  |  >> clsServices.RemoveTempRenamed
+24-05-27 19:00:03 01,1336 00,0004 |  |  |  |  << clsServices.RemoveTempRenamed
+24-05-27 19:00:03 01,1354 00,2584 |  |  |  << mExport.ChangedComponents
+24-05-27 19:00:03 01,1356 00,2593 |  |  << clsServices.ExportChangedComponents
+24-05-27 19:00:03 01,1359 01,1359 |  << mCompMan.ExportChangedComponents
+24-05-27 19:00:03 01,1359 01,1359 << Update Outdated Common Components (by Add-in) for Log.xlsb
+24-05-27 19:00:03                 Execution trace by 'Common VBA Execution Trace Service (mTrc)' (https://github.com/warbe-maker/VBA-Trace)
+24-05-27 19:00:03                 Impact on the overall performance (caused by the trace itself): 0,2 milliseconds!
