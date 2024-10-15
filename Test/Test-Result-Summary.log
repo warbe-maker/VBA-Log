@@ -1,0 +1,24 @@
+------------------------------------------+---------+-----------+-----------+--------------+--------------------------------------------------------------------------+----------+-----------
+                   Test                   |  Test   | Component | Component |  Procedure   |                               Verification                               |   Test   | Exec time 
+                  Title                   |   Id    |   Name    |   Type    |     Name     |                         (expected/tested result)                         |  Result  |  (msec)   
+------------------------------------------+---------+-----------+-----------+--------------+--------------------------------------------------------------------------+----------+-----------
+ Alignment straight (not column arranged) | 010-1.1 | clsLog    | Function  | Align        | Align left, margin= " " (ignored!), fill=" " (final width = 10)          |  Passed  |       n/a 
+                                          | 010-2.1 | clsLog    | Function  | Align        | Align left, margin= " " (ignored!), fill=" " (final width = 10)          |  Passed  |       n/a 
+                                          | 010-3.1 | clsLog    | Function  | Align        | Align right, margin=" " (ignored), fill=" " (final length = 10)          |  Passed  |       n/a 
+                                          | 010-4.1 | clsLog    | Function  | Align        | Align centered, margin="", fill="-" (final width is 10)                  |  Passed  |       n/a 
+                                          | 010-5.1 | clsLog    | Function  | Align        | Align centered, margin="", fill=" -" (final width is 10)                 |  Passed  |       n/a 
+                                          | 010-6.1 | clsLog    | Function  | Align        | Align left, margin="", fill=".:" (final width is 10)                     |  Passed  |       n/a 
+                                          | 010-7.1 | clsLog    | Function  | Align        | Align left, margin="", fill="." (final width is 10                       |  Passed  |       n/a 
+ Alignments column arranged               | 020-1.1 | clsLog    | Function  | Align        | Align left, cols arragend, margin= " ", fill=" " (final width = 12)      |  Passed  |       n/a 
+                                          | 020-2.1 | clsLog    | Function  | Align        | Align right, cols arranged, margin=" ", fill=" " (final length = 12)     |  Passed  |       n/a 
+                                          | 020-3.1 | clsLog    | Function  | Align        | Align centered, cols arranged, margin=" ", fill="-" (final width is 14)  |  Passed  |       n/a 
+                                          | 020-4.1 | clsLog    | Function  | Align        | Align centered, cols arranged, margin=" ", fill=" -" (final width is 14) |  Passed  |       n/a 
+                                          | 020-5.1 | clsLog    | Function  | Align        | Align left, cols arranged, fill=".:", colls arranged (final width is 12) |  Passed  |       n/a 
+                                          | 020-5.2 | clsLog    | Function  | Align        | Align left, filled with ".", considered cols arranged, final width is 11 |  Passed  |       n/a 
+ All log services                         | 100-1.1 | clsLog    | Function  | Title, Entry | 1. A log entry with 4 line title, 2. One log entry as new log            |  Passed  |       n/a 
+                                          | 100-2.1 | clsLog    | Function  | Title, Entry | New log file, title centered filled with -, 2 log entires                |  Passed  |       n/a 
+                                          | 100-3.1 | clsLog    | Function  | Title, Entry | Title width adjusted, indicates new log                                  |  Passed  |       n/a 
+                                          | 100-4.1 | clsLog    | Function  | Title, Entry | New log file, items arranged in columns, no column header                |  Passed  |       n/a 
+                                          | 100-5.1 | clsLog    | Function  | Title, Entry | Items arranged in columns (with header)                                  |  Passed  |       n/a 
+                                          | 100-6.1 | clsLog    | Function  | Title, Entry | Items arranged in columns (fill " .:", no header)                        |  Passed  |       n/a 
+                                          | 100-7.1 | clsLog    | Function  | Title, Entry | Items arranged in columns (fill ".:", cols with empty items)             |  Passed  |       n/a 

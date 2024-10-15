@@ -1,0 +1,5 @@
+24-10-15-19:09:02 =========================== Test 4: Items arranged in columns (with header)  ============================
+24-10-15-19:09:02 ---------------------------------------------------------------------------------------------------------
+24-10-15-19:09:02   3  xxxxx ..............................................:  yyyyyy      Rightmost column no width limit! 
+24-10-15-19:09:02   3  xxx ................................................:  yyyy          - Header and title is adjusted with first (above) line 
+24-10-15-19:09:02   3  x ..................................................:  yyyyy         - Leading spaces are preserved with left alignment, rigth are with right alignment) 

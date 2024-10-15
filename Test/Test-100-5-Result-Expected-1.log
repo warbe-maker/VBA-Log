@@ -1,0 +1,8 @@
+24-10-15-19:06:06 -------------------------------------------------------- Test 4: Items arranged in columns (with header)  --------------------------------------------------------
+24-10-15-19:06:06 ----+------------+------------+-----------------------------------------------------------------------------------------------------------------------------------
+24-10-15-19:06:06  Nr |    Item    |    Item    |         Item         
+24-10-15-19:06:06     |     1      |     2      |  4 (no width limit)  
+24-10-15-19:06:06 ----+------------+------------+-----------------------------------------------------------------------------------------------------------------------------------
+24-10-15-19:06:06   3 | xxxxx      |     yyyyyy | Rightmost column without width limit! (this first line implicitly indicates the columns width for being considered by the header) 
+24-10-15-19:06:06   3 | xxx        |       yyyy |          zzzzzz (note that leading spaces are preserved when/because the first line implicitly indicated left adjusted)           
+24-10-15-19:06:06   3 | x          |      yyyyy | zzzzzz                                                                                                                            

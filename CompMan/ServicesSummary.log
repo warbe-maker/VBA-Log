@@ -1,0 +1,88 @@
+24-10-14-00:39:36 ------------------ Export Changed Components (by CompMan.xlsb) for Log.xlsb ------------------
+24-10-14-00:39:36 ----------------------------------------------------------------------------------------------
+24-10-14-00:39:36  Class-Module     clsTestAid      Modified Common Component: Release registered pending       
+24-10-14-00:39:36                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-00:39:36                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-00:39:37  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-14-00:39:37 ExportChangedComponents (by CompMan.xlsb) for Log.xlsb: 2 of 11 exported (clsTestAid, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-14-19:04:51 ==============================================================================================
+24-10-14-19:04:51 ------------------ Export Changed Components (by CompMan.xlsb) for Log.xlsb ------------------
+24-10-14-19:04:51 ----------------------------------------------------------------------------------------------
+24-10-14-19:04:51  Class-Module     clsTestAid      Modified Common Component: Release registered pending       
+24-10-14-19:04:51                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-19:04:51                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-19:04:51  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-14-19:04:51                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-19:04:51                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-19:04:51  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-14-19:04:52 ExportChangedComponents (by CompMan.xlsb) for Log.xlsb: 3 of 11 exported (clsTestAid, clsLog, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-14-19:44:07 ==============================================================================================
+24-10-14-19:44:07 ------------------ Export Changed Components (by CompMan.xlsb) for Log.xlsb ------------------
+24-10-14-19:44:07 ----------------------------------------------------------------------------------------------
+24-10-14-19:44:07  Class-Module     clsTestAid      Modified Common Component: Release registered pending       
+24-10-14-19:44:07                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-19:44:07                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-19:44:07  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-14-19:44:07                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-19:44:07                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-19:44:07  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-14-19:44:07 ExportChangedComponents (by CompMan.xlsb) for Log.xlsb: 3 of 11 exported (clsTestAid, clsLog, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-14-19:45:21 ==============================================================================================
+24-10-14-19:45:21 ------------------ Export Changed Components (by CompMan.xlsb) for Log.xlsb ------------------
+24-10-14-19:45:21 ----------------------------------------------------------------------------------------------
+24-10-14-19:45:21  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-14-19:45:21                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-14-19:45:21                                   Serviced Common Component modified: Re-registered pending release
+24-10-14-19:45:22 ExportChangedComponents (by CompMan.xlsb) for Log.xlsb: 1 of 11 exported (clsLog)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-15-16:02:26 ==============================================================================================
+24-10-15-16:02:26 ----------------- Update Outdated Common Components (by Add-in) for Log.xlsb -----------------
+24-10-15-16:02:26 ----------------------------------------------------------------------------------------------
+24-10-15-16:02:26  Class-Module     clsTestAid      Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  Class-Module     clsLog          Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  Standard-Module  mCompManClient  Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  Standard-Module  mMsg            Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  Standard-Module  mErH            Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  UserForm         fMsg            Serviced Common Component used is up-to-date                
+24-10-15-16:02:26  Standard-Module  mTrc            Serviced Common Component used is up-to-date                
+24-10-15-17:54:45 ==============================================================================================
+24-10-15-17:54:45 --------------------- Export Changed Components (by Add-in) for Log.xlsb ---------------------
+24-10-15-17:54:45 ----------------------------------------------------------------------------------------------
+24-10-15-17:54:45  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-15-17:54:45                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-15-17:54:45                                   Serviced Common Component modified: Re-registered pending release
+24-10-15-17:54:46  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-15-17:54:46 ExportChangedComponents (by CompMan.xlam) for Log.xlsb: 2 of 11 exported (clsLog, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-15-18:00:31 ==============================================================================================
+24-10-15-18:00:31 --------------------- Export Changed Components (by Add-in) for Log.xlsb ---------------------
+24-10-15-18:00:31 ----------------------------------------------------------------------------------------------
+24-10-15-18:00:31  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-15-18:00:32                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-15-18:00:32                                   Serviced Common Component modified: Re-registered pending release
+24-10-15-18:00:32  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-15-18:00:32 ExportChangedComponents (by CompMan.xlam) for Log.xlsb: 2 of 11 exported (clsLog, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-15-18:30:48 ==============================================================================================
+24-10-15-18:30:48 --------------------- Export Changed Components (by Add-in) for Log.xlsb ---------------------
+24-10-15-18:30:48 ----------------------------------------------------------------------------------------------
+24-10-15-18:30:48  Class-Module     clsLog          Modified Common Component: Release registered pending       
+24-10-15-18:30:48                                   Serviced Common Component modified: E x p o r t e d !       
+24-10-15-18:30:48                                   Serviced Common Component modified: Re-registered pending release
+24-10-15-18:30:48  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                      
+24-10-15-18:30:48 ExportChangedComponents (by CompMan.xlam) for Log.xlsb: 2 of 11 exported (clsLog, mLogTest)     See the VBE CompMan menu for 3 Common Components pending release!  (see Services.log for log details)
+24-10-15-19:24:31 ================================================================================================
+24-10-15-19:24:31  Class-Module     clsTestAid.....:  Modified Common Component: Release registered pending       
+24-10-15-19:24:31                                     Serviced Common Component modified (code differs from public and LastModAt > LastmodAt public): Registered pending release
+24-10-15-19:24:31                                     Serviced Common Component modified: Properties pending set equal serviced                                                 
+24-10-15-19:24:32                                     Serviced Common Component properties housekeeping:                                                                        
+24-10-15-19:24:32                                     Serviced Common Component's Export-File meets public: Properties set equal public                                         
+24-10-15-19:24:32 ============================================================================================================================================================
+24-10-15-19:24:32 ------------------------------------------------- Export Changed Components (by CompMan.xlsb) for Log.xlsb -------------------------------------------------
+24-10-15-19:24:32 ------------------------------------------------------------------------------------------------------------------------------------------------------------
+24-10-15-19:24:32                                   Modified Common Component: Release registered pending                                                                     
+24-10-15-19:24:32                                   Serviced Common Component modified: E x p o r t e d !                                                                     
+24-10-15-19:24:32                                   Serviced Common Component modified: Re-registered pending release                                                         
+24-10-15-19:24:33  Class-Module     clsLog          Modified Common Component: Release registered pending                                                                     
+24-10-15-19:24:33                                   Serviced Common Component modified: E x p o r t e d !                                                                     
+24-10-15-19:24:33                                   Serviced Common Component modified: Properties in CommComps.dat updated                                                   
+24-10-15-19:24:33                                   Serviced Common Component modified: Registered pending release                                                            
+24-10-15-19:24:33  Standard-Module  mLogTest        Modified VBComponent e x p o r t e d !                                                                                    
+24-10-15-19:24:33 ExportChangedComponents (by CompMan.xlsb) for Log.xlsb: 3 of 11 exported (clsTestAid, clsLog, mLogTest)     See the VBE CompMan menu for 2 Common Components pending release!  (see Services.log for log details)

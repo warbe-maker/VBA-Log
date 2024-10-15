@@ -11,6 +11,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 Option Explicit
 ' -------------------------------------------------------------------------------
 ' UserForm fMsg: Provides all means for the setup of all message variants with
@@ -4353,20 +4354,21 @@ Public Sub WidthsDebug(Optional ByVal m_phase As String = vbNullString)
 ' ------------------------------------------------------------------------------
 ' For test and debugging only!
 ' ------------------------------------------------------------------------------
+    Const PROC = "WidthsDebug"
     
-    Debug.Print "====== Widths after/at: " & m_phase & "==================================================="
-    Debug.Print "FormWidthOutside: Max = " & FormWidthOutsideMax & " (dpi=" & DsplyWidthDPI & ", pt=" & DsplyWidthPT & ", " & FormWidthOutsideMax / (DsplyWidthPT / 100) & "% )"
-    Debug.Print "----------------- Min = " & FormWidthOutsideMin & " (dpi=" & DsplyWidthDPI & ", pt=" & DsplyWidthPT & ", " & FormWidthOutsideMin / (DsplyWidthPT / 100) & "% )"
-    Debug.Print "                  now = " & Me.Width
-    Debug.Print "FormWidthInside : Max = " & siFormWidthInsideMax
-    Debug.Print "----------------- Min = " & siFormWidthInsideMin
-    Debug.Print "                  now = " & siFormWidthInside
-    Debug.Print "AreasFrmWidth   : Max = " & AreasFrmWidthMax
-    Debug.Print "-- Barea/Marea -- Min = " & AreasFrmWidthMin
-    Debug.Print "                  now = " & siAreasFrmWidth
-    Debug.Print "BttnsFrm        : Max = " & AreasFrmWidthMax
-    Debug.Print "----------------- Min = " & AreasFrmWidthMin
-    Debug.Print "                  now = " & BttnsFrm.Width
+    Debug.Print ErrSrc(PROC) & ": " & "====== Widths after/at: " & m_phase & "==================================================="
+    Debug.Print ErrSrc(PROC) & ": " & "FormWidthOutside: Max = " & FormWidthOutsideMax & " (dpi=" & DsplyWidthDPI & ", pt=" & DsplyWidthPT & ", " & FormWidthOutsideMax / (DsplyWidthPT / 100) & "% )"
+    Debug.Print ErrSrc(PROC) & ": " & "----------------- Min = " & FormWidthOutsideMin & " (dpi=" & DsplyWidthDPI & ", pt=" & DsplyWidthPT & ", " & FormWidthOutsideMin / (DsplyWidthPT / 100) & "% )"
+    Debug.Print ErrSrc(PROC) & ": " & "                  now = " & Me.Width
+    Debug.Print ErrSrc(PROC) & ": " & "FormWidthInside : Max = " & siFormWidthInsideMax
+    Debug.Print ErrSrc(PROC) & ": " & "----------------- Min = " & siFormWidthInsideMin
+    Debug.Print ErrSrc(PROC) & ": " & "                  now = " & siFormWidthInside
+    Debug.Print ErrSrc(PROC) & ": " & "AreasFrmWidth   : Max = " & AreasFrmWidthMax
+    Debug.Print ErrSrc(PROC) & ": " & "-- Barea/Marea -- Min = " & AreasFrmWidthMin
+    Debug.Print ErrSrc(PROC) & ": " & "                  now = " & siAreasFrmWidth
+    Debug.Print ErrSrc(PROC) & ": " & "BttnsFrm        : Max = " & AreasFrmWidthMax
+    Debug.Print ErrSrc(PROC) & ": " & "----------------- Min = " & AreasFrmWidthMin
+    Debug.Print ErrSrc(PROC) & ": " & "                  now = " & BttnsFrm.Width
 
 End Sub
 
